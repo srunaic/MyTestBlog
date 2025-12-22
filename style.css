@@ -370,28 +370,36 @@ body {
 }
 
 .page-btn {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #fff;
-    border: 1px solid #ddd;
-    color: #111;
-    font-weight: 900;
-    font-size: 0.9rem;
+    border: 1px solid #eee;
+    color: #555;
+    font-weight: 700;
+    font-size: 0.85rem;
     cursor: pointer;
-    transition: 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: 0.2s ease;
 }
 
 .page-btn:hover {
     border-color: #000;
+    color: #000;
+    background: #f9f9f9;
 }
 
 .page-btn.active {
-    background: #000;
-    color: #fff;
-    border-color: #000;
+    background: #f0f0f0;
+    color: #000;
+    border-color: #ddd;
+    font-weight: 900;
+}
+
+.nav-btn {
+    font-size: 0.7rem;
+    color: #999;
 }
 
 .title-item.selected {

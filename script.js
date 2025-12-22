@@ -569,9 +569,22 @@ function renderPagination(total) {
     if (!container) return;
     container.innerHTML = '';
 
-    // Always show at least page 1 as requested
     const pageCount = Math.max(1, total);
 
+    // Prev Button
+    if (currentPage > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn nav-btn';
+        prevBtn.innerHTML = '❮';
+        prevBtn.onclick = () => {
+            currentPage--;
+            window.scrollTo({ top: 400, behavior: 'smooth' });
+            renderPosts();
+        };
+        container.appendChild(prevBtn);
+    }
+
+    // Page Numbers
     for (let i = 1; i <= pageCount; i++) {
         const btn = document.createElement('button');
         btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
@@ -582,6 +595,19 @@ function renderPagination(total) {
             renderPosts();
         };
         container.appendChild(btn);
+    }
+
+    // Next Button
+    if (currentPage < pageCount) {
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn nav-btn';
+        nextBtn.innerHTML = '❯';
+        nextBtn.onclick = () => {
+            currentPage++;
+            window.scrollTo({ top: 400, behavior: 'smooth' });
+            renderPosts();
+        };
+        container.appendChild(nextBtn);
     }
 }
 
