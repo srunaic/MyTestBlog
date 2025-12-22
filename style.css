@@ -489,11 +489,13 @@ body {
 }
 
 .detail-header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 5rem;
-    line-height: 1.1;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3rem;
+    line-height: 1.2;
     margin-bottom: 20px;
-    letter-spacing: -2px;
+    letter-spacing: -1px;
+    font-weight: 700;
+    color: #000;
 }
 
 .detail-meta {
