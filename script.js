@@ -25,6 +25,63 @@ var currentPage = 1;
 var postsPerPage = 12;
 
 // ==========================================
+// 2. SESSION & STATE MANAGER
+// ==========================================
+const SessionManager = {
+    KEYS: {
+        AUTH: 'nano_dorothy_session',
+        DRAFT_POST: 'nano_dorothy_draft_post',
+        DRAFT_SIGNUP: 'nano_dorothy_draft_signup',
+        UI_STATE: 'nano_dorothy_ui_state'
+    },
+
+    // Auth Session (Persistent)
+    saveAuth(user) {
+        const sessionData = {
+            ...user,
+            loginTime: Date.now(),
+            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours expiry
+        };
+        localStorage.setItem(this.KEYS.AUTH, JSON.stringify(sessionData));
+    },
+    getAuth() {
+        const raw = localStorage.getItem(this.KEYS.AUTH);
+        if (!raw) return null;
+        const session = JSON.parse(raw);
+        if (Date.now() > session.expiresAt) {
+            this.clearAuth();
+            return null;
+        }
+        return session;
+    },
+    clearAuth() {
+        localStorage.removeItem(this.KEYS.AUTH);
+    },
+
+    // Draft Session (Temporary)
+    saveDraft(key, data) {
+        sessionStorage.setItem(key, JSON.stringify(data));
+    },
+    getDraft(key) {
+        const raw = sessionStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+    },
+    clearDraft(key) {
+        sessionStorage.removeItem(key);
+    },
+
+    // UI State (Persistent across refreshes)
+    saveUIState(state) {
+        const currentState = this.getUIState() || {};
+        localStorage.setItem(this.KEYS.UI_STATE, JSON.stringify({ ...currentState, ...state }));
+    },
+    getUIState() {
+        const raw = localStorage.getItem(this.KEYS.UI_STATE);
+        return raw ? JSON.parse(raw) : null;
+    }
+};
+
+// ==========================================
 // 2. SUPABASE CONFIGURATION
 // ==========================================
 var SUPABASE_URL = 'https://xefallpzdgyjufsxpsnk.supabase.co';
@@ -142,8 +199,10 @@ async function init() {
     setupMusic();
 
     // 4. Initial Render
+    restoreUIState();
     checkSession();
     renderAll();
+    restoreDrafts();
 
     // 4. Data Loading Status
     const statusDiv = document.createElement('div');
@@ -257,16 +316,28 @@ async function ensureAdminInSupabase() {
 // 6. AUTHENTICATION
 // ==========================================
 function checkSession() {
-    try {
-        const session = localStorage.getItem(SESSION_KEY);
-        currentUser = session ? JSON.parse(session) : null;
-        isAdminMode = currentUser && currentUser.role === 'admin';
-    } catch (e) {
-        console.error('Session parse error', e);
-        currentUser = null;
-        isAdminMode = false;
-    }
+    currentUser = SessionManager.getAuth();
+    isAdminMode = currentUser && currentUser.role === 'admin';
     updateUserNav();
+}
+
+function restoreUIState() {
+    const state = SessionManager.getUIState();
+    if (state) {
+        if (state.category) currentCategory = state.category;
+        if (state.page) currentPage = state.page;
+    }
+}
+
+function restoreDrafts() {
+    // Post Draft
+    const postDraft = SessionManager.getDraft(SessionManager.KEYS.DRAFT_POST);
+    if (postDraft && form) {
+        form.title.value = postDraft.title || '';
+        form.content.value = postDraft.content || '';
+        form['post-category'].value = postDraft.category || 'board';
+        console.log('Post draft restored.');
+    }
 }
 
 function updateUserNav() {
@@ -299,8 +370,9 @@ function updateUserNav() {
 
 window.logout = () => {
     if (confirm('로그아웃 하시겠습니까?')) {
-        localStorage.removeItem(SESSION_KEY);
+        SessionManager.clearAuth();
         currentUser = null;
+        isAdminMode = false;
         checkSession();
         renderAll();
     }
@@ -331,7 +403,18 @@ function openAuthModal(mode) {
     if (switchTxt) switchTxt.textContent = mode === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?';
     if (switchLnk) switchLnk.textContent = mode === 'login' ? '회원가입' : '로그인';
 
-    if (authForm) authForm.reset();
+    if (authForm) {
+        authForm.reset();
+        if (mode === 'signup') {
+            const signupDraft = SessionManager.getDraft(SessionManager.KEYS.DRAFT_SIGNUP);
+            if (signupDraft) {
+                const uInput = document.getElementById('auth-username');
+                const nInput = document.getElementById('auth-nickname');
+                if (uInput) uInput.value = signupDraft.username || '';
+                if (nInput) nInput.value = signupDraft.nickname || '';
+            }
+        }
+    }
 }
 function closeAuthModal() {
     const modal = document.getElementById('auth-modal');
@@ -420,6 +503,7 @@ function renderCategories() {
         el.onclick = () => {
             currentCategory = el.dataset.id;
             currentPage = 1; // Reset to page 1 on category change
+            SessionManager.saveUIState({ category: currentCategory, page: currentPage });
             listView.style.display = 'block';
             detailView.style.display = 'none';
             selectedPostIds.clear();
@@ -573,6 +657,7 @@ function renderPagination(total) {
         prevBtn.innerHTML = '❮';
         prevBtn.onclick = () => {
             currentPage = curr - 1;
+            SessionManager.saveUIState({ page: currentPage });
             window.scrollTo({ top: 400, behavior: 'smooth' });
             renderPosts();
         };
@@ -586,6 +671,7 @@ function renderPagination(total) {
         btn.textContent = i;
         btn.onclick = () => {
             currentPage = i;
+            SessionManager.saveUIState({ page: currentPage });
             window.scrollTo({ top: 400, behavior: 'smooth' });
             renderPosts();
         };
@@ -599,6 +685,7 @@ function renderPagination(total) {
         nextBtn.innerHTML = '❯';
         nextBtn.onclick = () => {
             currentPage = curr + 1;
+            SessionManager.saveUIState({ page: currentPage });
             window.scrollTo({ top: 400, behavior: 'smooth' });
             renderPosts();
         };
@@ -760,10 +847,23 @@ function setupEventListeners() {
                     posts.unshift({ ...postPayload, id: Date.now() });
                 }
             }
+            // Clear draft on success
+            SessionManager.clearDraft(SessionManager.KEYS.DRAFT_POST);
             closeModal();
             renderAll();
             listView.style.display = 'block';
             detailView.style.display = 'none';
+        };
+
+        // Draft Auto-save for Post
+        form.oninput = () => {
+            if (!document.getElementById('post-id').value) { // Only save drafts for NEW posts
+                SessionManager.saveDraft(SessionManager.KEYS.DRAFT_POST, {
+                    title: document.getElementById('post-title').value,
+                    content: document.getElementById('post-content').value,
+                    category: document.getElementById('post-category').value
+                });
+            }
         };
     }
 
@@ -792,19 +892,30 @@ function setupEventListeners() {
                     users.push(newUser);
                 }
                 alert('회원가입이 완료되었습니다. 로그인해 주세요.');
+                SessionManager.clearDraft(SessionManager.KEYS.DRAFT_SIGNUP);
                 await loadData();
                 openAuthModal('login');
             } else {
                 const user = users.find(user => user.username === u && user.password === p);
                 if (user) {
                     currentUser = user;
-                    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+                    SessionManager.saveAuth(user);
                     closeAuthModal();
                     checkSession();
                     renderAll();
                 } else {
                     alert('아이디 또는 비밀번호가 틀렸습니다.');
                 }
+            }
+        };
+
+        // Draft Auto-save for Signup
+        authForm.oninput = () => {
+            if (authMode === 'signup') {
+                SessionManager.saveDraft(SessionManager.KEYS.DRAFT_SIGNUP, {
+                    username: document.getElementById('auth-username').value,
+                    nickname: document.getElementById('auth-nickname').value
+                });
             }
         };
     }
