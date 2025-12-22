@@ -1,0 +1,12 @@
+{
+    "name": "nanodoroshi-blog",
+    "version": "1.1.0",
+    "description": "Futuristic Cyber-Minimalist Blog",
+    "main": "script.js",
+    "scripts": {
+        "build": "mkdir -p deploy && cp -r * deploy/ || true && rm -rf deploy/node_modules && javascript-obfuscator ./script.js --output ./deploy/script.js --compact true --self-defending true --string-array true --string-array-rotate true --string-array-shuffle true --string-array-index-shift true && javascript-obfuscator ./sw.js --output ./deploy/sw.js --compact true"
+    },
+    "devDependencies": {
+        "javascript-obfuscator": "^4.1.0"
+    }
+}
