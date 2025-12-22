@@ -53,6 +53,11 @@ Secure multi-user authentication system with custom-designed visual protection l
 - **Social Connectivity System**: Centralized social link management / 중앙 집중식 소셜 연결 관리 시스템.
 - **Access Control Architecture**: Enterprise-grade role management / 기업용 수준의 역할 기반 접근 제어 아키텍처.
 
+### 📱 Progressive Web App (차세대 모바일 앱 기술) - **HOT**
+- **Natively Installable**: Install as a mobile app directly from the browser / 브라우저에서 즉시 설치 가능한 네모바일 앱 환경 제공.
+- **Offline Resilience**: Service Worker-based caching for instant loading / 서비스 워커 기반의 오프라인 대응 및 초고속 로딩.
+- **Mobile-First Design**: Safe-area optimized UI for modern smartphones / 최신 스마트폰 노치 및 시스템 UI 최적화 디자인 적용.
+
 ---
 
 ## 📄 License & Intellectual Property (라이선스 및 저작권)
