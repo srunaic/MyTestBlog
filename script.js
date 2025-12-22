@@ -122,29 +122,25 @@ function initializeDOMElements() {
 }
 
 // ==========================================
-// 4. INITIALIZATION (IMMEDIATE UI RENDER)
-// ==========================================
-// ==========================================
-// 4. INITIALIZATION (IMMEDIATE UI RENDER)
+// 4. INITIALIZATION
 // ==========================================
 async function init() {
-    console.log('Initializing Blog (Module Mode)...');
+    console.log('Initializing Blog...');
 
-    // 1. Initialize Globals safely
+    // 1. Initialize Globals
     if (!posts) posts = [];
     if (!users) users = [];
     categories = [...defaultCats];
 
-    // 2. Initialize DOM Elements (CRITICAL FIX)
+    // 2. DOM Elements
     initializeDOMElements();
 
-    // 3. Setup Events & UI immediately
+    // 3. Setup Listeners
     setupEventListeners();
-    setupAdmin();
     setupBulkActions();
     setupMusic();
 
-    // 3. Initial Render
+    // 4. Initial Render
     checkSession();
     renderAll();
 
@@ -313,18 +309,28 @@ window.logout = () => {
 let authMode = 'login';
 // Auth Handlers
 function openAuthModal(mode) {
-    const modal = document.getElementById('auth-modal');
-    const form = document.getElementById('auth-form');
-    if (!modal || !form) { console.error('Auth modal elements not found!'); return; }
+    if (!authModal || !authForm) {
+        authModal = document.getElementById('auth-modal');
+        authForm = document.getElementById('auth-form');
+    }
+    if (!authModal) { console.error('Auth modal element missing!'); return; }
 
     authMode = mode;
-    modal.classList.add('active');
-    document.getElementById('auth-modal-title').textContent = mode === 'login' ? '로그인' : '회원가입';
-    document.getElementById('auth-submit-btn').textContent = mode === 'login' ? '접속하기' : '가입하기';
-    document.getElementById('signup-nickname-group').style.display = mode === 'signup' ? 'block' : 'none';
-    document.getElementById('auth-switch-text').textContent = mode === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?';
-    document.getElementById('auth-switch-link').textContent = mode === 'login' ? '회원가입' : '로그인';
-    form.reset();
+    authModal.classList.add('active');
+
+    const title = document.getElementById('auth-modal-title');
+    const btn = document.getElementById('auth-submit-btn');
+    const group = document.getElementById('signup-nickname-group');
+    const switchTxt = document.getElementById('auth-switch-text');
+    const switchLnk = document.getElementById('auth-switch-link');
+
+    if (title) title.textContent = mode === 'login' ? '로그인' : '회원가입';
+    if (btn) btn.textContent = mode === 'login' ? '접속하기' : '가입하기';
+    if (group) group.style.display = mode === 'signup' ? 'block' : 'none';
+    if (switchTxt) switchTxt.textContent = mode === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?';
+    if (switchLnk) switchLnk.textContent = mode === 'login' ? '회원가입' : '로그인';
+
+    if (authForm) authForm.reset();
 }
 function closeAuthModal() {
     const modal = document.getElementById('auth-modal');
@@ -341,43 +347,14 @@ function toggleAuthMode() {
 // ==========================================
 
 
-window.deletePostAction = async (id) => {
-    const post = posts.find(p => p.id == id);
-    if (!post) return;
-    const isAuthor = currentUser && currentUser.nickname === post.author;
-    if (isAdminMode || isAuthor) {
-        if (confirm('삭제하시겠습니까?')) {
-            if (supabase) await supabase.from('posts').delete().eq('id', id);
-            else posts = posts.filter(p => p.id != id);
+// Handled below in unified actions
 
-            await loadData();
-            renderAll();
-            listView.style.display = 'block';
-            detailView.style.display = 'none';
-        }
-    } else alert('권한이 없습니다.');
-};
-
-window.editPostAction = (id) => {
-    const post = posts.find(p => p.id == id);
-    if (!post) return;
-    const isAuthor = currentUser && currentUser.nickname === post.author;
-    if (isAdminMode || isAuthor) openModal(post);
-    else alert('권한이 없습니다.');
-};
+// Handled below
 
 // ==========================================
 // 8. ADMIN USER MANAGEMENT
 // ==========================================
-window.deleteUserAction = async (username) => {
-    if (confirm(`'${username}' 삭제하시겠습니까?`)) {
-        if (supabase) await supabase.from('users').delete().eq('username', username);
-        else users = users.filter(u => u.username !== username);
-
-        await loadData();
-        renderUserManagement();
-    }
-};
+// Handled below
 
 // ==========================================
 // 9. RENDERING LOGIC
