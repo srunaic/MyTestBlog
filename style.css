@@ -388,19 +388,24 @@ body {
 }
 
 .cat-tag {
-    font-size: 0.6rem;
-    font-weight: 900;
-    letter-spacing: 2px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
     color: var(--modern-muted);
-    margin-bottom: 1rem;
+    margin-bottom: 8px;
     display: block;
+    text-transform: uppercase;
 }
 
 .title-item h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.5rem;
-    line-height: 1.2;
-    margin-bottom: 5px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 10px;
+    color: #000;
+    letter-spacing: -0.5px;
+    word-break: keep-all;
 }
 
 .item-meta {
