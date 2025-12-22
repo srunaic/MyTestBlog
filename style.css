@@ -357,6 +357,41 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 25px;
+    margin-bottom: 5px;
+}
+
+/* Pagination Styling */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 60px;
+    padding-bottom: 40px;
+}
+
+.page-btn {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #111;
+    font-weight: 900;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.page-btn:hover {
+    border-color: #000;
+}
+
+.page-btn.active {
+    background: #000;
+    color: #fff;
+    border-color: #000;
 }
 
 .title-item.selected {

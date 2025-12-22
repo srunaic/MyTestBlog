@@ -20,6 +20,8 @@ var bgmAudio = null;
 var isPlaying = false;
 var selectedPostIds = new Set();
 var SESSION_KEY = 'nano_dorothy_session';
+var currentPage = 1;
+var postsPerPage = 12;
 
 // ==========================================
 // 2. SUPABASE CONFIGURATION
@@ -439,10 +441,12 @@ function renderCategories() {
     document.querySelectorAll('.cat-item').forEach(el => {
         el.onclick = () => {
             currentCategory = el.dataset.id;
+            currentPage = 1; // Reset to page 1 on category change
             listView.style.display = 'block';
             detailView.style.display = 'none';
             selectedPostIds.clear();
             if (currentCategory === 'users-mgr') renderUserManagement();
+            else renderAll();
         };
     });
 }
@@ -510,11 +514,21 @@ function renderPosts() {
     if (!grid) return;
     grid.innerHTML = '';
     const filtered = currentCategory === 'all' ? posts : posts.filter(p => p.category === currentCategory);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filtered.length / postsPerPage);
+    const startIndex = (currentPage - 1) * postsPerPage;
+    const endIndex = startIndex + postsPerPage;
+    const pagedPosts = filtered.slice(startIndex, endIndex);
+
     if (filtered.length === 0) {
         grid.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">아직 등록된 글이 없습니다.<br>첫 번째 이야기를 작성해보세요!</div>';
+        const pgContainer = document.getElementById('pagination-container');
+        if (pgContainer) pgContainer.innerHTML = '';
         return;
     }
-    filtered.forEach(post => {
+
+    pagedPosts.forEach(post => {
         const cat = categories.find(c => c.id === post.category);
         const catName = cat ? cat.name.split(' (')[0] : '미분류';
         const isSelected = selectedPostIds.has(post.id);
@@ -546,6 +560,27 @@ function renderPosts() {
         }
         grid.appendChild(item);
     });
+
+    renderPagination(totalPages);
+}
+
+function renderPagination(total) {
+    const container = document.getElementById('pagination-container');
+    if (!container) return;
+    container.innerHTML = '';
+    if (total <= 1) return;
+
+    for (let i = 1; i <= total; i++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+        btn.textContent = i;
+        btn.onclick = () => {
+            currentPage = i;
+            window.scrollTo({ top: 400, behavior: 'smooth' });
+            renderPosts();
+        };
+        container.appendChild(btn);
+    }
 }
 
 function showDetail(id) {
