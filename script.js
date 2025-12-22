@@ -856,20 +856,9 @@ function renderSocialLinks() {
     const mgrList = document.getElementById('social-mgr-list');
     if (list) {
         list.innerHTML = '';
-        if (socialLinks.length === 0) {
-            const defaults = [
-                { name: 'YOUTUBE', url: 'https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA' },
-                { name: 'INSTAGRAM', url: 'https://www.instagram.com/droshi365/' },
-                { name: 'CHZZK', url: 'https://chzzk.naver.com/c7294ac184f1bc7340375f3c2b2e8fd6' }
-            ];
-            defaults.forEach(link => {
-                list.innerHTML += `<a href="${link.url}" target="_blank" class="social-link">${link.name}</a>`;
-            });
-        } else {
-            socialLinks.forEach(link => {
-                list.innerHTML += `<a href="${link.url}" target="_blank" class="social-link">${link.name}</a>`;
-            });
-        }
+        socialLinks.forEach(link => {
+            list.innerHTML += `<a href="${link.url}" target="_blank" class="social-link">${link.name}</a>`;
+        });
     }
 
     if (mgrList) {
