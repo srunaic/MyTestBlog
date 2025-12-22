@@ -685,17 +685,20 @@ body {
 }
 
 /* Modal */
-.modal {
+.modal,
+.modal-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: #fff;
+    background: rgba(0, 0, 0, 0.7);
     z-index: 9999;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(5px);
 }
 
-.modal.active {
+.modal.active,
+.modal-overlay.active {
     display: flex;
 }
 
@@ -888,9 +891,6 @@ body {
         justify-content: center;
         margin-bottom: 30px;
     }
-}
-
-color: var(--modern-muted);
 }
 
 .form-group input,

@@ -550,6 +550,7 @@ function showDetail(id) {
         </div>
     `;
 }
+window.showDetail = showDetail;
 
 // ==========================================
 // 10. UTILS & SETUP
@@ -584,7 +585,8 @@ function setupAdmin() {
         updateBulkUI();
         if (isAdminMode) renderCategories();
     };
-}
+};
+window.setupAdmin = setupAdmin;
 
 function setupMusic() {
     const bgmAudio = document.getElementById('bgm-audio');
@@ -789,6 +791,52 @@ function renderCatManager() {
     });
 }
 window.deleteCategory = (id) => { if (confirm('삭제하시겠습니까?')) { categories = categories.filter(c => c.id !== id); renderAll(); } };
+
+// Post Actions
+window.editPostAction = (id) => {
+    const post = posts.find(p => p.id == id);
+    if (post) openModal(post);
+};
+
+window.deletePostAction = async (id) => {
+    if (confirm('정말 삭제하시겠습니까?')) {
+        if (supabase) {
+            const { error } = await supabase.from('posts').delete().eq('id', id);
+            if (error) alert('삭제 실패: ' + error.message);
+        } else {
+            posts = posts.filter(p => p.id != id);
+        }
+        await loadData();
+        renderAll();
+    }
+};
+
+// User Management Actions
+window.updateUserRole = async (username, newRole) => {
+    if (supabase) {
+        const { error } = await supabase.from('users').update({ role: newRole }).eq('username', username);
+        if (error) alert('권한 변경 실패: ' + error.message);
+        else alert('권한이 변경되었습니다.');
+    } else {
+        const user = users.find(u => u.username === username);
+        if (user) user.role = newRole;
+    }
+    await loadData();
+    renderUserManagement();
+};
+
+window.deleteUser = async (username) => {
+    if (confirm(`${username} 사용자를 삭제하시겠습니까?`)) {
+        if (supabase) {
+            const { error } = await supabase.from('users').delete().eq('username', username);
+            if (error) alert('삭제 실패: ' + error.message);
+        } else {
+            users = users.filter(u => u.username !== username);
+        }
+        await loadData();
+        renderUserManagement();
+    }
+};
 
 // Account management
 window.openAccountModal = () => {
