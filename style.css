@@ -33,6 +33,8 @@ body {
     color: var(--futuristic-text);
     line-height: 1.6;
     overflow-x: hidden;
+    /* Mobile App Safe Area */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 #blog-container {
