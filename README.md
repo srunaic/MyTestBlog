@@ -1,83 +1,75 @@
 # 🌌 Nanodoroshi | Futuristic Cyber-Minimalist Blog
-## 나노 도로시 | 미래지향적 사이버 미니멀리즘 블로그
+## 나노 도로시 | 미려한 감각의 사이버 미니멀리즘 아카이브
 
 [![Live Demo](https://img.shields.io/badge/demo-live-00f2ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://srunaic.github.io/MyTestBlog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-> **"Where Digital Artistry Meets Advanced AI Research"**
-> **"디지털 예술과 첨단 AI 연구가 만나는 공간"**
+> **"A Symphony of Digital Aesthetics and Intelligence"**
+> **"디지털 미학과 지능형 기술이 빚어내는 완벽한 조화"**
 >
-> A state-of-the-art, high-performance blog platform engineered with a **Cyber-Minimalist** aesthetic. Built for creators who demand a premium, high-tech interface for documenting the intersection of art and technology.
-> 최첨단 성능과 **사이버 미니멀리즘** 미학을 결합한 고성능 블로그 플랫폼입니다. 예술과 기술의 교차점을 기록하기 위한 프리미엄 하이테크 인터페이스를 제공합니다.
+> Nanodoroshi is a premium, high-performance blog platform that redefines digital documentation through a **Cyber-Minimalist** lens. It is a space designed for creators who value both technical precision and visual excellence.
+> 나노 도로시는 **사이버 미니멀리즘**의 시각으로 디지털 기록의 정의를 새롭게 정립하는 프리미엄 블로그 플랫폼입니다. 기술적 정교함과 시각적 완성도를 동시에 추구하는 크리에이터를 위한 특별한 공간입니다.
 
 ---
 
-## ✨ Project Overview (프로젝트 개요)
+## ✨ Project Vision (프로젝트 비전)
 
-**Nanodoroshi** is a technical showcase of modern web engineering and premium UI design. It utilizes a Serverless architecture to provide a seamless experience through sophisticated Glassmorphism and Neon-Cyber aesthetics.
-**나노 도로시**는 현대 웹 엔지니어링과 프리미엄 UI 디자인의 정수를 보여주는 프로젝트입니다. 서버리스 아키텍처를 기반으로 세련된 글래스모피즘(Glassmorphism)과 네온 사이버 스타일을 통해 매끄러운 사용자 경험을 제공합니다.
+**Nanodoroshi** transcends the traditional blog format, offering a seamless intersection of art and engineering. It's built on a robust serverless architecture wrapped in a sophisticated "Glassmorphism 2.0" aesthetic.
+**나노 도로시**는 기존 블로그의 틀을 넘어 예술과 공학이 만나는 접점을 제안합니다. 견고한 서버리스 아키텍처 위에 구현된 '글래스모피즘 2.0' 미학은 사용자에게 차원이 다른 몰입감을 선사합니다.
 
-### 🎨 Design Philosophy (디자인 철학)
-- **Glassmorphism 2.0**: Multi-layered holographic interface / 다층 구조의 홀로그래픽 인터페이스.
-- **Neon Accents**: High-contrast Cyan & Magenta energy lines / 고대비 사이언 및 마젠타 네온 액센트.
-- **Dynamic Digital Environment**: Responsive grid & radial mesh / 반응형 그리드와 방사형 메이 패턴.
-- **Asymmetric UI**: Custom geometric components for a tectonic feel / 지각 변동을 연상시키는 비대칭 기하학적 UI.
-
----
-
-## 🛠️ Tech Stack (기술 스택)
-
-Built using a **pure modern web stack** for maximum performance and scalability.
-최고의 성능과 확장성을 위해 **순수 모던 웹 스택**만을 사용하여 구축되었습니다.
-
-- **Frontend**: HTML5, Vanilla JavaScript (ES Module), CSS3 (Advanced Design System)
-- **Backend**: [Supabase](https://supabase.com/) (PostgreSQL-based Cloud Infrastructure)
-- **Infrastructure**: GitHub Actions (Automated CI/CD), GitHub Pages (Global Hosting)
-- **SEO & Search**: Semantic HTML, OG Metadata, JSON-LD Structured Data
+### 🎨 Design Ethos (디자인 정체성)
+- **Holographic Depth**: Multi-layered interfaces that feel alive. / 생동감 넘치는 다층 구조의 홀로그래픽 인터페이스.
+- **Electric Accents**: Vibrant neon energy that pulses through the design. / 디자인 전반에 활력을 불어넣는 강렬한 네온 포인트.
+- **Architectural Layout**: Asymmetric geometry for a bold, structural appeal. / 대담하고 구조적인 미학을 강조한 비대칭 기하학적 레이아웃.
 
 ---
 
-## 🚀 Premium Features (핵심 하이테크 기능)
+## 🛠️ Core Technology Stack (핵심 기술 스택)
 
-### 🤖 Oracle AI Assistant (오라클 지능형 AI 가이드)
-**Experience the future of blog management with our context-aware AI.**
-**맥락을 이해하는 인공지능과 함께 블로그 관리의 미래를 경험하십시오.**
-- **Content-Aware Intelligence**: Understands post titles, body text, and #tags in real-time. / 모든 포스트의 제목, 본문, #태그를 실시간으로 분석하고 이해합니다.
-- **Rich Media Interaction**: Recommends relevant posts with visual thumbnails and direct navigation. / 관련성 높은 콘텐츠를 썸네일과 함께 시각적으로 추천하며 전용 링크를 제공합니다.
-- **Semantic Search Engine**: Finds high-precision results through natural language processing. / 자연어 처리를 통해 매우 정밀한 검색 결과를 도출합니다.
+Built for speed and elegance using a modern, lightweight architecture.
+지연 없는 사용성과 우아한 퍼포먼스를 위해 가벼운 모던 웹 스택을 채택했습니다.
 
-### 🧠 User Intelligence Engine (유저 행동 분석 머신)
-**A personalized ecosystem that adapts to your unique digital signature.**
-**사용자 고유의 디지털 흔적에 반응하도록 설계된 개인화된 생태계입니다.**
-- **Behavioral Memory**: Tracks user preferences, favorite tags, and reading history in Supabase. / 유저의 선호도, 관심 태그, 독서 기록을 데이터베이스에 지능적으로 축적합니다.
-- **Contextual Adaptation**: Provides personalized recommendations based on accumulated user telemetry. / 축적된 유저 데이터를 바탕으로 최적화된 콘텐츠 추천을 자동으로 수행합니다.
-- **AI Analytics Dashboard**: Admins can analyze user query logs through the "Oracle Insights" panel. / 관리자는 'Oracle Insights'를 통해 유저의 질의 패턴을 분석하고 학습시킬 수 있습니다.
+- **Frontend Core**: Vanilla JavaScript (ESM Architecture), CSS3 (Custom Design Tokens)
+- **Data Engine**: [Supabase](https://supabase.com/) (Enterprise-grade PostgreSQL Cloud Service)
+- **Deployment**: GitHub Actions (Automated CI/CD), Edge-optimized Hosting (GitHub Pages)
 
-### 🔐 Advanced Admin Orchestration (고급 관리자 오케스트레이션)
-**Total control over your digital kingdom through a premium dashboard.**
-**프리미엄 대시보드를 통해 디지털 왕국에 대한 절대적인 통제권을 제공합니다.**
-- **Enterprise User Management**: Remote role-based access control and user telemetry. / 기업 수준의 역할 기반 접근 제어 및 사용자 관리 시스템.
-- **Dynamic Social Hub**: Manage external connections and social integrations in one high-tech view. / 소셜 미디어를 포함한 모든 외부 링크를 하나의 통합 뷰에서 지능적으로 관리합니다.
-- **Real-time Log Analytics**: Monitor system interactions and AI performance logs instantly. / 시스템 상호작용 및 AI 성능 로그를 실시간으로 모니터링합니다.
+---
 
-### 📱 Progressive Web App (차세대 모바일 앱 플랫폼)
-**The boundary between web and native applications is erased.**
-**웹과 네이티브 어플리케이션의 경계가 사라지는 혁신적인 경험.**
-- **Natively Installable**: Premium standalone experience with no browser chrome. / 브라우저 주소창 없이 네이티브 앱과 동일한 고품질 독립형 환경 제공.
-- **Offline Resilience**: Instant-load architecture powered by Service Worker caching. / 서비스 워커 캐싱을 통한 오프라인 대응 및 초고속 데이터 로딩 아키텍처.
-- **Safe-area Optimized**: Tailored for the latest smartphone notches and system layouts. / 최신 스마트폰 노치와 시스템 레이아웃에 완벽하게 대응하는 최적화 디자인.
+## 🚀 Advanced Intelligence & Experience (고도화된 지능형 기능)
+
+### 🤖 Oracle AI: Contextual Assistant (지능형 오라클 가이드)
+**Interacting with your content has never been more intuitive.**
+- **Smart Discovery**: Analyzes posts, tags, and media to find exactly what you need. / 블로그의 모든 텍스트와 미디어를 검색해 최적의 콘텐츠를 찾아줍니다.
+- **Rich Visual Response**: Recommendations come to life with thumbnails and direct links. / 관련 글을 썸네일과 버튼이 포함된 시각적인 형태로 추천합니다.
+- **Semantic Understanding**: Parses natural language to provide relevant, context-aware help. / 사용자의 의도를 파악해 단순 키워드 이상의 맥락 있는 정보를 제공합니다.
+
+### 🧠 User Intelligence Engine (사용자 기반 지능형 생태계)
+**The blog that learns from you, creating an evolving personal archive.**
+- **Intent Tracking**: Remembers your preferred tags and reading patterns via Supabase. / 사용자의 관심 태그와 독서 패턴을 기억해 데이터로 축적합니다.
+- **Personalized Flow**: Recommends content based on individual history and interests. / 축적된 데이터를 바탕으로 유저별 맞춤형 콘텐츠 흐름을 제안합니다.
+- **Data Insights**: Admin tools to monitor interaction logs and refine the AI's learning. / 'Oracle Insights' 대시보드를 통해 유저와의 상호작용을 분석하고 개선합니다.
+
+### 🔐 Professional Admin Orchestration (전문적인 관리자 시스템)
+**Sophisticated control mechanisms for a seamless management experience.**
+- **Unified Social Hub**: Centralized control of all external brand touchpoints. / 모든 외부 소셜 링크와 연결점을 한곳에서 지능적으로 관리합니다.
+- **Secure Access Control**: Robust role-based security layers for administrative actions. / 역할 기반의 보안 레이어를 통해 관리 권한을 안전하게 보호합니다.
+- **Real-time Telemetry**: Instant monitoring of system logs and AI performance. / 시스템 전반의 로그와 AI 작동 상태를 실시간으로 모니터링합니다.
+
+### 📱 Next-Gen Mobile Experience (차세대 모바일 플랫폼)
+- **PWA Integration**: Experience a standalone app-like presence on any device. / 브라우저의 한계를 넘어 실제 앱과 같은 독립적인 사용 환경을 제공합니다.
+- **Instant Availability**: Optimized caching ensures high performance, even offline. / 영리한 캐싱 전략으로 언제 어디서나 초고속 로딩을 보장합니다.
 
 ---
 
 ## 📄 License & Intellectual Property (라이선스 및 저작권)
 
-This project is a private creative work. The architecture and design are protected as unique intellectual property.
-본 프로젝트는 개인 창작물로서, 시스템 아키텍처와 디자인은 고유한 지적 재산권으로 보호받습니다.
+This project is a unique creative archive. Its architecture and design language are protected intellectual property.
+본 프로젝트는 고유한 창작 아카이브입니다. 시스템 설계와 디자인 언어는 독창적인 지적 재산권으로 보호됩니다.
 
 ---
-### 📫 Connect with the Creator (Blog & YouTube)
-- **YouTube**: [Nanodoroshi Official Channel](https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA)
-- **Blog**: [Nanodoroshi Official Blog Site](https://srunaic.github.io/MyTestBlog/)
+### 📫 Connect with the Creator
+- **YouTube**: [Nanodoroshi Official](https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA)
+- **Blog Site**: [Live Blog Experience](https://srunaic.github.io/MyTestBlog/)
 
 ---
-*Developed with 💎 by [Nanodoroshi](https://github.com/srunaic).*
+*Curated with 💎 by [Nanodoroshi](https://github.com/srunaic).*
