@@ -36,34 +36,64 @@ try {
 }
 
 // ==========================================
-// 3. DOM ELEMENTS
+// 3. DOM ELEMENTS (Initialized in init)
 // ==========================================
-// Use var/let or just direct lookups if cleaner, but var is safe.
-var grid = document.getElementById('blog-grid');
-var catList = document.getElementById('category-list');
-var postCatSelect = document.getElementById('post-category');
-var listView = document.getElementById('list-view');
-var detailView = document.getElementById('detail-view');
-var detailContent = document.getElementById('post-detail-content');
-var backBtn = document.getElementById('back-to-list');
-var adminToggle = document.getElementById('admin-toggle');
-var newPostBtn = document.getElementById('new-post-btn');
-var modal = document.getElementById('post-modal');
-var form = document.getElementById('post-form');
-var closeBtn = document.getElementById('close-modal');
-var userNav = document.getElementById('user-nav');
-var authModal = document.getElementById('auth-modal');
-var authForm = document.getElementById('auth-form');
-var adminOnlyActions = document.getElementById('admin-only-actions');
-var userActions = document.getElementById('user-actions');
-var userMgrBtn = document.getElementById('user-mgr-btn');
+var grid = null;
+var catList = null;
+var postCatSelect = null;
+var listView = null;
+var detailView = null;
+var detailContent = null;
+var backBtn = null;
+var adminToggle = null;
+var newPostBtn = null;
+var modal = null;
+var form = null;
+var closeBtn = null;
+var userNav = null;
+var authModal = null;
+var authForm = null;
+var adminOnlyActions = null;
+var userActions = null;
+var userMgrBtn = null;
+var manageCatsBtn = null;
+var catMgrSection = null;
+var addCatBtn = null;
+var newCatInput = null;
+var catMgrList = null;
 
-// Category Management UI
-var manageCatsBtn = document.getElementById('manage-cats-btn');
-var catMgrSection = document.getElementById('cat-mgr-section');
-var addCatBtn = document.getElementById('add-cat-btn');
-var newCatInput = document.getElementById('new-cat-name');
-var catMgrList = document.getElementById('cat-mgr-list');
+// Account
+var accountModal = null;
+var accountForm = null;
+
+function initializeDOMElements() {
+    grid = document.getElementById('blog-grid');
+    catList = document.getElementById('category-list');
+    postCatSelect = document.getElementById('post-category');
+    listView = document.getElementById('list-view');
+    detailView = document.getElementById('detail-view');
+    detailContent = document.getElementById('post-detail-content');
+    backBtn = document.getElementById('back-to-list');
+    adminToggle = document.getElementById('admin-toggle');
+    newPostBtn = document.getElementById('new-post-btn');
+    modal = document.getElementById('post-modal');
+    form = document.getElementById('post-form');
+    closeBtn = document.getElementById('close-modal');
+    userNav = document.getElementById('user-nav');
+    authModal = document.getElementById('auth-modal');
+    authForm = document.getElementById('auth-form');
+    adminOnlyActions = document.getElementById('admin-only-actions');
+    userActions = document.getElementById('user-actions');
+    userMgrBtn = document.getElementById('user-mgr-btn');
+    manageCatsBtn = document.getElementById('manage-cats-btn');
+    catMgrSection = document.getElementById('cat-mgr-section');
+    addCatBtn = document.getElementById('add-cat-btn');
+    newCatInput = document.getElementById('new-cat-name');
+    catMgrList = document.getElementById('cat-mgr-list');
+
+    accountModal = document.getElementById('account-modal');
+    accountForm = document.getElementById('account-form');
+}
 
 // ==========================================
 // 4. INITIALIZATION (IMMEDIATE UI RENDER)
@@ -79,7 +109,10 @@ async function init() {
     if (!users) users = [];
     categories = [...defaultCats];
 
-    // 2. Setup Events & UI immediately
+    // 2. Initialize DOM Elements (CRITICAL FIX)
+    initializeDOMElements();
+
+    // 3. Setup Events & UI immediately
     setupEventListeners();
     setupAdmin();
     setupBulkActions();
@@ -750,8 +783,6 @@ function renderCatManager() {
 window.deleteCategory = (id) => { if (confirm('삭제하시겠습니까?')) { categories = categories.filter(c => c.id !== id); renderAll(); } };
 
 // Account management
-const accountModal = document.getElementById('account-modal');
-const accountForm = document.getElementById('account-form');
 window.openAccountModal = () => {
     if (!currentUser) return;
     accountModal.classList.add('active');
