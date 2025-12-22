@@ -944,41 +944,41 @@ body {
 .form-group select {
     width: 100%;
     border: none;
-    border-bottom: 4px solid #000;
+    border-bottom: 2px solid #000;
     background: transparent;
-    padding: 30px 0;
-    font-size: 3.5rem;
+    padding: 15px 0;
+    font-size: 1.8rem;
     font-family: 'Montserrat', sans-serif;
     font-weight: 700;
     outline: none;
     transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
     color: #000;
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
 }
 
 .form-group textarea {
-    font-size: 2rem;
-    min-height: 350px;
-    line-height: 1.4;
-    font-weight: 300;
+    font-size: 1.2rem;
+    min-height: 250px;
+    line-height: 1.6;
+    font-weight: 400;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
-    border-bottom-width: 8px;
-    padding-left: 30px;
+    border-bottom-width: 4px;
+    padding-left: 15px;
 }
 
 .submit-btn,
 .save-btn {
     background: #000;
     color: #fff;
-    padding: 40px;
+    padding: 25px 50px;
     border: none;
     font-weight: 900;
-    font-size: 1.6rem;
-    letter-spacing: 15px;
+    font-size: 1.1rem;
+    letter-spacing: 5px;
     cursor: pointer;
     text-transform: uppercase;
     transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
@@ -987,8 +987,8 @@ body {
 .submit-btn:hover,
 .save-btn:hover {
     background: #333;
-    padding-left: 60px;
-    letter-spacing: 20px;
+    padding-left: 40px;
+    letter-spacing: 8px;
 }
 
 .modal-footer {
