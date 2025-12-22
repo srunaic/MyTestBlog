@@ -197,7 +197,7 @@ body {
 }
 
 .view-count {
-    color: #999;
+    color: var(--futuristic-muted);
 }
 
 .best-list-grid {
@@ -241,7 +241,7 @@ body {
 
 .bio {
     font-size: 0.9rem;
-    color: #555;
+    color: var(--futuristic-muted);
     font-style: italic;
 }
 
@@ -254,8 +254,8 @@ body {
 
 .action-link {
     background: transparent;
-    border: 1px solid #ddd;
-    color: var(--modern-accent);
+    border: 1px solid var(--futuristic-border);
+    color: var(--futuristic-text);
     padding: 12px;
     font-weight: 900;
     font-size: 0.7rem;
@@ -286,7 +286,7 @@ body {
     display: block;
     padding: 10px 0;
     text-decoration: none;
-    color: var(--modern-text);
+    color: var(--futuristic-text);
     font-weight: 400;
     transition: 0.3s;
     border-right: 3px solid transparent;
@@ -296,8 +296,9 @@ body {
 .cat-item.active,
 .cat-item:hover {
     font-weight: 900;
-    border-color: var(--modern-accent);
+    border-color: var(--futuristic-accent);
     padding-right: 10px;
+    color: var(--futuristic-accent);
 }
 
 /* Content Area - Title Grid */
@@ -306,7 +307,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid var(--modern-accent);
+    border-bottom: 2px solid var(--futuristic-accent);
     padding-bottom: 15px;
 }
 
@@ -454,7 +455,7 @@ body {
 
 .page-btn.active {
     background: var(--futuristic-accent);
-    color: #000;
+    color: var(--futuristic-bg);
     border-color: var(--futuristic-accent);
     box-shadow: 0 0 20px var(--futuristic-accent-glow);
 }
@@ -600,7 +601,7 @@ body {
     margin-bottom: 20px;
     letter-spacing: -1px;
     font-weight: 700;
-    color: #000;
+    color: var(--futuristic-text);
 }
 
 .detail-meta {
@@ -625,7 +626,7 @@ body {
 .post-body {
     font-size: 1.3rem;
     line-height: 2;
-    color: #222;
+    color: var(--futuristic-text);
     font-family: 'Montserrat', sans-serif;
     font-weight: 300;
 }
