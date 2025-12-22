@@ -60,12 +60,90 @@
     <!-- Styles & Fonts -->
     <!-- Favicon bypass to prevent 404 -->
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.0.1">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap"
         rel="stylesheet">
 
-    <!-- Supabase SDK is imported in script.js -->
+    <!-- Emergency Futuristic Overrides -->
+    <style>
+        /* 1. Admin Panel & Action Buttons */
+        .action-link,
+        #write-btn,
+        .admin-box .action-link,
+        #admin-only-actions .action-link {
+            background: rgba(20, 20, 40, 0.8) !important;
+            backdrop-filter: blur(15px) !important;
+            border: 1px solid #00f2ff !important;
+            color: #00f2ff !important;
+            padding: 12px 25px !important;
+            font-weight: 950 !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%) !important;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2) !important;
+            margin-bottom: 10px !important;
+            transition: 0.4s !important;
+            display: inline-block !important;
+            cursor: pointer !important;
+        }
+
+        .action-link:hover,
+        #write-btn:hover {
+            background: #00f2ff !important;
+            color: #050510 !important;
+            box-shadow: 0 0 35px rgba(0, 242, 255, 0.5) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* 2. Admin & Social Inputs */
+        .sidebar-section input,
+        .social-links-manage input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #e0e0ff !important;
+            padding: 10px !important;
+            font-size: 0.9rem !important;
+        }
+
+        /* 3. Link Add Button */
+        #add-social-btn,
+        .social-links-manage button {
+            background: #00f2ff !important;
+            color: #050510 !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            font-weight: 950 !important;
+            clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%) !important;
+            cursor: pointer !important;
+        }
+
+        /* 4. Edit/Delete Snippets */
+        .list-admin-btn {
+            background: rgba(40, 40, 80, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #e0e0ff !important;
+            padding: 6px 14px !important;
+            font-weight: 800 !important;
+            font-size: 0.7rem !important;
+            cursor: pointer !important;
+        }
+
+        .list-admin-btn.edit:hover {
+            background: #00f2ff !important;
+            color: #050510 !important;
+        }
+
+        .list-admin-btn.delete {
+            color: #ff007a !important;
+            border-color: rgba(255, 0, 122, 0.4) !important;
+        }
+
+        .list-admin-btn.delete:hover {
+            background: #ff007a !important;
+            color: #fff !important;
+        }
+    </style>
 </head>
 
 <body>
