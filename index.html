@@ -104,6 +104,15 @@
                         <ul id="cat-mgr-list"></ul>
                     </div>
                     <button id="user-mgr-btn" class="sm-btn" style="display:none;">사용자 관리</button>
+
+                    <div class="admin-divider" style="margin:20px 0; border-top:1px solid #333;"></div>
+                    <h3 style="font-size:0.6rem; color:#555;">SOCIAL LINKS</h3>
+                    <div class="social-mgr-form" style="margin-top:10px;">
+                        <input type="text" id="new-link-name" placeholder="이름 (예: INSTA)" class="admin-input">
+                        <input type="text" id="new-link-url" placeholder="주소 (https://...)" class="admin-input">
+                        <button onclick="addSocialLink()" class="sm-btn">링크 추가</button>
+                    </div>
+                    <ul id="social-mgr-list" style="list-style:none; margin-top:15px; font-size:0.7rem;"></ul>
                 </div>
 
             </aside>
@@ -160,11 +169,8 @@
 
                 <div class="sidebar-section">
                     <h3>CONNECT</h3>
-                    <div class="social-links">
-                        <a href="https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA" target="_blank"
-                            class="social-link">YOUTUBE</a>
-                        <a href="https://chzzk.naver.com/c7294ac184f1bc7340375f3c2b2e8fd6" target="_blank"
-                            class="social-link">CHZZK</a>
+                    <div class="social-links" id="social-links-list">
+                        <!-- Dynamically Rendered -->
                     </div>
                 </div>
             </aside>

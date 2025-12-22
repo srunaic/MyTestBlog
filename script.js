@@ -11,13 +11,7 @@ var defaultCats = [
     { id: 'drawing', name: '갤러리 (DRAWINGS)' },
     { id: 'bug_report', name: '버그 신고 (BUG REPORT)' }
 ];
-var categories = [];
-var currentUser = null;
-var currentCategory = 'all';
-var isAdminMode = false;
-var bgmAudio = null;
-var isPlaying = false;
-var selectedPostIds = new Set();
+var socialLinks = [];
 var SESSION_KEY = 'nano_dorothy_session';
 
 // ==========================================
@@ -55,6 +49,8 @@ window.deleteCategory = (id) => deleteCategory(id);
 window.renderUserManagement = () => renderUserManagement();
 window.updateUserRole = (u, r) => updateUserRole(u, r);
 window.deleteUser = (u) => deleteUser(u);
+window.addSocialLink = () => addSocialLink();
+window.removeSocialLink = (id) => removeSocialLink(id);
 window.renderAll = () => renderAll();
 
 // ==========================================
@@ -212,6 +208,10 @@ async function loadData() {
         if (userData && userData.length > 0) {
             users = userData;
         }
+
+        // Fetch Social Links
+        const { data: linkData, error: linkError } = await supabase.from('social_links').select('*').order('id', { ascending: true });
+        if (!linkError) socialLinks = linkData || [];
 
         // CRITICAL: Ensure Admin Account Exists in DB
         await ensureAdminInSupabase();
@@ -379,6 +379,7 @@ function renderAll() {
     renderBestPosts();
     renderPosts();
     renderCatManager();
+    renderSocialLinks();
     updateBulkUI();
 }
 
@@ -811,6 +812,75 @@ window.editPostAction = (id) => {
     const post = posts.find(p => p.id == id);
     if (post) openModal(post);
 };
+
+// Social Links Management
+async function addSocialLink() {
+    const name = document.getElementById('new-link-name').value.trim();
+    const url = document.getElementById('new-link-url').value.trim();
+    if (!name || !url) return alert('이름과 주소를 모두 입력해주세요.');
+
+    if (supabase) {
+        const { error } = await supabase.from('social_links').insert([{ name, url }]);
+        if (error) alert('추가 실패: ' + error.message);
+    } else {
+        socialLinks.push({ id: Date.now(), name, url });
+    }
+    document.getElementById('new-link-name').value = '';
+    document.getElementById('new-link-url').value = '';
+    await loadData();
+    renderAll();
+}
+window.addSocialLink = addSocialLink;
+
+async function removeSocialLink(id) {
+    if (confirm('삭제하시겠습니까?')) {
+        if (supabase) {
+            const { error } = await supabase.from('social_links').delete().eq('id', id);
+            if (error) alert('삭제 실패: ' + error.message);
+        } else {
+            socialLinks = socialLinks.filter(l => l.id !== id);
+        }
+        await loadData();
+        renderAll();
+    }
+}
+window.removeSocialLink = removeSocialLink;
+
+function renderSocialLinks() {
+    const list = document.getElementById('social-links-list');
+    const mgrList = document.getElementById('social-mgr-list');
+    if (list) {
+        list.innerHTML = '';
+        if (socialLinks.length === 0) {
+            // Default links if none in DB
+            const defaults = [
+                { name: 'YOUTUBE', url: 'https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA' },
+                { name: 'INSTAGRAM', url: 'https://www.instagram.com/droshi365/' },
+                { name: 'CHZZK', url: 'https://chzzk.naver.com/c7294ac184f1bc7340375f3c2b2e8fd6' }
+            ];
+            defaults.forEach(link => {
+                list.innerHTML += `<a href="${link.url}" target="_blank" class="social-link">${link.name}</a>`;
+            });
+        } else {
+            socialLinks.forEach(link => {
+                list.innerHTML += `<a href="${link.url}" target="_blank" class="social-link">${link.name}</a>`;
+            });
+        }
+    }
+
+    if (mgrList) {
+        mgrList.innerHTML = '';
+        socialLinks.forEach(link => {
+            const li = document.createElement('li');
+            li.className = 'social-mgr-item';
+            li.innerHTML = `
+                <span>${link.name} (${link.url})</span>
+                <button onclick="removeSocialLink(${link.id})" class="cat-del-btn">✕</button>
+            `;
+            mgrList.appendChild(li);
+        });
+    }
+}
 
 window.deletePostAction = async (id) => {
     if (confirm('정말 삭제하시겠습니까?')) {
