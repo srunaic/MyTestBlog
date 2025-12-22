@@ -55,7 +55,6 @@ window.closeModal = () => closeModal();
 window.deleteCategory = (id) => deleteCategory(id);
 window.renderUserManagement = () => renderUserManagement();
 window.updateUserRole = (u, r) => updateUserRole(u, r);
-window.deleteUser = (u) => deleteUser(u);
 window.addSocialLink = () => addSocialLink();
 window.removeSocialLink = (id) => removeSocialLink(id);
 window.renderAll = () => renderAll();
@@ -840,18 +839,17 @@ async function addSocialLink() {
 window.addSocialLink = addSocialLink;
 
 async function removeSocialLink(id) {
-    if (confirm('삭제하시겠습니까?')) {
+    if (confirm('링크를 삭제하시겠습니까?')) {
         if (supabase) {
             const { error } = await supabase.from('social_links').delete().eq('id', id);
             if (error) alert('삭제 실패: ' + error.message);
         } else {
-            socialLinks = socialLinks.filter(l => l.id !== id);
+            socialLinks = socialLinks.filter(l => l.id != id);
         }
         await loadData();
         renderAll();
     }
 }
-window.removeSocialLink = removeSocialLink;
 
 function renderSocialLinks() {
     const list = document.getElementById('social-links-list');
@@ -859,7 +857,6 @@ function renderSocialLinks() {
     if (list) {
         list.innerHTML = '';
         if (socialLinks.length === 0) {
-            // Default links if none in DB
             const defaults = [
                 { name: 'YOUTUBE', url: 'https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA' },
                 { name: 'INSTAGRAM', url: 'https://www.instagram.com/droshi365/' },
@@ -877,15 +874,19 @@ function renderSocialLinks() {
 
     if (mgrList) {
         mgrList.innerHTML = '';
-        socialLinks.forEach(link => {
-            const li = document.createElement('li');
-            li.className = 'social-mgr-item';
-            li.innerHTML = `
-                <span>${link.name} (${link.url})</span>
-                <button onclick="removeSocialLink(${link.id})" class="cat-del-btn">✕</button>
-            `;
-            mgrList.appendChild(li);
-        });
+        if (socialLinks.length === 0) {
+            mgrList.innerHTML = '<li style="opacity:0.5; font-size:0.6rem;">등록된 커스텀 링크가 없습니다.</li>';
+        } else {
+            socialLinks.forEach(link => {
+                const li = document.createElement('li');
+                li.className = 'social-mgr-item';
+                li.innerHTML = `
+                    <span>${link.name}</span>
+                    <button onclick="removeSocialLink('${link.id}')" class="cat-del-btn">✕</button>
+                `;
+                mgrList.appendChild(li);
+            });
+        }
     }
 }
 
