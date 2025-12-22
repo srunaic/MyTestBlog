@@ -255,9 +255,11 @@ function checkSession() {
     try {
         const session = localStorage.getItem(SESSION_KEY);
         currentUser = session ? JSON.parse(session) : null;
+        isAdminMode = currentUser && currentUser.role === 'admin';
     } catch (e) {
         console.error('Session parse error', e);
         currentUser = null;
+        isAdminMode = false;
     }
     updateUserNav();
 }
@@ -285,10 +287,6 @@ function updateUserNav() {
         if (newPostBtn) newPostBtn.style.display = 'block';
         if (userMgrBtn) userMgrBtn.style.display = 'none';
         isAdminMode = false;
-        if (adminToggle) {
-            adminToggle.classList.remove('active');
-            adminToggle.textContent = '관리자 모드';
-        }
     }
     renderPosts();
     updateBulkUI();
@@ -600,16 +598,7 @@ function updateBulkUI() {
 }
 
 function setupAdmin() {
-    if (!adminToggle) return;
-    adminToggle.onclick = () => {
-        isAdminMode = !isAdminMode;
-        adminToggle.classList.toggle('active');
-        adminToggle.textContent = isAdminMode ? '관리 종료' : '관리자 모드';
-        userMgrBtn.style.display = isAdminMode ? 'block' : 'none';
-        renderPosts();
-        updateBulkUI();
-        if (isAdminMode) renderCategories();
-    };
+    // Admin features are now automated based on user role.
 };
 window.setupAdmin = setupAdmin;
 
