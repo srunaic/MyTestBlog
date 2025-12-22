@@ -517,12 +517,13 @@ function renderPosts() {
 
     // Pagination Logic
     const count = filtered.length;
-    const totalPages = Math.ceil(count / postsPerPage);
-    const startIndex = (parseInt(currentPage) - 1) * postsPerPage;
-    const endIndex = startIndex + postsPerPage;
-    const pagedPosts = filtered.slice(startIndex, endIndex);
+    const limit = 12; // Force 12 per page
+    const totalPages = Math.ceil(count / limit);
+    const start = (parseInt(currentPage) - 1) * limit;
+    const end = start + limit;
+    const pagedPosts = filtered.slice(start, end);
 
-    console.log(`Feed: ${count} posts, Total Pages: ${totalPages}, Current: ${currentPage}`);
+    console.log(`Feed Render: ${count} total, showing ${pagedPosts.length} (Page ${currentPage}/${totalPages})`);
 
     if (filtered.length === 0) {
         grid.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">아직 등록된 글이 없습니다.<br>첫 번째 이야기를 작성해보세요!</div>';
