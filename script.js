@@ -489,21 +489,33 @@ async function renderUserManagement() {
 
 function renderPosts() {
     if (!grid) return;
-    grid.innerHTML = '';
+
+    // Hard clear the grid
+    while (grid.firstChild) {
+        grid.removeChild(grid.firstChild);
+    }
+
     const filtered = currentCategory === 'all' ? posts : posts.filter(p => p.category === currentCategory);
 
-    // Pagination Logic
-    const count = filtered.length;
-    const limit = 12; // Force 12 per page
-    const totalPages = Math.ceil(count / limit);
-    const start = (parseInt(currentPage) - 1) * limit;
+    // Debug UI: Show count in header if exists
+    const feedHeader = document.querySelector('.list-header h2');
+    if (feedHeader) {
+        feedHeader.innerHTML = `FEEDS <span style="font-size:0.6rem; opacity:0.5;">(${filtered.length} posts)</span>`;
+    }
+
+    // Forced Pagination Logic
+    const limit = 12;
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const currPage = Math.max(1, parseInt(currentPage) || 1);
+    const start = (currPage - 1) * limit;
     const end = start + limit;
     const pagedPosts = filtered.slice(start, end);
 
-    console.log(`Feed Render: ${count} total, showing ${pagedPosts.length} (Page ${currentPage}/${totalPages})`);
+    console.log(`[PAGINATION] Total: ${total}, Page: ${currPage}/${totalPages}, Showing: ${pagedPosts.length}`);
 
-    if (filtered.length === 0) {
-        grid.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">아직 등록된 글이 없습니다.<br>첫 번째 이야기를 작성해보세요!</div>';
+    if (total === 0) {
+        grid.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">아직 등록된 글이 없습니다.</div>';
         const pgContainer = document.getElementById('pagination-container');
         if (pgContainer) pgContainer.innerHTML = '';
         return;
