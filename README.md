@@ -69,9 +69,9 @@ Built for speed and elegance using a modern, lightweight architecture.
 - **Supabase RLS (Row Level Security)**: All database interactions are protected at the schema level. Even with public API keys, data access is strictly limited to authorized users. / 모든 데이터 상호작용은 RLS 정책을 통해 스키마 계층에서 보호됩니다. API 키가 공개되어 있더라도 무단 데이터 접근은 기술적으로 차단됩니다.
 - **JWT Authentication**: Secure, encrypted session tokens ensure that only you have control over your archive. / 암호화된 JWT 토큰을 사용하여 본인만이 아카이브를 온전히 통제할 수 있습니다.
 
-### 📜 Intellectual Property (저작권 및 복제 금지)
-- **Code Obfuscation**: The production scripts are obfuscated to protect the unique logic of the Oracle AI and Admin Suite. / 오라클 AI 및 어드민 스위트의 고유 로직 보호를 위해 배포용 스크립트는 난독화 처리가 되어 있습니다.
-- **Legal Notice**: Unauthorized cloning or commercial redistribution of this architecture and design is strictly prohibited. / 본 시스템의 아키텍처와 디자인을 무단 복제하거나 상업적으로 재배포하는 행위는 엄격히 금지됩니다.
+### 📜 Intellectual Property & Protection (저작권 및 보안 정책)
+- **Code Obfuscation**: To protect the unique logic and intellectual property of the Nanodoroshi platform, all production scripts are **obfuscated and encrypted** during deployment. Unauthorized attempts to reverse-engineer or clone this architecture are strictly prohibited. / 본 플랫폼의 고유 로직과 지적 재산권 보호를 위해, 배포된 모든 프로덕션 스크립트는 **난독화 및 암호화** 처리가 되어 있습니다. 시스템 아키텍처를 무단으로 역설계하거나 복제하는 행위는 엄격히 금지됩니다.
+- **Legal Assertions**: This project is a curated digital archive. All design elements, UI/UX structures, and intelligent algorithms are the sole property of the creator. / 본 프로젝트는 고유한 디지털 아카이브입니다. 모든 디자인 요소, UI/UX 구조 및 지능형 알고리즘은 제작자의 고유 자산입니다.
 
 ---
 ## 📄 License & Intellectual Property (라이선스 및 저작권)
