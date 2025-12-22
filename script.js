@@ -119,6 +119,7 @@ window.addSocialLink = () => addSocialLink();
 window.removeSocialLink = (id) => removeSocialLink(id);
 window.renderAll = () => renderAll();
 window.toggleOracleInsights = () => toggleOracleInsights();
+window.toggleChat = () => toggleChat();
 
 // ==========================================
 // 3. DOM ELEMENTS (Initialized in init)
@@ -1111,18 +1112,24 @@ window.closeAccountModal = () => accountModal.classList.remove('active');
 // ==========================================
 let isChatOpen = false;
 
+function toggleChat() {
+    const chatWindow = document.getElementById('chatbot-window');
+    const chatInput = document.getElementById('chat-input');
+    if (chatWindow) {
+        isChatOpen = !isChatOpen;
+        chatWindow.style.display = isChatOpen ? 'flex' : 'none';
+        if (isChatOpen && chatInput) chatInput.focus();
+    }
+}
+
 function initChatbot() {
     const chatBtn = document.getElementById('chat-toggle-btn');
     const chatWindow = document.getElementById('chatbot-window');
     const chatInput = document.getElementById('chat-input');
     const chatClose = document.getElementById('close-chat');
 
-    if (chatBtn && chatWindow) {
-        chatBtn.onclick = () => {
-            isChatOpen = !isChatOpen;
-            chatWindow.style.display = isChatOpen ? 'flex' : 'none';
-            if (isChatOpen) chatInput.focus();
-        };
+    if (chatBtn) {
+        chatBtn.onclick = toggleChat;
     }
 
     if (chatClose) {
