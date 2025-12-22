@@ -470,9 +470,13 @@ function renderBestPosts() {
     topPosts.forEach((post, index) => {
         const cat = categories.find(c => c.id === post.category);
         const catName = cat ? cat.name.split(' (')[0] : '미분류';
-        const item = document.createElement('div');
-        item.className = 'best-item';
-        item.innerHTML = `
+        const card = document.createElement('div');
+        card.className = 'blog-card';
+        card.onclick = () => {
+            showDetail(post.id);
+            updateUserIntel({ last_viewed_post: post.id, last_category: post.category });
+        };
+        card.innerHTML = `
             <div class="rank-badge">0${index + 1}</div>
             <div onclick="showDetail(${post.id})" style="cursor:pointer;">
                 <span class="cat-tag">${catName}</span>
@@ -1157,7 +1161,7 @@ async function handleChatQuery(query) {
     chatBody.appendChild(botMsg);
 
     // Get Response & Log
-    const response = getHelpResponse(query);
+    const response = await getHelpResponse(query);
     setTimeout(async () => {
         botMsg.textContent = response;
         chatBody.scrollTop = chatBody.scrollHeight;
@@ -1165,14 +1169,86 @@ async function handleChatQuery(query) {
     }, 800);
 }
 
-function getHelpResponse(query) {
+async function getHelpResponse(query) {
     const q = query.toLowerCase();
     if (q.includes('글') || q.includes('작성') || q.includes('포스트')) return "글을 쓰려면 상단 'FEEDS' 섹션의 '글쓰기' 버튼을 누르세요. (현재 어드민 권한이 필요합니다.)";
     if (q.includes('로그인') || q.includes('접속')) return "우측 상단 'ACCESS' 버튼을 눌러 로그인하거나 회원가입할 수 있습니다.";
     if (q.includes('삭제') || q.includes('수정')) return "자신이 쓴 글 상단의 ⋮ 아이콘을 눌러 수정 또는 삭제가 가능합니다.";
     if (q.includes('로또') || q.includes('예측')) return "CONNECT 섹션 아래의 'LOTTO ORACLE' 메뉴를 이용해 보세요.";
-    if (q.includes('도움') || q.includes('기능')) return "저는 블로그 관리 및 이용을 돕는 Oracle AI입니다. 사용자의 질문을 분석해 점점 더 똑똑해집니다.";
-    return "그 질문에 대해서는 현재 분석 중입니다. 관리자가 로그를 확인하여 곧 도움말을 업데이트할 예정입니다.";
+    if (q.includes('도움') || q.includes('기능')) return "저는 블로그 콘텐츠와 이미지, 태그를 분석하는 Oracle AI입니다. 질문을 주시면 관련 내용을 찾아드릴게요.";
+    return await oracleBrain(query);
+}
+
+// 🧠 Advanced AI Logic: Oracle Brain
+async function oracleBrain(query) {
+    const q = query.toLowerCase();
+
+    // 1. Behavior Training: Track if the user is searching for a specific tag
+    if (q.startsWith('#')) {
+        const tag = q.replace('#', '');
+        updateUserIntel({ last_searched_tag: tag });
+    }
+
+    // 2. Content Awareness: Search in Posts
+    const results = posts.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.content.toLowerCase().includes(q) ||
+        (p.category && p.category.toLowerCase().includes(q))
+    );
+
+    // 3. Media Awareness: Search for Images
+    const imagePosts = results.filter(p => p.image_url && p.image_url.trim() !== '');
+
+    // 4. Intelligence Logic (Response Generation)
+    if (q.includes('이미지') || q.includes('사진') || q.includes('그림')) {
+        if (imagePosts.length > 0) {
+            return `이미지가 포함된 '${imagePosts[0].title}' 포스트를 찾았습니다. 확인해 보시겠어요?`;
+        }
+    }
+
+    if (results.length > 0) {
+        const top = results[0];
+        updateUserIntel({ last_recommended_post: top.id });
+        return `'${top.title}' 포스트가 질문과 관련이 있어 보입니다. #태그: ${top.category || '전체'}`;
+    }
+
+    // 5. Default Context-Aware Responses
+    if (q.includes('글') || q.includes('작성') || q.includes('포스트')) return "글을 쓰려면 상단 'FEEDS' 섹션의 '글쓰기' 버튼을 누르세요. (현재 어드민 권한이 필요합니다.)";
+    if (q.includes('로그인') || q.includes('접속')) return "우측 상단 'ACCESS' 버튼을 눌러 로그인하거나 회원가입할 수 있습니다.";
+    if (q.includes('삭제') || q.includes('수정')) return "자신이 쓴 글 상단의 ⋮ 아이콘을 눌러 수정 또는 삭제가 가능합니다.";
+    if (q.includes('로또') || q.includes('예측')) return "CONNECT 섹션 아래의 'LOTTO ORACLE' 메뉴를 이용해 보세요.";
+    if (q.includes('도움') || q.includes('기능')) return "저는 블로그 콘텐츠와 이미지, 태그를 분석하는 Oracle AI입니다. 질문을 주시면 관련 내용을 찾아드릴게요.";
+
+    return "그 질문의 맥락을 분석 중입니다. 아직 블로그에서 관련 포스트를 찾지 못했지만, 기록을 남겨 곧 학습하도록 하겠습니다.";
+}
+
+// 📊 User Intelligence: Behavior Tracking
+async function updateUserIntel(data) {
+    if (!currentUser) return;
+
+    const intelData = {
+        username: currentUser.username,
+        updated_at: new Date().toISOString(),
+        ...data
+    };
+
+    console.log('[AI INTEL UPDATE]', intelData);
+
+    if (supabase) {
+        try {
+            // Upsert: Create or Update user intel
+            const { error } = await supabase
+                .from('user_intel')
+                .upsert([intelData], { onConflict: 'username' });
+            if (error) console.warn('User Intel save failed:', error.message);
+        } catch (e) {
+            console.warn('User Intel Error:', e);
+        }
+    } else {
+        // Local Fallback
+        const localIntel = JSON.parse(localStorage.getItem('AI_USER_INTEL') || '{}');
+        localStorage.setItem('AI_USER_INTEL', JSON.stringify({ ...localIntel, ...intelData }));
+    }
 }
 
 async function logChatQuery(query, response) {
