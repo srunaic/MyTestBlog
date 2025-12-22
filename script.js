@@ -516,10 +516,13 @@ function renderPosts() {
     const filtered = currentCategory === 'all' ? posts : posts.filter(p => p.category === currentCategory);
 
     // Pagination Logic
-    const totalPages = Math.ceil(filtered.length / postsPerPage);
-    const startIndex = (currentPage - 1) * postsPerPage;
+    const count = filtered.length;
+    const totalPages = Math.ceil(count / postsPerPage);
+    const startIndex = (parseInt(currentPage) - 1) * postsPerPage;
     const endIndex = startIndex + postsPerPage;
     const pagedPosts = filtered.slice(startIndex, endIndex);
+
+    console.log(`Feed: ${count} posts, Total Pages: ${totalPages}, Current: ${currentPage}`);
 
     if (filtered.length === 0) {
         grid.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">아직 등록된 글이 없습니다.<br>첫 번째 이야기를 작성해보세요!</div>';
@@ -570,14 +573,15 @@ function renderPagination(total) {
     container.innerHTML = '';
 
     const pageCount = Math.max(1, total);
+    const curr = parseInt(currentPage);
 
     // Prev Button
-    if (currentPage > 1) {
+    if (curr > 1) {
         const prevBtn = document.createElement('button');
         prevBtn.className = 'page-btn nav-btn';
         prevBtn.innerHTML = '❮';
         prevBtn.onclick = () => {
-            currentPage--;
+            currentPage = curr - 1;
             window.scrollTo({ top: 400, behavior: 'smooth' });
             renderPosts();
         };
@@ -587,7 +591,7 @@ function renderPagination(total) {
     // Page Numbers
     for (let i = 1; i <= pageCount; i++) {
         const btn = document.createElement('button');
-        btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+        btn.className = `page-btn ${i === curr ? 'active' : ''}`;
         btn.textContent = i;
         btn.onclick = () => {
             currentPage = i;
@@ -598,12 +602,12 @@ function renderPagination(total) {
     }
 
     // Next Button
-    if (currentPage < pageCount) {
+    if (curr < pageCount) {
         const nextBtn = document.createElement('button');
         nextBtn.className = 'page-btn nav-btn';
         nextBtn.innerHTML = '❯';
         nextBtn.onclick = () => {
-            currentPage++;
+            currentPage = curr + 1;
             window.scrollTo({ top: 400, behavior: 'smooth' });
             renderPosts();
         };
