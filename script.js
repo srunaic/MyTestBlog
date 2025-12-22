@@ -279,8 +279,6 @@ async function loadData() {
         const { data: linkData, error: linkError } = await supabase.from('social_links').select('*').order('id', { ascending: true });
         if (!linkError) socialLinks = linkData || [];
 
-        // CRITICAL: Ensure Admin Account Exists in DB
-        await ensureAdminInSupabase();
 
     } catch (err) {
         console.error('Data load error:', err);
