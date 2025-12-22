@@ -170,13 +170,13 @@ body {
 
 .best-list-grid {
     display: grid;
-    gap: 30px;
-    margin-bottom: 40px;
+    gap: 20px;
+    margin-bottom: 30px;
 }
 
 .best-item {
     background: #fff;
-    padding: 25px;
+    padding: 15px 20px;
     border: 1px solid #f0f0f0;
     position: relative;
     transition: 0.3s;
@@ -198,8 +198,8 @@ body {
 }
 
 .best-item h2 {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
+    font-size: 1rem;
+    margin-bottom: 8px;
     max-width: 85%;
 }
 
@@ -344,11 +344,11 @@ body {
 
 .title-list-grid {
     display: grid;
-    gap: 20px;
+    gap: 15px;
 }
 
 .title-item {
-    padding: 40px;
+    padding: 25px 30px;
     background: #fff;
     border: 1px solid var(--modern-border);
     cursor: pointer;
@@ -388,21 +388,21 @@ body {
 }
 
 .cat-tag {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 1px;
     color: var(--modern-muted);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: block;
     text-transform: uppercase;
 }
 
 .title-item h2 {
     font-family: 'Montserrat', sans-serif;
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: 700;
     line-height: 1.3;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: #000;
     letter-spacing: -0.5px;
     word-break: keep-all;
