@@ -282,17 +282,25 @@ window.logout = () => {
 
 // Auth Handlers
 let authMode = 'login';
+// Auth Handlers
 window.openAuthModal = (mode) => {
+    const modal = document.getElementById('auth-modal');
+    const form = document.getElementById('auth-form');
+    if (!modal || !form) { console.error('Auth modal elements not found!'); return; }
+
     authMode = mode;
-    authModal.classList.add('active');
+    modal.classList.add('active');
     document.getElementById('auth-modal-title').textContent = mode === 'login' ? '로그인' : '회원가입';
     document.getElementById('auth-submit-btn').textContent = mode === 'login' ? '접속하기' : '가입하기';
     document.getElementById('signup-nickname-group').style.display = mode === 'signup' ? 'block' : 'none';
     document.getElementById('auth-switch-text').textContent = mode === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?';
     document.getElementById('auth-switch-link').textContent = mode === 'login' ? '회원가입' : '로그인';
-    authForm.reset();
+    form.reset();
 };
-window.closeAuthModal = () => authModal.classList.remove('active');
+window.closeAuthModal = () => {
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.classList.remove('active');
+};
 window.toggleAuthMode = () => openAuthModal(authMode === 'login' ? 'signup' : 'login');
 
 

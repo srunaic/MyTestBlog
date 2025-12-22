@@ -85,11 +85,159 @@
         </header>
 
         <div class="main-layout">
-            <!-- (Content Omitted for brevity, keeping structure) -->
-            <!-- ... -->
+            <!-- Sidebar: Categories & Admin -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>CATEGORIES</h3>
+                    <ul id="category-list">
+                        <!-- Categories rendered here -->
+                    </ul>
+                </div>
+
+                <div id="admin-only-actions" class="sidebar-section admin-box" style="display:none;">
+                    <h3>ADMIN PANEL</h3>
+                    <button id="admin-toggle" class="admin-btn">관리자 모드</button>
+                    <button id="manage-cats-btn" class="sm-btn">카테고리 관리</button>
+                    <div id="cat-mgr-section"
+                        style="display:none; padding:10px; background:#f9f9f9; margin-top:10px; border-radius:10px;">
+                        <input type="text" id="new-cat-name" placeholder="카테고리명">
+                        <button id="add-cat-btn" class="sm-btn-add">추가</button>
+                        <ul id="cat-mgr-list"></ul>
+                    </div>
+                    <button id="user-mgr-btn" class="sm-btn" style="display:none;">사용자 관리</button>
+                </div>
+
+                <div class="sidebar-section music-box">
+                    <h3>BGM PLAYER</h3>
+                    <button id="bgm-toggle" class="bgm-btn">
+                        <span id="bgm-status-text">MUSIC OFF</span>
+                    </button>
+                    <audio id="bgm-audio" loop>
+                        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                    </audio>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="content-area">
+                <div id="list-view">
+                    <!-- BEST Posts -->
+                    <div class="best-header">
+                        <h2>BEST POSTS</h2>
+                    </div>
+                    <div id="best-grid" class="best-grid"></div>
+
+                    <!-- All/Category Posts -->
+                    <div class="list-header">
+                        <h2>FEEDS</h2>
+                        <div id="user-actions" style="display:none;">
+                            <button id="new-post-btn" class="write-btn">글쓰기</button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Bulk Controls -->
+                    <div id="admin-bulk-controls" class="bulk-bar" style="display:none;">
+                        <input type="checkbox" id="select-all-posts">
+                        <span id="selected-count">0개 선택됨</span>
+                        <button id="bulk-edit-btn" class="bulk-btn">수정</button>
+                        <button id="bulk-delete-btn" class="bulk-btn del">삭제</button>
+                        <button id="clear-selection-btn" class="bulk-btn gray">취소</button>
+                    </div>
+
+                    <div id="blog-grid" class="blog-grid">
+                        <!-- Posts rendered here -->
+                    </div>
+                </div>
+
+                <!-- Detail View -->
+                <div id="detail-view" style="display:none;">
+                    <button id="back-to-list" class="back-btn">← 목록으로</button>
+                    <div id="post-detail-content" class="detail-container"></div>
+                </div>
+            </main>
         </div>
     </div>
-    <script type="module" src="script.js"></script>
+
+    <!-- Modals -->
+    <!-- 1. Post Modal -->
+    <div id="post-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">새 글 작성</h2>
+            <form id="post-form">
+                <input type="hidden" id="post-id">
+                <div class="input-group">
+                    <label>카테고리</label>
+                    <select id="post-category"></select>
+                </div>
+                <div class="input-group">
+                    <label>제목</label>
+                    <input type="text" id="post-title" required placeholder="제목을 입력하세요">
+                </div>
+                <div class="input-group">
+                    <label>이미지 URL (선택)</label>
+                    <input type="text" id="post-img" placeholder="http://...">
+                </div>
+                <div class="input-group">
+                    <label>내용</label>
+                    <textarea id="post-content" required placeholder="내용을 입력하세요" rows="10"></textarea>
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" class="submit-btn">저장하기</button>
+                    <button type="button" id="close-modal" class="cancel-btn">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Auth Modal -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="modal-content auth-modal">
+            <h2 id="auth-modal-title">로그인</h2>
+            <form id="auth-form">
+                <div class="input-group">
+                    <input type="text" id="auth-username" required placeholder="아이디">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="auth-password" required placeholder="비밀번호">
+                </div>
+                <div id="signup-nickname-group" class="input-group" style="display:none;">
+                    <input type="text" id="auth-nickname" placeholder="닉네임 (기본: 아이디)">
+                </div>
+                <button type="submit" id="auth-submit-btn" class="submit-btn full">로그인</button>
+                <div class="auth-switch">
+                    <span id="auth-switch-text">계정이 없으신가요?</span>
+                    <a href="javascript:void(0)" id="auth-switch-link" onclick="toggleAuthMode()">회원가입</a>
+                </div>
+                <button type="button" class="cancel-btn full" onclick="closeAuthModal()">닫기</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Account Modal -->
+    <div id="account-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>계정 정보 관리</h2>
+            <form id="account-form">
+                <div class="input-group">
+                    <label>닉네임</label>
+                    <input type="text" id="acc-nickname" required>
+                </div>
+                <div class="input-group">
+                    <label>아이디</label>
+                    <input type="text" id="acc-username" required>
+                </div>
+                <div class="input-group">
+                    <label>비밀번호 (8자 이상)</label>
+                    <input type="password" id="acc-password" required minlength="8">
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" class="submit-btn">수정완료</button>
+                    <button type="button" class="cancel-btn" onclick="closeAccountModal()">닫기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script type="module" src="script.js?v=1.0.2"></script>
 </body>
 
 </html>
