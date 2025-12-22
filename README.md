@@ -66,9 +66,9 @@ This project is a private creative work. The architecture and design are protect
 본 프로젝트는 개인 창작물로서, 시스템 아키텍처와 디자인은 고유한 지적 재산권으로 보호받습니다.
 
 ---
-### 📫 Connect with the Creator
-- **YouTube**: [Nanodoroshi Official](https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA)
-- **Live Performance**: [Nanodoroshi Live](https://srunaic.github.io/MyTestBlog/)
+### 📫 Connect with the Creator (Blog & YouTube)
+- **YouTube**: [Nanodoroshi Official Channel](https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA)
+- **Blog**: [Nanodoroshi Official Blog Site](https://srunaic.github.io/MyTestBlog/)
 
 ---
 *Developed with 💎 by [Nanodoroshi](https://github.com/srunaic).*
