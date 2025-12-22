@@ -568,9 +568,11 @@ function renderPagination(total) {
     const container = document.getElementById('pagination-container');
     if (!container) return;
     container.innerHTML = '';
-    if (total <= 1) return;
 
-    for (let i = 1; i <= total; i++) {
+    // Always show at least page 1 as requested
+    const pageCount = Math.max(1, total);
+
+    for (let i = 1; i <= pageCount; i++) {
         const btn = document.createElement('button');
         btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
         btn.textContent = i;
