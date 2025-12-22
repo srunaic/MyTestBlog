@@ -622,7 +622,7 @@ function renderPosts() {
         item.innerHTML = `
             ${isAdminMode ? `<input type="checkbox" class="item-checkbox" ${isSelected ? 'checked' : ''} data-id="${post.id}">` : ''}
             <div class="title-item-inner">
-                <div onclick="showDetail(${post.id})" style="cursor:pointer;">
+                <div onclick="showDetail(${post.id}); updateUserIntel({ last_viewed_post: ${post.id}, last_category: '${post.category}' });" style="cursor:pointer;">
                     <span class="cat-tag">${catName}</span>
                     <h2>${post.title}</h2>
                     <div class="item-meta">
@@ -1161,12 +1161,30 @@ async function handleChatQuery(query) {
     chatBody.appendChild(botMsg);
 
     // Get Response & Log
-    const response = await getHelpResponse(query);
+    const aiResponse = await getHelpResponse(query);
+
     setTimeout(async () => {
-        botMsg.textContent = response;
+        // Clear analyzing message and add rich response
+        botMsg.innerHTML = generateRichChatHtml(aiResponse);
         chatBody.scrollTop = chatBody.scrollHeight;
-        await logChatQuery(query, response);
+
+        // Log query
+        const plainTextResponse = typeof aiResponse === 'string' ? aiResponse : (aiResponse.text || 'Rich Content');
+        await logChatQuery(query, plainTextResponse);
     }, 800);
+}
+
+function generateRichChatHtml(response) {
+    if (typeof response === 'string') return response;
+
+    let html = `<div>${response.text}</div>`;
+    if (response.image) {
+        html += `<img src="${response.image}" class="chat-thumb" style="width:100%; border-radius:10px; margin-top:10px; border:1px solid var(--futuristic-border);">`;
+    }
+    if (response.link) {
+        html += `<button onclick="${response.link.action}" class="sm-btn" style="width:100%; margin-top:10px;">글 보러가기</button>`;
+    }
+    return html;
 }
 
 async function getHelpResponse(query) {
@@ -1202,14 +1220,23 @@ async function oracleBrain(query) {
     // 4. Intelligence Logic (Response Generation)
     if (q.includes('이미지') || q.includes('사진') || q.includes('그림')) {
         if (imagePosts.length > 0) {
-            return `이미지가 포함된 '${imagePosts[0].title}' 포스트를 찾았습니다. 확인해 보시겠어요?`;
+            const top = imagePosts[0];
+            return {
+                text: `이미지가 포함된 '${top.title}' 포스트를 찾았습니다.`,
+                image: top.image_url,
+                link: { action: `showDetail(${top.id})` }
+            };
         }
     }
 
     if (results.length > 0) {
         const top = results[0];
         updateUserIntel({ last_recommended_post: top.id });
-        return `'${top.title}' 포스트가 질문과 관련이 있어 보입니다. #태그: ${top.category || '전체'}`;
+        return {
+            text: `'${top.title}' 포스트가 질문과 관련이 있어 보입니다.`,
+            image: top.image_url || null,
+            link: { action: `showDetail(${top.id})` }
+        };
     }
 
     // 5. Default Context-Aware Responses
