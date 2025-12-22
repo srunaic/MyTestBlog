@@ -34,6 +34,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Inject Secrets
+        run: |
+          sed -i "s|VITE_SUPABASE_URL|${{ secrets.SUPABASE_URL }}|g" script.js
+          sed -i "s|VITE_SUPABASE_KEY|${{ secrets.SUPABASE_KEY }}|g" script.js
+
       - name: Build and Obfuscate
         run: npm run build
 

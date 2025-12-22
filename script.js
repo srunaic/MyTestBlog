@@ -84,8 +84,8 @@ const SessionManager = {
 // ==========================================
 // 2. SUPABASE CONFIGURATION
 // ==========================================
-var SUPABASE_URL = 'https://xefallpzdgyjufsxpsnk.supabase.co';
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlZmFsbHB6ZGd5anVmc3hwc25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMDI1NjcsImV4cCI6MjA4MTg3ODU2N30.3_Mk9KxtgLF-yLONT09Iz7AogSjlIxiKQvP3wpV8yBU';
+var SUPABASE_URL = 'VITE_SUPABASE_URL';
+var SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 
 // Initialize Client Immediate (Modules are awaited)
 var supabase = null;
