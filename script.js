@@ -203,6 +203,7 @@ async function init() {
     checkSession();
     renderAll();
     restoreDrafts();
+    initChatbot();
 
     // 4. Data Loading Status
     const statusDiv = document.createElement('div');
@@ -1098,6 +1099,105 @@ window.openAccountModal = () => {
 };
 window.closeAccountModal = () => accountModal.classList.remove('active');
 
+
+
+// ==========================================
+// 12. ORACLE HELP CHATBOT
+// ==========================================
+let isChatOpen = false;
+
+function initChatbot() {
+    const chatBtn = document.getElementById('chat-toggle-btn');
+    const chatWindow = document.getElementById('chatbot-window');
+    const chatInput = document.getElementById('chat-input');
+    const chatClose = document.getElementById('close-chat');
+
+    if (chatBtn && chatWindow) {
+        chatBtn.onclick = () => {
+            isChatOpen = !isChatOpen;
+            chatWindow.style.display = isChatOpen ? 'flex' : 'none';
+            if (isChatOpen) chatInput.focus();
+        };
+    }
+
+    if (chatClose) {
+        chatClose.onclick = () => {
+            isChatOpen = false;
+            chatWindow.style.display = 'none';
+        };
+    }
+
+    if (chatInput) {
+        chatInput.onkeypress = async (e) => {
+            if (e.key === 'Enter' && chatInput.value.trim()) {
+                const query = chatInput.value.trim();
+                chatInput.value = '';
+                await handleChatQuery(query);
+            }
+        };
+    }
+}
+
+async function handleChatQuery(query) {
+    const chatBody = document.getElementById('chat-body');
+    if (!chatBody) return;
+
+    // User Message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-msg user-msg';
+    userMsg.textContent = query;
+    chatBody.appendChild(userMsg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Bot Thinking
+    const botMsg = document.createElement('div');
+    botMsg.className = 'chat-msg bot-msg';
+    botMsg.textContent = '...Analyzing...';
+    chatBody.appendChild(botMsg);
+
+    // Get Response & Log
+    const response = getHelpResponse(query);
+    setTimeout(async () => {
+        botMsg.textContent = response;
+        chatBody.scrollTop = chatBody.scrollHeight;
+        await logChatQuery(query, response);
+    }, 800);
+}
+
+function getHelpResponse(query) {
+    const q = query.toLowerCase();
+    if (q.includes('글') || q.includes('작성') || q.includes('포스트')) return "글을 쓰려면 상단 'FEEDS' 섹션의 '글쓰기' 버튼을 누르세요. (현재 어드민 권한이 필요합니다.)";
+    if (q.includes('로그인') || q.includes('접속')) return "우측 상단 'ACCESS' 버튼을 눌러 로그인하거나 회원가입할 수 있습니다.";
+    if (q.includes('삭제') || q.includes('수정')) return "자신이 쓴 글 상단의 ⋮ 아이콘을 눌러 수정 또는 삭제가 가능합니다.";
+    if (q.includes('로또') || q.includes('예측')) return "CONNECT 섹션 아래의 'LOTTO ORACLE' 메뉴를 이용해 보세요.";
+    if (q.includes('도움') || q.includes('기능')) return "저는 블로그 관리 및 이용을 돕는 Oracle AI입니다. 사용자의 질문을 분석해 점점 더 똑똑해집니다.";
+    return "그 질문에 대해서는 현재 분석 중입니다. 관리자가 로그를 확인하여 곧 도움말을 업데이트할 예정입니다.";
+}
+
+async function logChatQuery(query, response) {
+    const logData = {
+        query: query,
+        response: response,
+        user_id: currentUser ? currentUser.username : 'anonymous',
+        session_id: sessionStorage.getItem('SESSION_ID') || 'guest-' + Date.now(),
+        category: 'help'
+    };
+
+    console.log('[CHAT LOG]', logData);
+
+    if (supabase) {
+        try {
+            const { error } = await supabase.from('chatbot_logs').insert([logData]);
+            if (error) console.warn('Chat log save failed (Supabase):', error.message);
+        } catch (e) {
+            console.warn('Chat log save error:', e);
+        }
+    } else {
+        const localLogs = JSON.parse(localStorage.getItem('CHATBOT_LOCAL_LOGS') || '[]');
+        localLogs.push({ ...logData, created_at: new Date().toISOString() });
+        localStorage.setItem('CHATBOT_LOCAL_LOGS', JSON.stringify(localLogs.slice(-100)));
+    }
+}
 
 // Start
 init();
