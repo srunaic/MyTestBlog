@@ -1,91 +1,75 @@
 # 🌌 Nanodoroshi | Futuristic Cyber-Minimalist Blog
+## 나노 도로시 | 미래지향적 사이버 미니멀리즘 블로그
 
 [![Live Demo](https://img.shields.io/badge/demo-live-00f2ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://srunaic.github.io/MyTestBlog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 > **"Where Digital Artistry Meets Advanced AI Research"**
+> **"디지털 예술과 첨단 AI 연구가 만나는 공간"**
 >
 > A state-of-the-art, high-performance blog platform engineered with a **Cyber-Minimalist** aesthetic. Built for creators who demand a premium, high-tech interface for documenting the intersection of art and technology.
+> 최첨단 성능과 **사이버 미니멀리즘** 미학을 결합한 고성능 블로그 플랫폼입니다. 예술과 기술의 교차점을 기록하기 위한 프리미엄 하이테크 인터페이스를 제공합니다.
 
 ---
 
-## ✨ Project Overview
+## ✨ Project Overview (프로젝트 개요)
 
-**Nanodoroshi** is more than just a blog; it's a technical showcase of modern web engineering and premium UI design. It utilizes a Serverless architecture to provide a seamless, lightning-fast experience while maintaining a "Digital Archive" feel through sophisticated Glassmorphism and Neon-Cyber aesthetics.
+**Nanodoroshi** is a technical showcase of modern web engineering and premium UI design. It utilizes a Serverless architecture to provide a seamless experience through sophisticated Glassmorphism and Neon-Cyber aesthetics.
+**나노 도로시**는 현대 웹 엔지니어링과 프리미엄 UI 디자인의 정수를 보여주는 프로젝트입니다. 서버리스 아키텍처를 기반으로 세련된 글래스모피즘(Glassmorphism)과 네온 사이버 스타일을 통해 매끄러운 사용자 경험을 제공합니다.
 
-### 🎨 Design Philosophy: Cyber-Minimalism
-- **Glassmorphism 2.0**: Multi-layered backdrop blurs and saturations for a deep, holographic interface.
-- **Neon Accents**: High-contrast Cyan and Magenta energy lines to guide user interaction.
-- **Dynamic Digital Environment**: A responsive radial mesh background with a technical grid overlay.
-- **Asymmetric Component Design**: Custom-engineered geometric UI components for a unique, tectonic feel.
-
----
-
-## 🛠️ Technical Architecture & Tech Stack
-
-This project is built using a **pure modern web stack**, prioritizing performance, security, and scalability without the overhead of heavy frameworks.
-
-- **Frontend**: 
-  - **HTML5 & Vanilla JavaScript**: High-performance, module-based logic execution.
-  - **CSS3 (Advanced)**: Comprehensive design system using CSS Variables, Flexbox/Grid, and hardware-accelerated animations.
-- **Backend-as-a-Service (BaaS)**: 
-  - **[Supabase](https://supabase.com/)**: Real-time database, Authentication, and Row Level Security (RLS).
-- **CI/CD & Hosting**:
-  - **GitHub Actions**: Automated build and deployment pipelines.
-  - **GitHub Pages**: Static site hosting with global CDN delivery.
-- **SEO & Performance**:
-  - Semantic HTML structure.
-  - Automated Open Graph (OG) metadata generation.
-  - JSON-LD structured data for Google Knowledge Graph.
+### 🎨 Design Philosophy (디자인 철학)
+- **Glassmorphism 2.0**: Multi-layered holographic interface / 다층 구조의 홀로그래픽 인터페이스.
+- **Neon Accents**: High-contrast Cyan & Magenta energy lines / 고대비 사이언 및 마젠타 네온 액센트.
+- **Dynamic Digital Environment**: Responsive grid & radial mesh / 반응형 그리드와 방사형 메이 패턴.
+- **Asymmetric UI**: Custom geometric components for a tectonic feel / 지각 변동을 연상시키는 비대칭 기하학적 UI.
 
 ---
 
-## 🚀 Key Features
+## 🛠️ Tech Stack (기술 스택)
 
-### 🔐 Multi-Tier Authentication
-Secure admin and user authentication powered by Supabase, featuring custom-designed glassmorphic login and registration modals.
+Built using a **pure modern web stack** for maximum performance and scalability.
+최고의 성능과 확장성을 위해 **순수 모던 웹 스택**만을 사용하여 구축되었습니다.
 
-### 🛠️ Advanced Admin Suite
-A comprehensive, integrated administration panel allowing for:
-- **Dynamic Post Management**: Create, edit, and delete blog entries in real-time.
-- **Social Link Orchestration**: Manage external connections through a dedicated interface.
-- **User Permission Control**: Secure role-based access management.
-
-### 📊 Real-Time Analytics & UX
-- **Post Interaction**: View count tracking and "Best Posts" categorization.
-- **Smart Pagination**: Optimized feed loading (12 posts per page) for enhanced performance.
-- **BGM Architecture**: Integrated modular BGM player with state-persistence.
+- **Frontend**: HTML5, Vanilla JavaScript (ES Module), CSS3 (Advanced Design System)
+- **Backend**: [Supabase](https://supabase.com/) (PostgreSQL, Auth, RLS)
+- **Infrastructure**: GitHub Actions (CI/CD), GitHub Pages (Hosting)
+- **Performance**: Semantic HTML, OG Metadata, JSON-LD Structured Data
 
 ---
 
-## 📥 Installation & Local Development
+## 🚀 Key Features (주요 기능)
 
-To explore the architecture locally:
+### 🔐 Multi-Tier Authentication (다중 계층 인증)
+Secure auth powered by Supabase with custom glassmorphic modals.
+Supabase 기반의 보안 인증 및 커스텀 글래스모피즘 모달 지원.
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/srunaic/MyTestBlog.git
-   ```
-2. **Setup Environment**: 
-   - Create a `.env` (or configure in `script.js`) with your Supabase credentials:
-     - `SUPABASE_URL`
-     - `SUPABASE_KEY`
-3. **Run Local Server**:
-   - Using Python: `python -m http.server 5000`
-   - Using Node: `npx serve`
-4. **Access**: Open `http://localhost:5000`
+### 🛡️ Advanced Session Management (고급 세션 관리) - **NEW**
+- **Persistent Auth**: 24H auto-expiry session for security / 24시간 자동 만료 보안 세션 유지.
+- **Draft Protection**: Auto-saves post & signup data to prevent loss / 글 쓰기 및 가입 데이터 자동 저장(휘발성 방지).
+- **State Retention**: Remembers categories & pages across refreshes / 새로고침 시에도 카테고리 및 페이지 위치 기억.
 
----
+### 🛠️ Admin Suite (관리자 기능)
+- **Real-time CRUD**: Dynamic post management / 실시간 게시글 작성, 수정 및 삭제.
+- **Social Link Orchestration**: Manage external connections / 동적 소셜 링크 관리 시스템.
+- **Permission Control**: Secure role-based access / 역할 기반 보안 접근 제어.
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### 📊 UX & Performance (사용자 경험 및 성능)
+- **Smart Pagination**: Optimized 12-post feed / 최적화된 12개 게시글 단위 페이지네이션.
+- **BGM Architecture**: Modular player with state-persistence / 상태가 유지되는 모듈형 BGM 플레이어.
 
 ---
 
-### 📫 Connect with the Creator
-- **YouTube**: [Nanodoroshi Official](https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA)
-- **Live Blog**: [nanodoroshi.netlify.app](https://srunaic.github.io/MyTestBlog/)
+## 📥 Local Development (로컬 개발 환경)
+
+1. **Clone**: `git clone https://github.com/srunaic/MyTestBlog.git`
+2. **Setup**: Configure Supabase credentials in `script.js`.
+3. **Run**: `python -m http.server 5000` or `npx serve`.
+
+---
+
+## 📄 License (라이선스)
+
+MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 *Created with 💎 and 🚀 by [Nanodoroshi](https://github.com/srunaic).*
