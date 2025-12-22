@@ -12,6 +12,13 @@ var defaultCats = [
     { id: 'bug_report', name: '버그 신고 (BUG REPORT)' }
 ];
 var socialLinks = [];
+var categories = [];
+var currentUser = null;
+var currentCategory = 'all';
+var isAdminMode = false;
+var bgmAudio = null;
+var isPlaying = false;
+var selectedPostIds = new Set();
 var SESSION_KEY = 'nano_dorothy_session';
 
 // ==========================================
