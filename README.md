@@ -31,45 +31,39 @@ Built using a **pure modern web stack** for maximum performance and scalability.
 최고의 성능과 확장성을 위해 **순수 모던 웹 스택**만을 사용하여 구축되었습니다.
 
 - **Frontend**: HTML5, Vanilla JavaScript (ES Module), CSS3 (Advanced Design System)
-- **Backend**: [Supabase](https://supabase.com/) (PostgreSQL, Auth, RLS)
-- **Infrastructure**: GitHub Actions (CI/CD), GitHub Pages (Hosting)
-- **Performance**: Semantic HTML, OG Metadata, JSON-LD Structured Data
+- **Backend**: [Supabase](https://supabase.com/) (PostgreSQL-based Cloud Infrastructure)
+- **Infrastructure**: GitHub Actions (Automated CI/CD), GitHub Pages (Global Hosting)
+- **SEO & Search**: Semantic HTML, OG Metadata, JSON-LD Structured Data
 
 ---
 
 ## 🚀 Key Features (주요 기능)
 
-### 🔐 Multi-Tier Authentication (다중 계층 인증)
-Secure auth powered by Supabase with custom glassmorphic modals.
-Supabase 기반의 보안 인증 및 커스텀 글래스모피즘 모달 지원.
+### 🔐 Intelligent Security (지능형 보안 및 인증)
+Secure multi-user authentication system with custom-designed visual protection layers.
+커스텀 디자인된 시각적 보호 레이어와 함께 제공되는 보안 다중 사용자 인증 시스템.
 
-### 🛡️ Advanced Session Management (고급 세션 관리) - **NEW**
-- **Persistent Auth**: 24H auto-expiry session for security / 24시간 자동 만료 보안 세션 유지.
-- **Draft Protection**: Auto-saves post & signup data to prevent loss / 글 쓰기 및 가입 데이터 자동 저장(휘발성 방지).
-- **State Retention**: Remembers categories & pages across refreshes / 새로고침 시에도 카테고리 및 페이지 위치 기억.
+### 🛡️ Advanced Session Management (고급 세션 관리)
+- **Session Security**: Multi-tier authentication state management / 다중 계층 인증 상태 관리.
+- **Workflow Protection**: Automated data recovery and draft retention / 자동 데이터 복구 및 작성 흐름 보존 시스템.
+- **Dynamic State Persistence**: Intelligent context retention / 고도화된 컨텍스트 및 상태 유지 로직.
 
-### 🛠️ Admin Suite (관리자 기능)
-- **Real-time CRUD**: Dynamic post management / 실시간 게시글 작성, 수정 및 삭제.
-- **Social Link Orchestration**: Manage external connections / 동적 소셜 링크 관리 시스템.
-- **Permission Control**: Secure role-based access / 역할 기반 보안 접근 제어.
-
-### 📊 UX & Performance (사용자 경험 및 성능)
-- **Smart Pagination**: Optimized 12-post feed / 최적화된 12개 게시글 단위 페이지네이션.
-- **BGM Architecture**: Modular player with state-persistence / 상태가 유지되는 모듈형 BGM 플레이어.
+### 🛠️ Integrated Admin Suite (통합 관리자 도구)
+- **Content Orchestration**: Real-time dynamic post management / 실시간 동적 콘텐츠 오케스트레이션.
+- **Social Connectivity System**: Centralized social link management / 중앙 집중식 소셜 연결 관리 시스템.
+- **Access Control Architecture**: Enterprise-grade role management / 기업용 수준의 역할 기반 접근 제어 아키텍처.
 
 ---
 
-## 📥 Local Development (로컬 개발 환경)
+## 📄 License & Intellectual Property (라이선스 및 저작권)
 
-1. **Clone**: `git clone https://github.com/srunaic/MyTestBlog.git`
-2. **Setup**: Configure Supabase credentials in `script.js`.
-3. **Run**: `python -m http.server 5000` or `npx serve`.
-
----
-
-## 📄 License (라이선스)
-
-MIT License - see the [LICENSE](LICENSE) file for details.
+This project is a private creative work. The architecture and design are protected as unique intellectual property.
+본 프로젝트는 개인 창작물로서, 시스템 아키텍처와 디자인은 고유한 지적 재산권으로 보호받습니다.
 
 ---
-*Created with 💎 and 🚀 by [Nanodoroshi](https://github.com/srunaic).*
+### 📫 Connect with the Creator
+- **YouTube**: [Nanodoroshi Official](https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA)
+- **Live Performance**: [Nanodoroshi Live](https://srunaic.github.io/MyTestBlog/)
+
+---
+*Developed with 💎 by [Nanodoroshi](https://github.com/srunaic).*
