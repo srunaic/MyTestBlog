@@ -280,7 +280,7 @@ function updateUserNav() {
             <a href="javascript:void(0)" onclick="openAccountModal()" class="user-action-link">계정 관리</a> | 
             <a href="javascript:void(0)" onclick="logout()" class="logout-link">로그아웃</a>
         `;
-        if (adminOnlyActions) adminOnlyActions.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+        if (adminOnlyActions) adminOnlyActions.style.display = currentUser.role === 'admin' ? 'block' : 'none';
         if (userActions) userActions.style.display = 'flex';
         if (newPostBtn) newPostBtn.style.display = 'block';
         if (userMgrBtn) userMgrBtn.style.display = isAdminMode ? 'block' : 'none';
