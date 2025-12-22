@@ -227,7 +227,6 @@ async function init() {
             await loadData();
 
             // Check admin existence
-            await ensureAdminInSupabase();
 
             console.log('Data loaded. Re-rendering...');
             checkSession();
@@ -285,35 +284,9 @@ async function loadData() {
 
     } catch (err) {
         console.error('Data load error:', err);
-        // Fallback: Ensure Admin exists locally if DB loads fail
-        if (!users.find(u => u.role === 'admin')) {
-            users = [{ username: 'victoryka123', password: 'Tpdlflszkdltm1@', nickname: '나노 도로시', role: 'admin' }];
-        }
     }
 }
 
-async function ensureAdminInSupabase() {
-    const adminUser = {
-        username: 'victoryka123',
-        password: 'Tpdlflszkdltm1@',
-        nickname: '나노 도로시',
-        role: 'admin'
-    };
-
-    // Check if admin exists in the loaded data
-    const exists = users.find(u => u.username === adminUser.username);
-
-    if (!exists) {
-        console.log('Admin not found in DB. Creating now...');
-        const { error } = await supabase.from('users').insert([adminUser]);
-        if (error) {
-            console.error('Failed to auto-create admin:', error);
-        } else {
-            console.log('Admin account auto-created in Supabase.');
-            users.push(adminUser); // Sync local
-        }
-    }
-}
 
 // ==========================================
 // 6. AUTHENTICATION
@@ -489,7 +462,7 @@ function renderBestPosts() {
                 </div>
             </div>
         `;
-        bestGrid.appendChild(item);
+        bestGrid.appendChild(card);
     });
 }
 

@@ -33,7 +33,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request).then(cachedResponse => {
-            return cachedResponse || fetch(event.request);
+            return cachedResponse || fetch(event.request).catch(err => {
+                console.warn('[SW] Fetch failed:', event.request.url);
+                // Return null or a fallback if needed
+                return null;
+            });
         })
     );
 });
