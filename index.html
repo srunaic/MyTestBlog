@@ -202,6 +202,17 @@
                         <button onclick="addSocialLink()" class="sm-btn">링크 추가</button>
                     </div>
                     <ul id="social-mgr-list" style="list-style:none; margin-top:15px; font-size:0.7rem;"></ul>
+
+                    <div class="admin-divider" style="margin:20px 0; border-top:1px solid #333;"></div>
+                    <h3 style="font-size:0.6rem; color:var(--futuristic-accent);">ORACLE INSIGHTS (AI LOGS)</h3>
+                    <button onclick="toggleOracleInsights()" class="sm-btn"
+                        style="background:rgba(0, 242, 255, 0.1); border:1px solid var(--futuristic-accent);">챗봇 로그
+                        분석</button>
+                    <div id="oracle-insights-view" style="display:none; margin-top:15px; font-size:0.7rem;">
+                        <ul id="insights-list"
+                            style="list-style:none; padding:0; height:200px; overflow-y:auto; border:1px solid var(--futuristic-border); border-radius:5px; padding:5px;">
+                        </ul>
+                    </div>
                 </div>
 
             </aside>

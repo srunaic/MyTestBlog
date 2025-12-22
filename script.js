@@ -118,6 +118,7 @@ window.updateUserRole = (u, r) => updateUserRole(u, r);
 window.addSocialLink = () => addSocialLink();
 window.removeSocialLink = (id) => removeSocialLink(id);
 window.renderAll = () => renderAll();
+window.toggleOracleInsights = () => toggleOracleInsights();
 
 // ==========================================
 // 3. DOM ELEMENTS (Initialized in init)
