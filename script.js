@@ -1200,5 +1200,50 @@ async function logChatQuery(query, response) {
     }
 }
 
+// Oracle Insights Logic
+async function toggleOracleInsights() {
+    const view = document.getElementById('oracle-insights-view');
+    const list = document.getElementById('insights-list');
+    if (!view || !list) return;
+
+    if (view.style.display === 'none') {
+        view.style.display = 'block';
+        list.innerHTML = '<li style="color:var(--futuristic-accent); font-size:0.6rem;">로딩 중...</li>';
+
+        let logs = [];
+        if (supabase) {
+            try {
+                const { data, error } = await supabase.from('chatbot_logs').select('*').order('created_at', { ascending: false }).limit(50);
+                if (!error) logs = data;
+                else console.warn('Fetch logs error:', error.message);
+            } catch (e) {
+                console.warn('Fetch logs exception:', e);
+            }
+        } else {
+            logs = JSON.parse(localStorage.getItem('CHATBOT_LOCAL_LOGS') || '[]');
+        }
+
+        list.innerHTML = '';
+        if (logs.length === 0) {
+            list.innerHTML = '<li style="opacity:0.5; font-size:0.6rem;">기록된 로그가 없습니다.</li>';
+        } else {
+            logs.forEach(log => {
+                const li = document.createElement('li');
+                li.style.marginBottom = '10px';
+                li.style.borderBottom = '1px solid var(--futuristic-border)';
+                li.style.paddingBottom = '5px';
+                li.innerHTML = `
+                    <div style="color:var(--futuristic-accent); font-weight:bold;">Q: ${log.query}</div>
+                    <div style="color:var(--futuristic-muted);">A: ${log.response}</div>
+                    <div style="font-size:0.5rem; opacity:0.5;">${new Date(log.created_at || Date.now()).toLocaleString()} | ${log.user_id}</div>
+                `;
+                list.appendChild(li);
+            });
+        }
+    } else {
+        view.style.display = 'none';
+    }
+}
+
 // Start
 init();
