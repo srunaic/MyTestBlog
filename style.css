@@ -1,11 +1,20 @@
 :root {
-    --modern-bg: #ffffff;
-    --modern-content-bg: #fdfdfd;
-    --modern-accent: #111111;
-    --modern-text: #1a1a1a;
-    --modern-muted: #888888;
-    --modern-border: #eeeeee;
-    --header-height: 500px;
+    /* Futuristic Cyber-Minimalist Palette */
+    --futuristic-bg: #050510;
+    /* Deep Space Black */
+    --futuristic-content-bg: rgba(10, 10, 30, 0.4);
+    --futuristic-accent: #00f2ff;
+    /* Cyan Energy */
+    --futuristic-accent-glow: rgba(0, 242, 255, 0.5);
+    --futuristic-secondary: #ff007a;
+    /* Neon Magenta */
+    --futuristic-text: #e0e0ff;
+    /* Soft Icy Blue-White */
+    --futuristic-muted: #667085;
+    --futuristic-border: rgba(255, 255, 255, 0.08);
+    --futuristic-glass: rgba(20, 20, 40, 0.6);
+    --header-height: 550px;
+    --card-blur: 20px;
 }
 
 * {
@@ -15,22 +24,29 @@
 }
 
 body {
-    background-color: var(--modern-bg);
+    background-color: var(--futuristic-bg);
+    background-image:
+        linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
     font-family: 'Montserrat', sans-serif;
-    color: var(--modern-text);
+    color: var(--futuristic-text);
     line-height: 1.6;
+    overflow-x: hidden;
 }
 
 #blog-container {
-    max-width: 1300px;
+    max-width: 1400px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
 }
 
-/* Premium Modern Header */
+/* Premium Futuristic Header */
 .modern-header {
     position: relative;
     height: var(--header-height);
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background: radial-gradient(circle at top right, #1a1a40, #050510);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -64,12 +80,15 @@ body {
 }
 
 .header-title {
-    font-size: 6rem;
-    font-weight: 900;
-    letter-spacing: -3px;
+    font-size: 7.5rem;
+    font-weight: 950;
+    letter-spacing: -5px;
     text-transform: uppercase;
     margin-bottom: 0.5rem;
-    font-family: 'Playfair Display', serif;
+    background: linear-gradient(to bottom, #fff, var(--futuristic-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px var(--futuristic-accent-glow));
 }
 
 .header-subtitle {
@@ -125,9 +144,21 @@ body {
 /* Layout */
 .main-layout {
     display: grid;
-    grid-template-columns: 260px 1fr 260px;
-    gap: 80px;
-    padding: 120px 5%;
+    grid-template-columns: 280px 1fr 280px;
+    gap: 60px;
+    padding: 100px 5%;
+    position: relative;
+}
+
+.main-layout::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.05), transparent 70%);
+    pointer-events: none;
 }
 
 /* Sidebar Left */
@@ -136,17 +167,18 @@ body {
 }
 
 .avatar-placeholder {
-    width: 60px;
-    height: 60px;
-    background: var(--modern-accent);
-    color: white;
+    width: 70px;
+    height: 70px;
+    background: var(--futuristic-accent);
+    color: #000;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 900;
-    margin-bottom: 20px;
-    border-radius: 4px;
+    margin-bottom: 25px;
+    clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+    box-shadow: 0 0 25px var(--futuristic-accent-glow);
 }
 
 .name {
@@ -175,16 +207,20 @@ body {
 }
 
 .best-item {
-    background: #fff;
-    padding: 15px 20px;
-    border: 1px solid #f0f0f0;
+    background: var(--futuristic-glass);
+    backdrop-filter: blur(var(--card-blur));
+    padding: 20px 25px;
+    border: 1px solid var(--futuristic-border);
     position: relative;
-    transition: 0.3s;
+    transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    border-left: 3px solid var(--futuristic-accent);
 }
 
 .best-item:hover {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    border-color: #111;
+    transform: translateX(10px) translateY(-5px);
+    background: rgba(30, 30, 60, 0.4);
+    border-color: var(--futuristic-accent);
+    box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
 }
 
 .rank-badge {
@@ -348,16 +384,39 @@ body {
 }
 
 .title-item {
-    padding: 25px 30px;
-    background: #fff;
-    border: 1px solid var(--modern-border);
+    padding: 30px 40px;
+    background: var(--futuristic-glass);
+    backdrop-filter: blur(var(--card-blur));
+    border: 1px solid var(--futuristic-border);
     cursor: pointer;
     transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
     position: relative;
     display: flex;
     align-items: flex-start;
     gap: 25px;
-    margin-bottom: 5px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.title-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--futuristic-accent);
+    transition: 0.5s;
+}
+
+.title-item:hover {
+    background: rgba(40, 40, 80, 0.2);
+    border-color: var(--futuristic-accent);
+    transform: scale(1.02);
+}
+
+.title-item:hover::after {
+    width: 100%;
 }
 
 /* Pagination Styling */
@@ -370,31 +429,34 @@ body {
 }
 
 .page-btn {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
-    border: 1px solid #eee;
-    color: #555;
+    background: var(--futuristic-glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--futuristic-border);
+    color: var(--futuristic-text);
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     cursor: pointer;
-    transition: 0.2s ease;
+    transition: 0.3s;
+    font-family: 'Space Mono', monospace;
 }
 
 .page-btn:hover {
-    border-color: #000;
-    color: #000;
-    background: #f9f9f9;
+    border-color: var(--futuristic-accent);
+    color: var(--futuristic-accent);
+    background: rgba(0, 242, 255, 0.1);
+    box-shadow: 0 0 15px var(--futuristic-accent-glow);
 }
 
 .page-btn.active {
-    background: #f0f0f0;
+    background: var(--futuristic-accent);
     color: #000;
-    border-color: #ddd;
-    font-weight: 900;
+    border-color: var(--futuristic-accent);
+    box-shadow: 0 0 20px var(--futuristic-accent-glow);
 }
 
 .nav-btn {
