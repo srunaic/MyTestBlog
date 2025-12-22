@@ -36,6 +36,28 @@ try {
 }
 
 // ==========================================
+// 3. GLOBAL EXPOSURE (Early Binding)
+// ==========================================
+// We expose functions to window here so they are available to inline HTML even in Module mode.
+window.init = () => init();
+window.showDetail = (id) => showDetail(id);
+window.openAuthModal = (mode) => openAuthModal(mode);
+window.closeAuthModal = () => closeAuthModal();
+window.toggleAuthMode = () => toggleAuthMode();
+window.logout = () => logout();
+window.editPostAction = (id) => editPostAction(id);
+window.deletePostAction = (id) => deletePostAction(id);
+window.openAccountModal = () => openAccountModal();
+window.closeAccountModal = () => closeAccountModal();
+window.openModal = (post) => openModal(post);
+window.closeModal = () => closeModal();
+window.deleteCategory = (id) => deleteCategory(id);
+window.renderUserManagement = () => renderUserManagement();
+window.updateUserRole = (u, r) => updateUserRole(u, r);
+window.deleteUser = (u) => deleteUser(u);
+window.renderAll = () => renderAll();
+
+// ==========================================
 // 3. DOM ELEMENTS (Initialized in init)
 // ==========================================
 var grid = null;
@@ -160,7 +182,8 @@ async function init() {
         console.warn('Supabase client failed to initialize.');
     }
 }
-window.init = init; // Expose to window
+// function init code...
+window.init = init; // Redundant but safe
 
 // ==========================================
 // 5. DATA FETCHING (SUPABASE)
@@ -283,7 +306,7 @@ window.logout = () => {
 // Auth Handlers
 let authMode = 'login';
 // Auth Handlers
-window.openAuthModal = (mode) => {
+function openAuthModal(mode) {
     const modal = document.getElementById('auth-modal');
     const form = document.getElementById('auth-form');
     if (!modal || !form) { console.error('Auth modal elements not found!'); return; }
@@ -296,12 +319,14 @@ window.openAuthModal = (mode) => {
     document.getElementById('auth-switch-text').textContent = mode === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?';
     document.getElementById('auth-switch-link').textContent = mode === 'login' ? '회원가입' : '로그인';
     form.reset();
-};
-window.closeAuthModal = () => {
+}
+function closeAuthModal() {
     const modal = document.getElementById('auth-modal');
     if (modal) modal.classList.remove('active');
-};
-window.toggleAuthMode = () => openAuthModal(authMode === 'login' ? 'signup' : 'login');
+}
+function toggleAuthMode() {
+    openAuthModal(authMode === 'login' ? 'signup' : 'login');
+}
 
 
 
