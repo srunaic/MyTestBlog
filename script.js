@@ -1414,27 +1414,14 @@ async function loadComments(postId) {
 function renderComments() {
     if (!commentList) return;
 
-    if (comments.length === 0) {
+    // Organise comments into threads
+    const roots = comments.filter(c => !c.parent_id);
+    const children = comments.filter(c => c.parent_id);
+
+    if (roots.length === 0) {
         commentList.innerHTML = '<p style="text-align:center; opacity:0.5; padding:20px;">첫 댓글을 남겨보세요!</p>';
     } else {
-        commentList.innerHTML = comments.map(c => {
-            const isOwner = currentUser && (currentUser.username === c.user_id);
-            return `
-                <div class="comment-item">
-                    <div class="comment-meta">
-                        <span class="comment-nickname">${c.nickname}</span>
-                        <span class="comment-date">${new Date(c.created_at || Date.now()).toLocaleString()}</span>
-                    </div>
-                    <div class="comment-content">${c.content.replace(/\n/g, '<br>')}</div>
-                    ${isOwner ? `
-                        <div class="comment-actions">
-                            <button onclick="requestEditComment(${c.id}, '${c.content.replace(/'/g, "\\'")}')">수정</button>
-                            <button onclick="deleteComment(${c.id})">삭제</button>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }).join('');
+        commentList.innerHTML = roots.map(c => renderCommentItem(c, children)).join('');
     }
 
     const formArea = document.getElementById('comment-form-area');
@@ -1445,16 +1432,72 @@ function renderComments() {
     }
 }
 
-async function submitComment() {
+function renderCommentItem(c, allChildren, depth = 0) {
+    const isOwner = currentUser && (currentUser.username === c.user_id);
+    const myChildren = allChildren.filter(child => child.parent_id == c.id);
+
+    return `
+        <div class="comment-item" style="margin-left: ${depth * 30}px; ${depth > 0 ? 'border-left: 2px solid var(--futuristic-accent);' : ''}">
+            <div class="comment-meta">
+                <div>
+                    <span class="comment-nickname">${c.nickname}</span>
+                    ${depth > 0 ? '<span class="reply-tag">REPLY</span>' : ''}
+                </div>
+                <span class="comment-date">${new Date(c.created_at || Date.now()).toLocaleString()}</span>
+            </div>
+            <div class="comment-content">${c.content.replace(/\n/g, '<br>')}</div>
+            <div class="comment-actions">
+                <button onclick="handleReaction(${c.id}, 'like')" class="reaction-btn">👍 ${c.likes || 0}</button>
+                <button onclick="handleReaction(${c.id}, 'dislike')" class="reaction-btn">👎 ${c.dislikes || 0}</button>
+                <button onclick="openReplyForm(${c.id})">답글 달기</button>
+                ${isOwner ? `
+                    <button onclick="requestEditComment(${c.id}, '${c.content.replace(/'/g, "\\'")}')">수정</button>
+                    <button onclick="deleteComment(${c.id})">삭제</button>
+                ` : ''}
+            </div>
+            <div id="reply-form-${c.id}" class="reply-form-container" style="display:none; margin-top:10px;">
+                <textarea id="reply-input-${c.id}" placeholder="답글을 입력하세요..." class="reply-textarea"></textarea>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:5px;">
+                    <button class="action-btn-sm" onclick="closeReplyForm(${c.id})">취소</button>
+                    <button class="action-btn-sm primary" onclick="submitComment(${c.id})">등록</button>
+                </div>
+            </div>
+            ${myChildren.map(child => renderCommentItem(child, allChildren, depth + 1)).join('')}
+        </div>
+    `;
+}
+
+window.openReplyForm = (id) => {
+    const el = document.getElementById(`reply-form-${id}`);
+    if (el) el.style.display = 'block';
+};
+
+window.closeReplyForm = (id) => {
+    const el = document.getElementById(`reply-form-${id}`);
+    if (el) el.style.display = 'none';
+};
+
+async function submitComment(parentId = null) {
     if (!currentUser) return alert('로그인이 필요합니다.');
-    const content = commentInput.value.trim();
+
+    let content = '';
+    // Normalize parentId if it's passed as an event (e.g. from a button click without params)
+    const pid = (parentId && typeof parentId === 'number') ? parentId : null;
+
+    if (pid) {
+        content = document.getElementById(`reply-input-${pid}`).value.trim();
+    } else {
+        content = commentInput.value.trim();
+    }
+
     if (!content) return alert('내용을 입력해주세요.');
 
     const payload = {
         post_id: activePostId,
         user_id: currentUser.username,
         nickname: currentUser.nickname,
-        content: content
+        content: content,
+        parent_id: pid
     };
 
     if (supabase) {
@@ -1462,11 +1505,39 @@ async function submitComment() {
         if (error) return alert('저장 실패: ' + error.message);
     } else {
         const local = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]');
-        local.push({ ...payload, id: Date.now(), created_at: new Date().toISOString() });
+        local.push({ ...payload, id: Date.now(), created_at: new Date().toISOString(), likes: 0, dislikes: 0 });
         localStorage.setItem('LOCAL_COMMENTS', JSON.stringify(local));
     }
 
-    commentInput.value = '';
+    if (pid) {
+        document.getElementById(`reply-input-${pid}`).value = '';
+        closeReplyForm(pid);
+    } else {
+        commentInput.value = '';
+    }
+
+    await loadComments(activePostId);
+}
+
+async function handleReaction(id, type) {
+    if (!currentUser) return alert('로그인이 필요합니다.');
+
+    const comment = comments.find(c => c.id == id);
+    if (!comment) return;
+
+    const column = type === 'like' ? 'likes' : 'dislikes';
+    const newVal = (comment[column] || 0) + 1;
+
+    if (supabase) {
+        const { error } = await supabase.from('comments').update({ [column]: newVal }).eq('id', id);
+        if (error) return alert('실패: ' + error.message);
+    } else {
+        const local = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]');
+        const idx = local.findIndex(c => c.id == id);
+        if (idx !== -1) local[idx][column] = (local[idx][column] || 0) + 1;
+        localStorage.setItem('LOCAL_COMMENTS', JSON.stringify(local));
+    }
+
     await loadComments(activePostId);
 }
 
