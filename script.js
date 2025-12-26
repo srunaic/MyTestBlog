@@ -1067,6 +1067,12 @@ function setupEventListeners() {
         if (!currentUser) { alert('로그인 후 이용 가능합니다.'); openAuthModal('login'); } else { openModal(); }
     };
     if (closeBtn) closeBtn.onclick = () => closeModal();
+
+    // Layout Switcher Listeners (Retry)
+    const pcBtn = document.getElementById('force-pc-btn');
+    const mobBtn = document.getElementById('force-mobile-btn');
+    if (pcBtn) pcBtn.onclick = () => toggleViewMode('pc');
+    if (mobBtn) mobBtn.onclick = () => toggleViewMode('mobile');
 }
 
 function openModal(post = null) {
