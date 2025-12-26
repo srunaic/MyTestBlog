@@ -183,7 +183,7 @@ function initializeDOMElements() {
     modal = document.getElementById('post-modal');
     form = document.getElementById('post-form');
     closeBtn = document.getElementById('close-modal');
-    userNav = document.getElementById('user-nav');
+    userNav = document.getElementById('hero-nav');
     authModal = document.getElementById('auth-modal');
     authForm = document.getElementById('auth-form');
     adminOnlyActions = document.getElementById('admin-only-actions');
