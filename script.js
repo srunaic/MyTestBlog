@@ -255,22 +255,28 @@ async function init() {
             console.log('Fetching data from Supabase...');
             await loadData();
 
-            // Check admin existence
-
-            console.log('Data loaded. Re-rendering...');
             checkSession();
             renderAll();
 
-            // Success indicator (OPTIONAL: Uncomment to show green light)
-            // statusDiv.innerHTML = '🟢 연결됨';
-            // statusDiv.style.backgroundColor = '#d4edda';
-            // statusDiv.style.display = 'block';
+            // Success indicator
+            statusDiv.innerHTML = '🟢 Cloud Mode (DB Connected)';
+            statusDiv.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+            statusDiv.style.color = '#00ff00';
+            statusDiv.style.border = '1px solid #00ff00';
+            statusDiv.style.display = 'block';
 
         } catch (err) {
             console.error('Data load error:', err);
+            statusDiv.innerHTML = '🔴 DB Load Error (Check RLS/Table)';
+            statusDiv.style.display = 'block';
         }
     } else {
         console.warn('Supabase client failed to initialize.');
+        statusDiv.innerHTML = '⚠️ Local Mode (Supabase Not Configured)';
+        statusDiv.style.backgroundColor = 'rgba(255, 255, 0, 0.1)';
+        statusDiv.style.color = '#ffff00';
+        statusDiv.style.border = '1px solid #ffff00';
+        statusDiv.style.display = 'block';
     }
 }
 window.init = init; // Redundant but safe
@@ -905,7 +911,27 @@ function setupEventListeners() {
                 await loadData();
                 openAuthModal('login');
             } else {
-                const user = users.find(user => user.username === u && user.password === p);
+                let user = null;
+                if (supabase) {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('username', u)
+                        .eq('password', p)
+                        .single();
+
+                    if (!error && data) {
+                        user = data;
+                    } else if (error) {
+                        console.warn('Supabase login error:', error.message);
+                    }
+                }
+
+                // Fallback to local users list if not found in Supabase or Supabase is offline
+                if (!user) {
+                    user = users.find(user => user.username === u && user.password === p);
+                }
+
                 if (user) {
                     currentUser = user;
                     SessionManager.saveAuth(user);
@@ -913,7 +939,7 @@ function setupEventListeners() {
                     checkSession();
                     renderAll();
                 } else {
-                    alert('아이디 또는 비밀번호가 틀렸습니다.');
+                    alert('아이디 또는 비밀번호가 틀렸습니다. (서버 연결 상태도 확인해 주세요.)');
                 }
             }
         };
