@@ -255,6 +255,27 @@
                 <div id="detail-view" style="display:none;">
                     <button id="back-to-list" class="back-btn">← 목록으로</button>
                     <div id="post-detail-content" class="detail-container"></div>
+                    
+                    <!-- Comment Section -->
+                    <div id="comment-section" class="comment-section">
+                        <h3>COMMENTS</h3>
+                        <div id="comment-list" class="comment-list">
+                            <!-- Comments rendered here -->
+                        </div>
+                        
+                        <div id="comment-form-area" class="comment-form-area" style="display:none;">
+                            <div class="emoticon-picker" id="emoticon-picker">
+                                <!-- Emoticons added here -->
+                            </div>
+                            <div class="comment-input-grid">
+                                <textarea id="comment-input" placeholder="댓글을 입력하세요..." rows="3"></textarea>
+                                <button id="submit-comment-btn" class="sm-btn">등록</button>
+                            </div>
+                        </div>
+                        <div id="comment-login-msg" style="text-align:center; padding:20px; color:#888;">
+                            댓글을 달려면 <a href="javascript:void(0)" onclick="openAuthModal('login')">로그인</a>이 필요합니다.
+                        </div>
+                    </div>
                 </div>
             </main>
 
@@ -371,6 +392,16 @@
                     <button type="button" class="cancel-btn" onclick="closeAccountModal()">CLOSE</button>
                 </div>
             </form>
+
+            <div class="account-activity" style="margin-top:30px;">
+                <div class="activity-tabs">
+                    <button class="tab-btn active" data-tab="my-posts">내가 쓴 글</button>
+                    <button class="tab-btn" data-tab="my-comments">댓글 단 글</button>
+                </div>
+                <div id="activity-content" class="activity-content">
+                    <!-- Activity items rendered here -->
+                </div>
+            </div>
         </div>
     </div>
     <!-- 3. Chatbot UI -->

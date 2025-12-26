@@ -120,6 +120,10 @@ window.removeSocialLink = (id) => removeSocialLink(id);
 window.renderAll = () => renderAll();
 window.toggleOracleInsights = () => toggleOracleInsights();
 window.toggleChat = () => toggleChat();
+window.submitComment = () => submitComment();
+window.deleteComment = (id) => deleteComment(id);
+window.editComment = (id, content) => editComment(id, content);
+window.renderUserActivity = (tab) => renderUserActivity(tab);
 
 // ==========================================
 // 3. DOM ELEMENTS (Initialized in init)
@@ -147,6 +151,19 @@ var catMgrSection = null;
 var addCatBtn = null;
 var newCatInput = null;
 var catMgrList = null;
+
+// Comments & Activity
+var commentList = null;
+var commentInput = null;
+var submitCommentBtn = null;
+var emojiPicker = null;
+var activityContent = null;
+var currentTab = 'my-posts';
+var activePostId = null;
+
+// Data
+var comments = [];
+const emoticons = ['😊', '😂', '😍', '🤔', '😎', '😭', '😮', '😡', '👍', '🔥', '✨', '🎨', '🚀', '🌈'];
 
 // Account
 var accountModal = null;
@@ -179,6 +196,12 @@ function initializeDOMElements() {
 
     accountModal = document.getElementById('account-modal');
     accountForm = document.getElementById('account-form');
+
+    commentList = document.getElementById('comment-list');
+    commentInput = document.getElementById('comment-input');
+    submitCommentBtn = document.getElementById('submit-comment-btn');
+    emojiPicker = document.getElementById('emoticon-picker');
+    activityContent = document.getElementById('activity-content');
 }
 
 // ==========================================
@@ -206,6 +229,12 @@ async function init() {
     renderAll();
     restoreDrafts();
     initChatbot();
+    initEmoticonPicker();
+    setupActivityTabs();
+
+    if (submitCommentBtn) {
+        submitCommentBtn.onclick = submitComment;
+    }
 
     // 4. Data Loading Status
     const statusDiv = document.createElement('div');
@@ -244,7 +273,6 @@ async function init() {
         console.warn('Supabase client failed to initialize.');
     }
 }
-// function init code...
 window.init = init; // Redundant but safe
 
 // ==========================================
@@ -702,6 +730,9 @@ function showDetail(id) {
             ${canManage ? `<button onclick="editPostAction(${post.id})" class="action-btn">내용 수정</button><button onclick="deletePostAction(${post.id})" class="action-btn">내용 삭제</button>` : ''}
         </div>
     `;
+
+    // Load and render comments
+    loadComments(id);
 }
 window.showDetail = showDetail;
 
@@ -1073,6 +1104,9 @@ window.openAccountModal = () => {
     document.getElementById('acc-nickname').value = currentUser.nickname;
     document.getElementById('acc-username').value = currentUser.username;
     document.getElementById('acc-password').value = currentUser.password;
+
+    // Initial activity render
+    renderUserActivity();
 };
 window.closeAccountModal = () => accountModal.classList.remove('active');
 
@@ -1323,6 +1357,173 @@ async function toggleOracleInsights() {
         }
     } else {
         view.style.display = 'none';
+    }
+}
+
+// ==========================================
+// 13. COMMENT SYSTEM
+// ==========================================
+function initEmoticonPicker() {
+    if (!emojiPicker) return;
+    emojiPicker.innerHTML = emoticons.map(e => `<span class="emoticon-item" onclick="addEmoji('${e}')">${e}</span>`).join('');
+}
+
+window.addEmoji = (emoji) => {
+    if (commentInput) commentInput.value += emoji;
+}
+
+async function loadComments(postId) {
+    activePostId = postId;
+    if (supabase) {
+        const { data, error } = await supabase.from('comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
+        if (!error) comments = data || [];
+        else console.error('Comment fetch error:', error.message);
+    } else {
+        const local = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]');
+        comments = local.filter(c => c.post_id == postId);
+    }
+    renderComments();
+}
+
+function renderComments() {
+    if (!commentList) return;
+
+    if (comments.length === 0) {
+        commentList.innerHTML = '<p style="text-align:center; opacity:0.5; padding:20px;">첫 댓글을 남겨보세요!</p>';
+    } else {
+        commentList.innerHTML = comments.map(c => {
+            const isOwner = currentUser && (currentUser.username === c.user_id);
+            return `
+                <div class="comment-item">
+                    <div class="comment-meta">
+                        <span class="comment-nickname">${c.nickname}</span>
+                        <span class="comment-date">${new Date(c.created_at || Date.now()).toLocaleString()}</span>
+                    </div>
+                    <div class="comment-content">${c.content.replace(/\n/g, '<br>')}</div>
+                    ${isOwner ? `
+                        <div class="comment-actions">
+                            <button onclick="requestEditComment(${c.id}, '${c.content.replace(/'/g, "\\'")}')">수정</button>
+                            <button onclick="deleteComment(${c.id})">삭제</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    const formArea = document.getElementById('comment-form-area');
+    const loginMsg = document.getElementById('comment-login-msg');
+    if (formArea && loginMsg) {
+        formArea.style.display = currentUser ? 'block' : 'none';
+        loginMsg.style.display = currentUser ? 'none' : 'block';
+    }
+}
+
+async function submitComment() {
+    if (!currentUser) return alert('로그인이 필요합니다.');
+    const content = commentInput.value.trim();
+    if (!content) return alert('내용을 입력해주세요.');
+
+    const payload = {
+        post_id: activePostId,
+        user_id: currentUser.username,
+        nickname: currentUser.nickname,
+        content: content
+    };
+
+    if (supabase) {
+        const { error } = await supabase.from('comments').insert([payload]);
+        if (error) return alert('저장 실패: ' + error.message);
+    } else {
+        const local = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]');
+        local.push({ ...payload, id: Date.now(), created_at: new Date().toISOString() });
+        localStorage.setItem('LOCAL_COMMENTS', JSON.stringify(local));
+    }
+
+    commentInput.value = '';
+    await loadComments(activePostId);
+}
+
+window.requestEditComment = (id, oldContent) => {
+    const newContent = prompt('수정할 내용을 입력하세요:', oldContent);
+    if (newContent && newContent !== oldContent) {
+        editComment(id, newContent);
+    }
+}
+
+async function editComment(id, content) {
+    if (supabase) {
+        const { error } = await supabase.from('comments').update({ content }).eq('id', id);
+        if (error) return alert('수정 실패: ' + error.message);
+    } else {
+        const local = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]');
+        const idx = local.findIndex(c => c.id == id);
+        if (idx !== -1) local[idx].content = content;
+        localStorage.setItem('LOCAL_COMMENTS', JSON.stringify(local));
+    }
+    await loadComments(activePostId);
+}
+
+async function deleteComment(id) {
+    if (!confirm('댓글을 삭제하시겠습니까?')) return;
+    if (supabase) {
+        const { error } = await supabase.from('comments').delete().eq('id', id);
+        if (error) return alert('삭제 실패: ' + error.message);
+    } else {
+        const local = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]');
+        const filtered = local.filter(c => c.id != id);
+        localStorage.setItem('LOCAL_COMMENTS', JSON.stringify(filtered));
+    }
+    await loadComments(activePostId);
+}
+
+// ==========================================
+// 14. ACCOUNT ACTIVITY
+// ==========================================
+function setupActivityTabs() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(t => {
+        t.onclick = () => {
+            tabs.forEach(item => item.classList.remove('active'));
+            t.classList.add('active');
+            currentTab = t.dataset.tab;
+            renderUserActivity();
+        };
+    });
+}
+
+async function renderUserActivity() {
+    if (!currentUser || !activityContent) return;
+    activityContent.innerHTML = '<p style="padding:10px; opacity:0.5;">분석 중...</p>';
+
+    let items = [];
+    if (currentTab === 'my-posts') {
+        items = posts.filter(p => p.author === currentUser.nickname);
+        activityContent.innerHTML = items.length ? items.map(p => `
+            <div class="activity-item" onclick="closeAccountModal(); showDetail(${p.id});">
+                <h4>${p.title}</h4>
+                <p>${p.date} | 조회 ${p.views || 0}</p>
+            </div>
+        `).join('') : '<p style="padding:10px; opacity:0.3;">작성한 글이 없습니다.</p>';
+    } else {
+        let allComments = [];
+        if (supabase) {
+            const { data } = await supabase.from('comments').select('*').eq('user_id', currentUser.username);
+            allComments = data || [];
+        } else {
+            allComments = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]').filter(c => c.user_id === currentUser.username);
+        }
+
+        // Get unique post IDs from comments
+        const commentedPostIds = [...new Set(allComments.map(c => c.post_id))];
+        const commentedPosts = posts.filter(p => commentedPostIds.includes(p.id));
+
+        activityContent.innerHTML = commentedPosts.length ? commentedPosts.map(p => `
+            <div class="activity-item" onclick="closeAccountModal(); showDetail(${p.id});">
+                <h4>${p.title}</h4>
+                <p>${p.author}의 글에 댓글을 남겼습니다.</p>
+            </div>
+        `).join('') : '<p style="padding:10px; opacity:0.3;">댓글을 단 글이 없습니다.</p>';
     }
 }
 
