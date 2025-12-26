@@ -1847,6 +1847,13 @@ body {
     }
 }
 
+/* Force show even in PC mode on mobile */
+body.is-pc-forced .layout-switcher {
+    display: flex;
+    transform: translateX(-50%) scale(1.5); /* Scale up to remain clickable on small screen */
+    bottom: 40px;
+}
+
 .switch-btn {
     background: none;
     border: none;

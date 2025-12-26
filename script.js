@@ -220,12 +220,14 @@ function applyViewMode() {
         if (mobBtn) mobBtn.classList.remove('active');
         document.body.style.width = '1400px';
         document.body.style.overflowX = 'auto';
+        document.body.classList.add('is-pc-forced');
     } else {
         if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
         if (pcBtn) pcBtn.classList.remove('active');
         if (mobBtn) mobBtn.classList.add('active');
         document.body.style.width = '100%';
         document.body.style.overflowX = 'hidden';
+        document.body.classList.remove('is-pc-forced');
     }
 }
 
