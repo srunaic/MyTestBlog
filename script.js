@@ -266,10 +266,15 @@ async function init() {
             statusDiv.style.border = '1px solid #00ff00';
             statusDiv.style.display = 'block';
 
+            statusDiv.style.display = 'block';
+
+            updateSubscriberCount();
+
         } catch (err) {
             console.error('Data load error:', err);
             statusDiv.innerHTML = '🔴 DB Load Error (Check RLS/Table)';
             statusDiv.style.display = 'block';
+            updateSubscriberCount();
         }
     } else {
         console.warn('Supabase client failed to initialize.');
@@ -278,6 +283,30 @@ async function init() {
         statusDiv.style.color = '#ffff00';
         statusDiv.style.border = '1px solid #ffff00';
         statusDiv.style.display = 'block';
+        updateSubscriberCount();
+    }
+}
+
+async function updateSubscriberCount() {
+    const subscriberCountEl = document.getElementById('subscriber-count');
+    if (!subscriberCountEl) return;
+
+    if (supabase) {
+        try {
+            const { count, error } = await supabase
+                .from('users')
+                .select('*', { count: 'exact', head: true });
+
+            if (!error && count !== null) {
+                subscriberCountEl.innerText = count.toLocaleString();
+            }
+        } catch (e) {
+            console.warn('Failed to fetch subscriber count:', e);
+        }
+    } else {
+        // Fallback to local storage users array if local mode
+        const localUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        subscriberCountEl.innerText = localUsers.length.toLocaleString();
     }
 }
 window.init = init; // Redundant but safe

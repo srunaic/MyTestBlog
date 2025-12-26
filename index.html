@@ -162,6 +162,10 @@
             <div class="header-content">
                 <h1 class="header-title">NaNoDoroshi</h1>
                 <p class="header-subtitle">디지털 아티스트 & AI 연구소</p>
+                <div id="subscriber-stats" class="header-stats">
+                    <span class="stats-label">SUBSCRIBERS:</span>
+                    <span id="subscriber-count" class="stats-value">0</span>
+                </div>
             </div>
             <nav class="top-nav">
                 <div class="nav-left">
@@ -255,14 +259,14 @@
                 <div id="detail-view" style="display:none;">
                     <button id="back-to-list" class="back-btn">← 목록으로</button>
                     <div id="post-detail-content" class="detail-container"></div>
-                    
+
                     <!-- Comment Section -->
                     <div id="comment-section" class="comment-section">
                         <h3>COMMENTS</h3>
                         <div id="comment-list" class="comment-list">
                             <!-- Comments rendered here -->
                         </div>
-                        
+
                         <div id="comment-form-area" class="comment-form-area" style="display:none;">
                             <div class="emoticon-picker" id="emoticon-picker">
                                 <!-- Emoticons added here -->
