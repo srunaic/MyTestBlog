@@ -259,30 +259,34 @@ async function init() {
             checkSession();
             renderAll();
 
-            // Success indicator
+            // Success indicator (Simplified & Admin Only)
             statusDiv.innerHTML = '🟢 Cloud Mode (DB Connected)';
             statusDiv.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
             statusDiv.style.color = '#00ff00';
             statusDiv.style.border = '1px solid #00ff00';
-            statusDiv.style.display = 'block';
 
-            statusDiv.style.display = 'block';
+            // Show status indicator ONLY for admins
+            if (isAdminMode) {
+                statusDiv.style.display = 'block';
+            } else {
+                statusDiv.style.display = 'none';
+            }
 
             updateSubscriberCount();
 
         } catch (err) {
             console.error('Data load error:', err);
-            statusDiv.innerHTML = '🔴 DB Load Error (Check RLS/Table)';
-            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '🔴 DB Load Error';
+            if (isAdminMode) statusDiv.style.display = 'block';
             updateSubscriberCount();
         }
     } else {
         console.warn('Supabase client failed to initialize.');
-        statusDiv.innerHTML = '⚠️ Local Mode (Supabase Not Configured)';
+        statusDiv.innerHTML = '⚠️ Local Mode';
         statusDiv.style.backgroundColor = 'rgba(255, 255, 0, 0.1)';
         statusDiv.style.color = '#ffff00';
         statusDiv.style.border = '1px solid #ffff00';
-        statusDiv.style.display = 'block';
+        if (isAdminMode) statusDiv.style.display = 'block';
         updateSubscriberCount();
     }
 }
@@ -383,8 +387,10 @@ function updateUserNav() {
 
     if (currentUser) {
         userNav.innerHTML = `
-            <span class="user-info-text">${currentUser.nickname}님</span> | 
-            <a href="javascript:void(0)" onclick="openAccountModal()" class="user-action-link">계정 관리</a> | 
+            <a href="javascript:void(0)" onclick="renderAll()" class="active">기록소</a>
+            <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">일지</a>
+            <span class="user-info-text">${currentUser.nickname}님</span>
+            <a href="javascript:void(0)" onclick="openAccountModal()" class="user-action-link">계정 관리</a>
             <a href="javascript:void(0)" onclick="logout()" class="logout-link">로그아웃</a>
         `;
         if (adminOnlyActions) adminOnlyActions.style.display = currentUser.role === 'admin' ? 'block' : 'none';
@@ -393,7 +399,9 @@ function updateUserNav() {
         if (userMgrBtn) userMgrBtn.style.display = isAdminMode ? 'block' : 'none';
     } else {
         userNav.innerHTML = `
-            <a href="javascript:void(0)" onclick="openAuthModal('login')">로그인</a> | 
+            <a href="javascript:void(0)" onclick="renderAll()" class="active">기록소</a>
+            <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">일지</a>
+            <a href="javascript:void(0)" onclick="openAuthModal('login')">로그인</a>
             <a href="javascript:void(0)" onclick="openAuthModal('signup')">회원가입</a>
         `;
         if (adminOnlyActions) adminOnlyActions.style.display = 'none';
@@ -402,6 +410,13 @@ function updateUserNav() {
         if (userMgrBtn) userMgrBtn.style.display = 'none';
         isAdminMode = false;
     }
+
+    // After updating nav, check if we should show the admin status indicator
+    const statusIndicator = document.getElementById('db-status-indicator');
+    if (statusIndicator) {
+        statusIndicator.style.display = isAdminMode ? 'block' : 'none';
+    }
+
     renderPosts();
     updateBulkUI();
 }
