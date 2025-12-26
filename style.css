@@ -279,7 +279,8 @@ body {
     color: var(--futuristic-muted);
 }
 
-.best-list-grid, .best-grid {
+.best-list-grid,
+.best-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
@@ -291,7 +292,8 @@ body {
     backdrop-filter: blur(var(--card-blur));
     padding: 30px 25px;
     border: 1px solid var(--futuristic-border);
-    position: relative; /* Crucial for rank-badge containment */
+    position: relative;
+    /* Crucial for rank-badge containment */
     transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     border-radius: 15px;
     overflow: hidden;
@@ -1198,16 +1200,18 @@ body {
     /* Force Single Column & Card Style */
     .content-area,
     .title-list-grid,
-    .best-list-grid {
+    .best-list-grid,
+    .best-grid {
         grid-template-columns: 1fr !important;
         width: 100% !important;
-        gap: 25px !important;
+        gap: 20px !important;
     }
 
     .title-item,
     .blog-card {
-        padding: 30px 25px;
+        padding: 25px 20px;
         flex-direction: column;
+        position: relative;
         border-radius: 20px;
         background: linear-gradient(145deg, rgba(20, 20, 40, 0.6), rgba(10, 10, 30, 0.4));
         border: 1px solid var(--futuristic-border);
@@ -1217,8 +1221,17 @@ body {
 
     .title-item h2,
     .blog-card h2 {
-        font-size: 1.6rem;
-        margin-top: 10px;
+        font-size: 1.4rem;
+        margin-top: 15px;
+        line-height: 1.4;
+        word-break: keep-all;
+    }
+
+    .rank-badge {
+        top: 15px;
+        right: 20px;
+        font-size: 1.2rem;
+        opacity: 0.3;
     }
 
     .item-meta {

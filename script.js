@@ -383,7 +383,10 @@ function restoreDrafts() {
 }
 
 function updateUserNav() {
-    if (!userNav) return;
+    if (!userNav) {
+        userNav = document.getElementById('hero-nav');
+        if (!userNav) return;
+    }
 
     if (currentUser) {
         userNav.innerHTML = `
