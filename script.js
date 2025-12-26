@@ -1552,6 +1552,11 @@ window.requestEditComment = (id, oldContent) => {
 }
 
 async function editComment(id, content) {
+    const comment = comments.find(c => c.id == id);
+    if (!comment || !currentUser || comment.user_id !== currentUser.username) {
+        return alert('본인의 댓글만 수정할 수 있습니다.');
+    }
+
     if (supabase) {
         const { error } = await supabase.from('comments').update({ content }).eq('id', id);
         if (error) return alert('수정 실패: ' + error.message);
@@ -1565,6 +1570,11 @@ async function editComment(id, content) {
 }
 
 async function deleteComment(id) {
+    const comment = comments.find(c => c.id == id);
+    if (!comment || !currentUser || comment.user_id !== currentUser.username) {
+        return alert('본인의 댓글만 삭제할 수 있습니다.');
+    }
+
     if (!confirm('댓글을 삭제하시겠습니까?')) return;
     if (supabase) {
         const { error } = await supabase.from('comments').delete().eq('id', id);
