@@ -1047,22 +1047,53 @@ body {
 
 @media screen and (max-width: 768px) {
     :root {
-        --header-height: 300px;
+        --header-height: auto;
+    }
+
+    .modern-header {
+        padding: 50px 20px 100px 20px;
+        height: auto;
+        min-height: 400px;
     }
 
     .header-title {
         font-size: 3rem;
+        letter-spacing: -2px;
     }
 
     .header-subtitle {
         font-size: 0.8rem;
         letter-spacing: 5px;
+        margin-bottom: 30px;
+    }
+
+    .header-stats {
+        position: relative;
+        padding: 10px 20px;
+        background: rgba(0, 242, 255, 0.1);
+        backdrop-filter: blur(5px);
+    }
+
+    .stats-value {
+        font-size: 1.2rem;
     }
 
     .main-layout {
         display: flex;
         flex-direction: column;
         padding: 30px 15px;
+    }
+
+    .top-nav {
+        padding: 1rem 5%;
+        position: relative;
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .nav-left, .nav-right {
+        justify-content: center;
     }
 
     /* Force Single Column */

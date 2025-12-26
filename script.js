@@ -512,11 +512,13 @@ function renderBestPosts() {
             showDetail(post.id);
             updateUserIntel({ last_viewed_post: post.id, last_category: post.category });
         };
+        const fullTitle = post.title || '';
+        const truncatedTitle = fullTitle.length > 12 ? fullTitle.substring(0, 12) + '...' : fullTitle;
         card.innerHTML = `
             <div class="rank-badge">0${index + 1}</div>
-            <div onclick="showDetail(${post.id})" style="cursor:pointer;">
+            <div onclick="showDetail(${post.id})" style="cursor:pointer;" title="${fullTitle}">
                 <span class="cat-tag">${catName}</span>
-                <h2>${post.title}</h2>
+                <h2>${truncatedTitle}</h2>
                 <div class="item-meta">
                     <span>${post.author}</span>
                     <span>${post.date}</span>
@@ -658,9 +660,9 @@ function renderPosts() {
         item.innerHTML = `
             ${isAdminMode ? `<input type="checkbox" class="item-checkbox" ${isSelected ? 'checked' : ''} data-id="${post.id}">` : ''}
             <div class="title-item-inner">
-                <div onclick="showDetail(${post.id}); updateUserIntel({ last_viewed_post: ${post.id}, last_category: '${post.category}' });" style="cursor:pointer;">
+                <div onclick="showDetail(${post.id}); updateUserIntel({ last_viewed_post: ${post.id}, last_category: '${post.category}' });" style="cursor:pointer;" title="${post.title}">
                     <span class="cat-tag">${catName}</span>
-                    <h2>${post.title}</h2>
+                    <h2>${post.title.length > 12 ? post.title.substring(0, 12) + '...' : post.title}</h2>
                     <div class="item-meta">
                         <span>${post.author}</span>
                         <span>${post.date}</span>
