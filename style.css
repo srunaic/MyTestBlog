@@ -15,6 +15,7 @@
     --futuristic-glass: rgba(20, 20, 40, 0.6);
     --header-height: 550px;
     --card-blur: 20px;
+    --comment-indent: 30px;
 }
 
 * {
@@ -1458,6 +1459,20 @@ body {
     .header-title {
         font-size: 3rem;
     }
+
+    /* Mobile Comment Optimization */
+    :root {
+        --comment-indent: 12px;
+    }
+
+    .comment-item {
+        padding: 15px 10px;
+        border-left-width: 3px !important;
+    }
+
+    .comment-content {
+        font-size: 0.9rem;
+    }
 }
 
 /* Oracle Help Chatbot Styling */
@@ -1630,7 +1645,9 @@ body {
 .comment-content {
     font-size: 0.95rem;
     color: var(--futuristic-text);
-    word-break: break-all;
+    word-break: break-word;
+    /* Better than break-all for readability */
+    line-height: 1.5;
 }
 
 .comment-actions {

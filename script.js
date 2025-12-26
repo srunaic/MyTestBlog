@@ -1487,7 +1487,7 @@ function renderCommentItem(c, allChildren, depth = 0) {
     const myChildren = allChildren.filter(child => child.parent_id == c.id);
 
     return `
-        <div class="comment-item" style="margin-left: ${depth * 30}px; ${depth > 0 ? 'border-left: 2px solid var(--futuristic-accent);' : ''}">
+        <div class="comment-item" style="margin-left: calc(var(--comment-indent) * ${depth}); ${depth > 0 ? 'border-left: 2px solid var(--futuristic-accent);' : ''}">
             <div class="comment-meta">
                 <div>
                     <span class="comment-nickname">${c.nickname}</span>
