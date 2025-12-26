@@ -1824,3 +1824,48 @@ body {
     font-size: 0.8rem;
     color: var(--futuristic-muted);
 }
+/* Layout Switcher Styling */
+.layout-switcher {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 30, 0.8);
+    backdrop-filter: blur(20px);
+    padding: 8px;
+    border-radius: 50px;
+    border: 1px solid var(--futuristic-accent);
+    display: none;
+    gap: 5px;
+    z-index: 9999;
+    box-shadow: 0 5px 30px rgba(0, 242, 255, 0.2);
+}
+
+@media screen and (max-width: 1024px) {
+    .layout-switcher {
+        display: flex;
+    }
+}
+
+.switch-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 40px;
+    color: var(--futuristic-text);
+    font-size: 0.75rem;
+    font-weight: 950;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s;
+    white-space: nowrap;
+}
+
+.switch-btn.active {
+    background: var(--futuristic-accent);
+    color: var(--futuristic-bg);
+}
+
+.switch-btn:not(.active):hover {
+    background: rgba(255, 255, 255, 0.05);
+}

@@ -208,8 +208,37 @@ function initializeDOMElements() {
 // ==========================================
 // 4. INITIALIZATION
 // ==========================================
+function applyViewMode() {
+    const savedMode = localStorage.getItem('VIEW_MODE') || 'mobile';
+    const pcBtn = document.getElementById('force-pc-btn');
+    const mobBtn = document.getElementById('force-mobile-btn');
+    const viewport = document.querySelector('meta[name="viewport"]');
+
+    if (savedMode === 'pc') {
+        if (viewport) viewport.setAttribute('content', 'width=1400');
+        if (pcBtn) pcBtn.classList.add('active');
+        if (mobBtn) mobBtn.classList.remove('active');
+        document.body.style.width = '1400px';
+        document.body.style.overflowX = 'auto';
+    } else {
+        if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+        if (pcBtn) pcBtn.classList.remove('active');
+        if (mobBtn) mobBtn.classList.add('active');
+        document.body.style.width = '100%';
+        document.body.style.overflowX = 'hidden';
+    }
+}
+
+window.toggleViewMode = (mode) => {
+    localStorage.setItem('VIEW_MODE', mode);
+    applyViewMode();
+    // Force a small delay then reload to ensure browser applies viewport change cleanly
+    setTimeout(() => window.location.reload(), 100);
+};
+
 async function init() {
     console.log('Initializing Blog...');
+    applyViewMode(); // Apply saved mode immediately
 
     // 1. Initialize Globals
     if (!posts) posts = [];
