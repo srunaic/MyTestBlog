@@ -47,8 +47,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Deploy the obfuscated code from the 'deploy' directory
-          path: "./deploy"
+          # Deploy the obfuscated code from the 'public' directory
+          path: "./public"
           
       - name: Deploy to GitHub Pages
         id: deployment
