@@ -120,9 +120,10 @@ window.removeSocialLink = (id) => removeSocialLink(id);
 window.renderAll = () => renderAll();
 window.toggleOracleInsights = () => toggleOracleInsights();
 window.toggleChat = () => toggleChat();
-window.submitComment = () => submitComment();
+window.submitComment = (pid) => submitComment(pid);
 window.deleteComment = (id) => deleteComment(id);
 window.editComment = (id, content) => editComment(id, content);
+window.handleReaction = (id, type) => handleReaction(id, type);
 window.renderUserActivity = (tab) => renderUserActivity(tab);
 
 // ==========================================
@@ -1477,17 +1478,18 @@ window.closeReplyForm = (id) => {
     if (el) el.style.display = 'none';
 };
 
-async function submitComment(parentId = null) {
+async function submitComment(arg = null) {
     if (!currentUser) return alert('로그인이 필요합니다.');
 
     let content = '';
-    // Normalize parentId if it's passed as an event (e.g. from a button click without params)
-    const pid = (parentId && typeof parentId === 'number') ? parentId : null;
+    // Normalize pid: ignore if it's an event object, handle number or string IDs
+    let pid = (arg && (typeof arg === 'number' || typeof arg === 'string')) ? arg : null;
 
     if (pid) {
-        content = document.getElementById(`reply-input-${pid}`).value.trim();
+        const replyInput = document.getElementById(`reply-input-${pid}`);
+        if (replyInput) content = replyInput.value.trim();
     } else {
-        content = commentInput.value.trim();
+        if (commentInput) content = commentInput.value.trim();
     }
 
     if (!content) return alert('내용을 입력해주세요.');
@@ -1510,10 +1512,11 @@ async function submitComment(parentId = null) {
     }
 
     if (pid) {
-        document.getElementById(`reply-input-${pid}`).value = '';
+        const replyInput = document.getElementById(`reply-input-${pid}`);
+        if (replyInput) replyInput.value = '';
         closeReplyForm(pid);
     } else {
-        commentInput.value = '';
+        if (commentInput) commentInput.value = '';
     }
 
     await loadComments(activePostId);
