@@ -23,7 +23,9 @@
 
 #anticode-container {
     display: flex;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
+    /* Dynamic viewport for mobile keyboards */
     width: 100vw;
 }
 
@@ -686,7 +688,9 @@
 
     /* Adjust main content */
     .anticode-chat-area {
-        width: 100%;
+        flex: 1;
+        min-height: 0;
+        /* Important for flex child overflow */
     }
 
     /* Header adjustments */
@@ -712,12 +716,72 @@
         gap: 4px !important;
     }
 
+    .header-title-group {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+    }
+
     #current-channel-name {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+        font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 100%;
+        max-width: 120px;
+    }
+
+    .header-category-label {
+        font-size: 0.65rem;
+        color: var(--accent);
+        opacity: 0.8;
+    }
+
+    /* Sidebar Interaction Refactor */
+    .channel-group-item {
+        margin: 8px 0;
+        padding: 0 8px;
+    }
+
+    .channel-name-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 4px;
+        pointer-events: none;
+        /* Just a label */
+    }
+
+    .channel-sub-link {
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+        border: 1px solid transparent;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .channel-sub-link:hover {
+        background: rgba(0, 242, 255, 0.05);
+        border-color: var(--accent);
+    }
+
+    .channel-group-item.active .channel-sub-link {
+        background: rgba(0, 242, 255, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .sub-link-icon {
+        font-size: 0.85rem;
+    }
+
+    /* Dropdown danger item */
+    .menu-item-danger {
+        color: #ff4d4d !important;
+        font-weight: bold !important;
     }
 
     /* Back link smaller for space */

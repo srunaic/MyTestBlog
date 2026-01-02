@@ -28,27 +28,30 @@ class Channel {
         this.order = data.order || 0;
     }
 
-    renderHeader(isOwner) {
+    renderHeader() {
         const hash = this.type === 'secret' ? '🔒' : '#';
-        let deleteBtn = '';
-        if (isOwner) {
-            deleteBtn = `<button id="delete-channel-btn" class="delete-channel-btn">채널 삭제</button>`;
-        }
+        const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
         return `
             <div class="header-left">
                 <span class="channel-hash">${hash}</span>
-                <h1 id="current-channel-name">${this.name}</h1>
-                ${deleteBtn}
+                <div class="header-title-group">
+                    <h1 id="current-channel-name">${this.name}</h1>
+                    <span class="header-category-label">${categoryLabel}</span>
+                </div>
             </div>
         `;
     }
 
     renderSidebarItem(isActive) {
-        const hash = this.type === 'secret' ? '🔒' : '# ';
+        const hash = this.type === 'secret' ? '🔒' : '#';
+        const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
         return `
-            <li class="channel-item ${isActive ? 'active' : ''}" data-id="${this.id}">
-                ${hash}${this.name}
-            </li>
+            <div class="channel-group-item ${isActive ? 'active' : ''}">
+                <div class="channel-name-label">${hash} ${this.name}</div>
+                <div class="channel-sub-link" data-id="${this.id}">
+                    <span class="sub-link-icon">${categoryLabel}</span>
+                </div>
+            </div>
         `;
     }
 
@@ -259,14 +262,14 @@ class AntiCodeApp {
                     <span class="group-label">${CATEGORY_NAMES[catId]}</span>
                     ${catId === 'chat' ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
                 </div>
-                <ul class="sidebar-list">
+                <div class="sidebar-list">
                     ${chans.map(c => c.renderSidebarItem(this.activeChannel && c.id === this.activeChannel.id)).join('')}
-                </ul>
+                </div>
             `;
             container.appendChild(group);
         });
 
-        container.querySelectorAll('.channel-item').forEach(item => {
+        container.querySelectorAll('.channel-sub-link').forEach(item => {
             item.onclick = () => this.handleChannelSwitch(item.dataset.id);
         });
         const createBtn = document.getElementById('open-create-channel-cat');
@@ -299,28 +302,30 @@ class AntiCodeApp {
         this.unlockedChannels.add(channelId);
         this.renderChannels();
 
-        // Update header info safely to preserve mobile buttons
-        const nameEl = document.getElementById('current-channel-name');
-        if (nameEl) nameEl.textContent = channel.name;
+        // Update header info safely
+        const headerLeft = document.querySelector('.header-left');
+        if (headerLeft) {
+            headerLeft.outerHTML = channel.renderHeader();
+        }
 
-        const hashEl = document.querySelector('.channel-hash');
-        if (hashEl) hashEl.textContent = channel.type === 'secret' ? '🔒' : '#';
+        // Handle delete button in the "More Options" dropdown
+        const dropdown = document.getElementById('mobile-dropdown-menu');
+        let delBtn = document.getElementById('menu-delete-channel');
 
-        // Handle delete button for owners
-        let delBtn = document.getElementById('delete-channel-btn');
         if (channel.owner_id === this.currentUser.username) {
-            if (!delBtn) {
-                const left = document.querySelector('.header-left');
-                if (left) {
-                    const btn = document.createElement('button');
-                    btn.id = 'delete-channel-btn';
-                    btn.className = 'delete-channel-btn';
-                    btn.textContent = '채널 삭제';
-                    left.appendChild(btn);
-                    delBtn = btn;
-                }
+            if (!delBtn && dropdown) {
+                const btn = document.createElement('button');
+                btn.id = 'menu-delete-channel';
+                btn.className = 'menu-item-danger';
+                btn.textContent = '❌ 채널 삭제';
+                dropdown.appendChild(btn);
+                delBtn = btn;
             }
-            if (delBtn) delBtn.onclick = () => this.deleteChannel(channel.id);
+            if (delBtn) delBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (dropdown) dropdown.style.display = 'none';
+                this.deleteChannel(channel.id);
+            };
         } else if (delBtn) {
             delBtn.remove();
         }
