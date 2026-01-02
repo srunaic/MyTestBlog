@@ -614,3 +614,98 @@
 ::-webkit-scrollbar-thumb:hover {
     background: #121214;
 }
+
+/* Mobile Specific Styles & Media Queries */
+.mobile-only-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-right: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .mobile-only-btn {
+        display: flex;
+    }
+
+    #anticode-container {
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Sidebars as absolute drawers */
+    .anticode-sidebar {
+        position: absolute;
+        left: -100%;
+        top: 0;
+        z-index: 1000;
+        width: 280px;
+        height: 100%;
+        transition: left 0.3s ease;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .anticode-sidebar.open {
+        left: 0;
+    }
+
+    .anticode-members {
+        position: absolute;
+        right: -100%;
+        top: 0;
+        z-index: 1000;
+        width: 280px;
+        height: 100%;
+        transition: right 0.3s ease;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .anticode-members.open {
+        right: 0;
+    }
+
+    /* Adjust main content */
+    .anticode-chat-area {
+        width: 100%;
+    }
+
+    /* Header adjustments */
+    .chat-header {
+        padding: 0 15px;
+    }
+
+    #current-channel-name {
+        font-size: 1rem;
+    }
+
+    /* Back link smaller for space */
+    .back-link {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+    }
+
+    /* Chat message padding */
+    .message-container {
+        padding: 10px;
+    }
+
+    .message-item {
+        gap: 10px;
+    }
+
+    /* Modals smaller */
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+
+    /* Input padding */
+    .chat-input-container {
+        padding: 0 10px 10px 10px;
+    }
+}

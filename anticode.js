@@ -284,6 +284,11 @@ class AntiCodeApp {
             document.getElementById('entry-password-input').focus();
             return;
         }
+
+        // Close sidebar on mobile after switch
+        document.querySelector('.anticode-sidebar').classList.remove('open');
+        document.querySelector('.anticode-members').classList.remove('open');
+
         await this.switchChannel(channelId);
     }
 
@@ -520,19 +525,40 @@ class AntiCodeApp {
         document.addEventListener('click', () => { emojiPicker.style.display = 'none'; });
         emojiPicker.querySelectorAll('.emoji-item').forEach(em => {
             em.onclick = (e) => {
-                e.stopPropagation();
                 input.value += em.innerText;
-                emojiPicker.style.display = 'none';
                 input.focus();
             };
         });
 
+        // Mobile Toggles
+        const sidebar = document.querySelector('.anticode-sidebar');
+        const membersSide = document.querySelector('.anticode-members');
+
+        document.getElementById('mobile-menu-toggle').onclick = (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('open');
+            membersSide.classList.remove('open');
+        };
+
+        document.getElementById('mobile-members-toggle').onclick = (e) => {
+            e.stopPropagation();
+            membersSide.classList.toggle('open');
+            sidebar.classList.remove('open');
+        };
+
+        // Close sidebar when clicking main content
+        document.querySelector('.anticode-chat-area').onclick = () => {
+            sidebar.classList.remove('open');
+            membersSide.classList.remove('open');
+        };
         // Channel Modal
         const modal = document.getElementById('create-channel-modal');
         const closeBtn = document.getElementById('close-channel-modal');
         const form = document.getElementById('create-channel-form');
         const typeSelect = document.getElementById('new-channel-type');
         const passGroup = document.getElementById('password-field-group');
+
+        document.getElementById('open-create-channel').onclick = () => modal.style.display = 'flex';
         typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
         closeBtn.onclick = () => modal.style.display = 'none';
         form.onsubmit = async (e) => {
