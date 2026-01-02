@@ -70,6 +70,7 @@ class AntiCodeApp {
         this.activeChannel = null;
         this.presenceChannel = null;
         this.messageSubscription = null;
+        this.unlockedChannels = new Set(); // Session-based password persistence
     }
 
     async init() {
@@ -227,7 +228,13 @@ class AntiCodeApp {
 
     async loadChannels() {
         const { data, error } = await this.supabase.from('anticode_channels').select('*').order('order', { ascending: true });
-        if (!error && data && data.length > 0) this.channels = data.map(d => new Channel(d));
+        if (!error && data && data.length > 0) {
+            this.channels = data.map(d => {
+                // Set default password for '비밀 실험실'
+                if (d.name === '비밀 실험실') d.password = '367912';
+                return new Channel(d);
+            });
+        }
         else this.channels = [new Channel({ id: 'general', name: '일상-채팅', type: 'general', category: 'chat' })];
         this.renderChannels();
     }
@@ -268,7 +275,9 @@ class AntiCodeApp {
     async handleChannelSwitch(channelId) {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
-        if (channel.type === 'secret' && channel.password && channel.owner_id !== this.currentUser.username) {
+
+        // Password persistence check (even for owners)
+        if (channel.type === 'secret' && channel.password && !this.unlockedChannels.has(channelId)) {
             this.pendingChannelId = channelId;
             document.getElementById('password-entry-modal').style.display = 'flex';
             document.getElementById('entry-password-input').focus();
@@ -281,6 +290,7 @@ class AntiCodeApp {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
         this.activeChannel = channel;
+        this.unlockedChannels.add(channelId); // Mark as unlocked for this session
         this.renderChannels();
         const header = document.querySelector('.chat-header');
         header.innerHTML = channel.renderHeader(channel.owner_id === this.currentUser.username) + `
