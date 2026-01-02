@@ -541,27 +541,49 @@ class AntiCodeApp {
             };
         });
 
-        // Mobile Toggles
+        // Mobile Toggles & Nav
         const sidebar = document.querySelector('.anticode-sidebar');
         const membersSide = document.querySelector('.anticode-members');
+        const chatArea = document.querySelector('.anticode-chat-area');
 
-        document.getElementById('mobile-menu-toggle').onclick = (e) => {
+        const toggleSidebar = (open) => {
+            if (sidebar) {
+                if (typeof open === 'boolean') sidebar.classList.toggle('open', open);
+                else sidebar.classList.toggle('open');
+            }
+            if (membersSide) membersSide.classList.remove('open');
+        };
+        const toggleMembers = (open) => {
+            if (membersSide) {
+                if (typeof open === 'boolean') membersSide.classList.toggle('open', open);
+                else membersSide.classList.toggle('open');
+            }
+            if (sidebar) sidebar.classList.remove('open');
+        };
+
+        _safeBind('mobile-menu-toggle', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(); });
+        _safeBind('mobile-members-toggle', 'onclick', (e) => { e.stopPropagation(); toggleMembers(); });
+
+        _safeBind('nav-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
+        _safeBind('nav-friends', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
+        _safeBind('nav-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
+        _safeBind('nav-add', 'onclick', (e) => {
             e.stopPropagation();
-            sidebar.classList.toggle('open');
-            membersSide.classList.remove('open');
-        };
-
-        document.getElementById('mobile-members-toggle').onclick = (e) => {
+            const m = document.getElementById('create-channel-modal');
+            if (m) m.style.display = 'flex';
+        });
+        _safeBind('nav-profile', 'onclick', (e) => {
             e.stopPropagation();
-            membersSide.classList.toggle('open');
-            sidebar.classList.remove('open');
-        };
+            const mod = document.getElementById('profile-modal');
+            if (mod) mod.style.display = 'flex';
+        });
 
-        // Close sidebar when clicking main content
-        document.querySelector('.anticode-chat-area').onclick = () => {
-            sidebar.classList.remove('open');
-            membersSide.classList.remove('open');
-        };
+        if (chatArea) {
+            chatArea.onclick = () => {
+                if (sidebar) sidebar.classList.remove('open');
+                if (membersSide) membersSide.classList.remove('open');
+            };
+        }
         // Channel Modal
         // Channel Modal
         const cModal = document.getElementById('create-channel-modal');
