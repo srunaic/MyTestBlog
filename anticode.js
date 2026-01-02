@@ -545,6 +545,7 @@ class AntiCodeApp {
         const sidebar = document.querySelector('.anticode-sidebar');
         const membersSide = document.querySelector('.anticode-members');
         const chatArea = document.querySelector('.anticode-chat-area');
+        const dropdown = document.getElementById('mobile-dropdown-menu');
 
         const toggleSidebar = (open) => {
             if (sidebar) {
@@ -552,6 +553,7 @@ class AntiCodeApp {
                 else sidebar.classList.toggle('open');
             }
             if (membersSide) membersSide.classList.remove('open');
+            if (dropdown) dropdown.style.display = 'none';
         };
         const toggleMembers = (open) => {
             if (membersSide) {
@@ -559,29 +561,42 @@ class AntiCodeApp {
                 else membersSide.classList.toggle('open');
             }
             if (sidebar) sidebar.classList.remove('open');
+            if (dropdown) dropdown.style.display = 'none';
         };
 
         _safeBind('mobile-menu-toggle', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(); });
         _safeBind('mobile-members-toggle', 'onclick', (e) => { e.stopPropagation(); toggleMembers(); });
 
-        _safeBind('nav-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
-        _safeBind('nav-friends', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
-        _safeBind('nav-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
-        _safeBind('nav-add', 'onclick', (e) => {
+        _safeBind('mobile-more-btn', 'onclick', (e) => {
             e.stopPropagation();
+            if (dropdown) dropdown.style.display = dropdown.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        _safeBind('menu-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
+        _safeBind('menu-friends', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
+        _safeBind('menu-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
+        _safeBind('menu-add', 'onclick', (e) => {
+            e.stopPropagation();
+            if (dropdown) dropdown.style.display = 'none';
             const m = document.getElementById('create-channel-modal');
             if (m) m.style.display = 'flex';
         });
-        _safeBind('nav-profile', 'onclick', (e) => {
+        _safeBind('menu-profile', 'onclick', (e) => {
             e.stopPropagation();
+            if (dropdown) dropdown.style.display = 'none';
             const mod = document.getElementById('profile-modal');
             if (mod) mod.style.display = 'flex';
+        });
+
+        document.addEventListener('click', () => {
+            if (dropdown) dropdown.style.display = 'none';
         });
 
         if (chatArea) {
             chatArea.onclick = () => {
                 if (sidebar) sidebar.classList.remove('open');
                 if (membersSide) membersSide.classList.remove('open');
+                if (dropdown) dropdown.style.display = 'none';
             };
         }
         // Channel Modal
