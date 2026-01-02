@@ -630,7 +630,19 @@
 
 @media (max-width: 768px) {
     .mobile-only-btn {
-        display: flex;
+        display: flex !important;
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0;
+        margin: 0 5px;
+        z-index: 110;
+    }
+
+    .header-left,
+    .header-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px;
     }
 
     #anticode-container {
