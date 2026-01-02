@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AntiCode | Nanodoroshi Community</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="anticode.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="anticode-body">
+    <div id="anticode-container">
+        <!-- Sidebar: Channels -->
+        <aside class="anticode-sidebar">
+            <div class="sidebar-header">
+                <h2>ANTICODE</h2>
+            </div>
+            <div class="channel-list-container">
+                <div class="channel-group">
+                    <span class="group-label">텍스트 채널</span>
+                    <ul id="channel-list">
+                        <!-- Channels rendered here -->
+                        <li class="channel-item active" data-id="general"># 일상-채팅</li>
+                        <li class="channel-item" data-id="qna"># 질문-답변</li>
+                        <li class="channel-item" data-id="notice"># 공지사항</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="user-info-section" id="current-user-info">
+                <!-- Current user profile info -->
+            </div>
+        </aside>
+
+        <!-- Main: Chat Area -->
+        <main class="anticode-chat-area">
+            <header class="chat-header">
+                <div class="header-left">
+                    <span class="channel-hash">#</span>
+                    <h1 id="current-channel-name">일상-채팅</h1>
+                </div>
+                <div class="header-right">
+                    <a href="index.html" class="back-link">블로그로 돌아가기</a>
+                </div>
+            </header>
+
+            <div id="message-container" class="message-container">
+                <!-- Messages rendered here -->
+                <div class="chat-welcome">
+                    <h1>#일반 채널에 오신 것을 환영합니다!</h1>
+                    <p>Anticode 커뮤니티의 시작점입니다.</p>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="input-wrapper">
+                    <textarea id="chat-input" placeholder="#일반 에 메시지 보내기" rows="1"></textarea>
+                    <div class="input-actions">
+                        <button id="send-msg-btn">전송</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right: Member List -->
+        <aside class="anticode-members">
+            <div class="members-header">
+                <span>온라인 — <span id="online-count">0</span></span>
+            </div>
+            <div id="member-list" class="member-list">
+                <!-- Member items rendered here -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Auth Guard Overlay -->
+    <div id="auth-guard" class="auth-guard" style="display:none;">
+        <div class="guard-content">
+            <h2>접근 제한</h2>
+            <p>AntiCode를 이용하시려면 로그인이 필요합니다.</p>
+            <button onclick="location.href='index.html?action=login'">로그인하러 가기</button>
+        </div>
+    </div>
+
+    <script type="module" src="anticode.js"></script>
+</body>
+</html>
