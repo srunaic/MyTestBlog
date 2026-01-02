@@ -118,12 +118,76 @@
     color: var(--accent);
 }
 
+/* Emoji Picker */
+.emoji-trigger-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 10px 0 0;
+    transition: 0.2s;
+}
+
+.emoji-trigger-btn:hover {
+    transform: scale(1.2);
+}
+
+.emoji-picker-popover {
+    position: absolute;
+    bottom: 50px;
+    left: 10px;
+    background: #2b2d31;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.emoji-item {
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: center;
+}
+
+.emoji-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
 /* User Profile Section */
 .user-profile-section {
     padding: 15px;
     background: rgba(0, 0, 0, 0.2);
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.user-profile-section:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--accent);
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--accent);
 }
 
 .uid-badge {

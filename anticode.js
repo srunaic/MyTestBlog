@@ -66,13 +66,14 @@ class AntiCodeApp {
         this.currentUser = null;
         this.channels = [];
         this.friends = [];
+        this.userCache = {}; // Cache for nickname and avatars
         this.activeChannel = null;
         this.presenceChannel = null;
         this.messageSubscription = null;
     }
 
     async init() {
-        console.log('AntiCode Social App initializing...');
+        console.log('AntiCode Feature App initializing...');
 
         this.currentUser = this.getAuth();
         if (!this.currentUser) {
@@ -83,8 +84,8 @@ class AntiCodeApp {
         try {
             this.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            // 1. Handle User UID
-            await this.syncUserUID();
+            // 1. Sync User Metadata
+            await this.syncUserMetadata();
 
             // 2. Load Data
             await this.loadChannels();
@@ -112,33 +113,74 @@ class AntiCodeApp {
         return session;
     }
 
-    // --- Social & UID Logic ---
-    async syncUserUID() {
-        // Look up by username
+    async syncUserMetadata() {
         let { data, error } = await this.supabase
             .from('anticode_users')
-            .select('uid')
+            .select('*')
             .eq('username', this.currentUser.username)
             .single();
 
         if (error || !data) {
-            // Generate new UID
             const newUID = Math.floor(100000 + Math.random() * 900000).toString();
-            await this.supabase.from('anticode_users').upsert({
+            const newUser = {
                 username: this.currentUser.username,
                 nickname: this.currentUser.nickname,
-                uid: newUID
-            });
-            this.currentUser.uid = newUID;
+                uid: newUID,
+                avatar_url: null
+            };
+            await this.supabase.from('anticode_users').upsert(newUser);
+            this.currentUser = { ...this.currentUser, ...newUser };
         } else {
-            this.currentUser.uid = data.uid;
+            this.currentUser = { ...this.currentUser, ...data };
         }
+
+        // Cache current user
+        this.userCache[this.currentUser.username] = {
+            nickname: this.currentUser.nickname,
+            avatar_url: this.currentUser.avatar_url
+        };
+    }
+
+    async getUserInfo(username) {
+        if (this.userCache[username]) return this.userCache[username];
+
+        const { data, error } = await this.supabase
+            .from('anticode_users')
+            .select('nickname, avatar_url')
+            .eq('username', username)
+            .single();
+
+        if (!error && data) {
+            this.userCache[username] = data;
+            return data;
+        }
+        return { nickname: username, avatar_url: null };
+    }
+
+    async updateProfile(nickname, avatarUrl) {
+        const { error } = await this.supabase
+            .from('anticode_users')
+            .update({ nickname, avatar_url: avatarUrl })
+            .eq('username', this.currentUser.username);
+
+        if (!error) {
+            this.currentUser.nickname = nickname;
+            this.currentUser.avatar_url = avatarUrl;
+            this.userCache[this.currentUser.username] = { nickname, avatar_url: avatarUrl };
+            this.renderUserInfo();
+            // Update session if needed
+            const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+            session.nickname = nickname;
+            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+            return true;
+        }
+        return false;
     }
 
     async loadFriends() {
         const { data, error } = await this.supabase
             .from('anticode_friends')
-            .select('friend_id, anticode_users(username, nickname, uid)')
+            .select('friend_id, anticode_users(username, nickname, uid, avatar_url)')
             .eq('user_id', this.currentUser.username);
 
         if (!error && data) {
@@ -146,6 +188,7 @@ class AntiCodeApp {
                 username: d.anticode_users.username,
                 nickname: d.anticode_users.nickname,
                 uid: d.anticode_users.uid,
+                avatar_url: d.anticode_users.avatar_url,
                 online: false
             }));
             this.renderFriends();
@@ -153,33 +196,20 @@ class AntiCodeApp {
     }
 
     async addFriendByUID(uid) {
-        // 1. Find user by UID
         const { data: target, error: searchError } = await this.supabase
             .from('anticode_users')
             .select('username')
             .eq('uid', uid)
             .single();
 
-        if (searchError || !target) {
-            alert('해당 UID를 가진 사용자를 찾을 수 없습니다.');
-            return false;
-        }
+        if (searchError || !target) { alert('사용자를 찾을 수 없습니다.'); return false; }
+        if (target.username === this.currentUser.username) { alert('자기 자신은 친구로 추가할 수 없습니다.'); return false; }
 
-        if (target.username === this.currentUser.username) {
-            alert('자기 자신은 친구로 추가할 수 없습니다.');
-            return false;
-        }
-
-        // 2. Add to friends table
         const { error: addError } = await this.supabase
             .from('anticode_friends')
             .insert([{ user_id: this.currentUser.username, friend_id: target.username }]);
 
-        if (addError) {
-            if (addError.code === '23505') alert('이미 친구로 등록된 사용자입니다.');
-            else alert('친구 추가 중 오류가 발생했습니다.');
-            return false;
-        }
+        if (addError) { alert('이미 친구거나 오류가 발생했습니다.'); return false; }
 
         await this.loadFriends();
         return true;
@@ -189,34 +219,22 @@ class AntiCodeApp {
         const list = document.getElementById('friend-list');
         list.innerHTML = this.friends.map(f => `
             <li class="friend-item ${f.online ? 'online' : 'offline'}">
-                <div class="avatar-sm">${f.nickname[0]}</div>
+                ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${f.nickname[0]}</div>`}
                 <div class="member-name-text">${f.nickname} <small>#${f.uid}</small></div>
             </li>
         `).join('');
     }
 
-    // --- Channel Logic ---
     async loadChannels() {
-        const { data, error } = await this.supabase
-            .from('anticode_channels')
-            .select('*')
-            .order('order', { ascending: true });
-
-        if (!error && data && data.length > 0) {
-            this.channels = data.map(d => new Channel(d));
-        } else {
-            this.channels = [
-                new Channel({ id: 'general', name: '일상-채팅', type: 'general', category: 'chat' }),
-            ];
-        }
+        const { data, error } = await this.supabase.from('anticode_channels').select('*').order('order', { ascending: true });
+        if (!error && data && data.length > 0) this.channels = data.map(d => new Channel(d));
+        else this.channels = [new Channel({ id: 'general', name: '일상-채팅', type: 'general', category: 'chat' })];
         this.renderChannels();
     }
 
     renderChannels() {
         const container = document.getElementById('categorized-channels');
-        container.innerHTML = ''; // Clear
-
-        // Categorize channels
+        container.innerHTML = '';
         const categories = {};
         this.channels.forEach(ch => {
             if (!categories[ch.category]) categories[ch.category] = [];
@@ -225,8 +243,7 @@ class AntiCodeApp {
 
         Object.keys(CATEGORY_NAMES).forEach(catId => {
             const chans = categories[catId] || [];
-            if (chans.length === 0 && catId !== 'chat') return; // Don't show empty categories except chat
-
+            if (chans.length === 0 && catId !== 'chat') return;
             const group = document.createElement('div');
             group.className = 'channel-group';
             group.innerHTML = `
@@ -241,12 +258,9 @@ class AntiCodeApp {
             container.appendChild(group);
         });
 
-        // Re-bind clicks
         container.querySelectorAll('.channel-item').forEach(item => {
             item.onclick = () => this.handleChannelSwitch(item.dataset.id);
         });
-
-        // Re-bind create button if it exists
         const createBtn = document.getElementById('open-create-channel-cat');
         if (createBtn) createBtn.onclick = () => document.getElementById('create-channel-modal').style.display = 'flex';
     }
@@ -254,72 +268,46 @@ class AntiCodeApp {
     async handleChannelSwitch(channelId) {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
-
-        // Password check
         if (channel.type === 'secret' && channel.password && channel.owner_id !== this.currentUser.username) {
             this.pendingChannelId = channelId;
             document.getElementById('password-entry-modal').style.display = 'flex';
             document.getElementById('entry-password-input').focus();
             return;
         }
-
         await this.switchChannel(channelId);
     }
 
     async switchChannel(channelId) {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
-
         this.activeChannel = channel;
         this.renderChannels();
-
-        const isOwner = channel.owner_id === this.currentUser.username;
         const header = document.querySelector('.chat-header');
-        header.innerHTML = channel.renderHeader(isOwner) + `
-            <div class="header-right">
-                <a href="index.html" class="back-link">블로그로 돌아가기</a>
-            </div>
+        header.innerHTML = channel.renderHeader(channel.owner_id === this.currentUser.username) + `
+            <div class="header-right"><a href="index.html" class="back-link">블로그로 돌아가기</a></div>
         `;
         document.getElementById('chat-input').placeholder = channel.getPlaceholder();
-
-        // Bind delete if exists
         const delBtn = document.getElementById('delete-channel-btn');
         if (delBtn) delBtn.onclick = () => this.deleteChannel(channel.id);
-
         await this.loadMessages(channel.id);
         this.setupMessageSubscription(channel.id);
     }
 
     async deleteChannel(channelId) {
-        if (!confirm('정말로 이 채널을 삭제하시겠습니까? 복구할 수 없습니다.')) return;
-
-        const { error } = await this.supabase
-            .from('anticode_channels')
-            .delete()
-            .eq('id', channelId);
-
+        if (!confirm('정말로 이 채널을 삭제하시겠습니까?')) return;
+        const { error } = await this.supabase.from('anticode_channels').delete().eq('id', channelId);
         if (!error) {
             this.channels = this.channels.filter(c => c.id !== channelId);
             if (this.channels.length > 0) this.switchChannel(this.channels[0].id);
             else location.reload();
-        } else {
-            alert('채널 삭제 실패');
         }
     }
 
     async createChannel(name, type, category, password) {
-        const { data, error } = await this.supabase
-            .from('anticode_channels')
-            .insert([{
-                name,
-                type,
-                category,
-                password: type === 'secret' ? password : null,
-                owner_id: this.currentUser.username,
-                order: this.channels.length
-            }])
-            .select();
-
+        const { data, error } = await this.supabase.from('anticode_channels').insert([{
+            name, type, category, password: type === 'secret' ? password : null,
+            owner_id: this.currentUser.username, order: this.channels.length
+        }]).select();
         if (!error && data) {
             const newChan = new Channel(data[0]);
             this.channels.push(newChan);
@@ -330,18 +318,11 @@ class AntiCodeApp {
         return false;
     }
 
-    // --- Message & Presence Logic ---
     async loadMessages(channelId) {
-        const { data, error } = await this.supabase
-            .from('anticode_messages')
-            .select('*')
-            .eq('channel_id', channelId)
-            .order('created_at', { ascending: true })
-            .limit(50);
-
+        const { data, error } = await this.supabase.from('anticode_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true }).limit(50);
         if (!error) {
             document.getElementById('message-container').innerHTML = '';
-            data.forEach(msg => this.appendMessage(msg));
+            for (const msg of data) await this.appendMessage(msg);
         }
     }
 
@@ -368,22 +349,22 @@ class AntiCodeApp {
                         username: this.currentUser.username,
                         nickname: this.currentUser.nickname,
                         uid: this.currentUser.uid,
+                        avatar_url: this.currentUser.avatar_url,
                         online_at: new Date().toISOString(),
                     });
                 }
             });
     }
 
-    updateOnlineUsers(state) {
+    async updateOnlineUsers(state) {
         const memberList = document.getElementById('member-list');
         const onlineCount = document.getElementById('online-count');
         const users = [];
         for (const id in state) users.push(state[id][0]);
-
         onlineCount.innerText = users.length;
         memberList.innerHTML = users.map(user => `
             <div class="member-card online">
-                <div class="avatar-sm">${user.nickname[0]}</div>
+                ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${user.nickname[0]}</div>`}
                 <span class="member-name-text">${user.nickname}</span>
             </div>
         `).join('');
@@ -392,10 +373,7 @@ class AntiCodeApp {
     syncFriendStatus(state) {
         const onlineUsernames = [];
         for (const id in state) onlineUsernames.push(state[id][0].username);
-
-        this.friends.forEach(f => {
-            f.online = onlineUsernames.includes(f.username);
-        });
+        this.friends.forEach(f => { f.online = onlineUsernames.includes(f.username); });
         this.renderFriends();
     }
 
@@ -403,7 +381,6 @@ class AntiCodeApp {
         const input = document.getElementById('chat-input');
         const content = input.value.trim();
         if (!content || !this.activeChannel) return;
-
         const newMessage = {
             channel_id: this.activeChannel.id,
             user_id: this.currentUser.username,
@@ -411,23 +388,26 @@ class AntiCodeApp {
             content: content,
             created_at: new Date().toISOString()
         };
-
         input.value = '';
-        const { error } = await this.supabase.from('anticode_messages').insert([newMessage]);
-        if (error) alert('메시지 전송 실패');
+        input.style.height = 'auto';
+        await this.supabase.from('anticode_messages').insert([newMessage]);
     }
 
-    appendMessage(msg) {
+    async appendMessage(msg) {
         const container = document.getElementById('message-container');
         const msgEl = document.createElement('div');
         msgEl.className = 'message-item';
         const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+        // Use cache/fetch for avatar
+        const info = await this.getUserInfo(msg.user_id);
+        const avatarHtml = info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar">` : `<div class="user-avatar">${msg.author[0]}</div>`;
+
         msgEl.innerHTML = `
-            <div class="user-avatar">${msg.author[0]}</div>
+            ${avatarHtml}
             <div class="message-content-wrapper">
                 <div class="message-meta">
-                    <span class="member-name">${msg.author}</span>
+                    <span class="member-name">${info.nickname}</span>
                     <span class="timestamp">${timeStr}</span>
                 </div>
                 <div class="message-text">${msg.content}</div>
@@ -440,9 +420,10 @@ class AntiCodeApp {
     renderUserInfo() {
         const info = document.getElementById('current-user-info');
         if (!info) return;
+        const avatarHtml = this.currentUser.avatar_url ? `<img src="${this.currentUser.avatar_url}" class="avatar-img">` : `<div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>`;
         info.innerHTML = `
             <div style="display:flex; align-items:center; gap:10px;">
-                <div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>
+                ${avatarHtml}
                 <div class="user-info-text">
                     <div class="member-name" style="font-size:0.8rem;">${this.currentUser.nickname}</div>
                     <div class="uid-badge">UID: ${this.currentUser.uid}</div>
@@ -457,24 +438,54 @@ class AntiCodeApp {
         sendBtn.onclick = () => this.sendMessage();
         input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendMessage(); } };
 
+        // Auto-resize textarea
+        input.oninput = () => {
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+        };
+
+        // Profile Management
+        document.getElementById('current-user-info').onclick = () => {
+            document.getElementById('edit-nickname').value = this.currentUser.nickname;
+            document.getElementById('edit-avatar-url').value = this.currentUser.avatar_url || '';
+            document.getElementById('profile-modal').style.display = 'flex';
+        };
+        document.getElementById('close-profile-modal').onclick = () => document.getElementById('profile-modal').style.display = 'none';
+        document.getElementById('profile-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const nickname = document.getElementById('edit-nickname').value;
+            const avatarUrl = document.getElementById('edit-avatar-url').value;
+            if (await this.updateProfile(nickname, avatarUrl)) {
+                document.getElementById('profile-modal').style.display = 'none';
+                location.reload(); // Refresh to update all instances
+            }
+        };
+
+        // Emoji Picker
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiPicker = document.getElementById('emoji-picker');
+        emojiBtn.onclick = (e) => { e.stopPropagation(); emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'grid' : 'none'; };
+        document.addEventListener('click', () => { emojiPicker.style.display = 'none'; });
+        emojiPicker.querySelectorAll('.emoji-item').forEach(em => {
+            em.onclick = (e) => {
+                e.stopPropagation();
+                input.value += em.innerText;
+                emojiPicker.style.display = 'none';
+                input.focus();
+            };
+        });
+
         // Channel Modal
         const modal = document.getElementById('create-channel-modal');
         const closeBtn = document.getElementById('close-channel-modal');
         const form = document.getElementById('create-channel-form');
         const typeSelect = document.getElementById('new-channel-type');
         const passGroup = document.getElementById('password-field-group');
-
         typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
         closeBtn.onclick = () => modal.style.display = 'none';
-
         form.onsubmit = async (e) => {
             e.preventDefault();
-            const success = await this.createChannel(
-                document.getElementById('new-channel-name').value,
-                typeSelect.value,
-                document.getElementById('new-channel-category').value,
-                document.getElementById('new-channel-password').value
-            );
+            const success = await this.createChannel(document.getElementById('new-channel-name').value, typeSelect.value, document.getElementById('new-channel-category').value, document.getElementById('new-channel-password').value);
             if (success) { modal.style.display = 'none'; form.reset(); }
         };
 
@@ -483,32 +494,25 @@ class AntiCodeApp {
         const fOpen = document.getElementById('open-add-friend');
         const fClose = document.getElementById('close-friend-modal');
         const fForm = document.getElementById('add-friend-form');
-
         fOpen.onclick = () => fModal.style.display = 'flex';
         fClose.onclick = () => fModal.style.display = 'none';
         fForm.onsubmit = async (e) => {
             e.preventDefault();
-            const val = document.getElementById('friend-uid-input').value;
-            if (await this.addFriendByUID(val)) { fModal.style.display = 'none'; fForm.reset(); }
+            if (await this.addFriendByUID(document.getElementById('friend-uid-input').value)) { fModal.style.display = 'none'; fForm.reset(); }
         };
 
-        // Password Entry Modal
+        // Password Entry
         const pModal = document.getElementById('password-entry-modal');
         const pClose = document.getElementById('close-password-modal');
         const pForm = document.getElementById('password-entry-form');
-
         pClose.onclick = () => pModal.style.display = 'none';
         pForm.onsubmit = async (e) => {
             e.preventDefault();
             const channel = this.channels.find(c => c.id === this.pendingChannelId);
-            const inputVal = document.getElementById('entry-password-input').value;
-            if (channel && channel.password === inputVal) {
-                pModal.style.display = 'none';
-                pForm.reset();
+            if (channel && channel.password === document.getElementById('entry-password-input').value) {
+                pModal.style.display = 'none'; pForm.reset();
                 await this.switchChannel(this.pendingChannelId);
-            } else {
-                alert('비밀번호가 틀렸습니다.');
-            }
+            } else alert('비밀번호가 틀렸습니다.');
         };
     }
 }
