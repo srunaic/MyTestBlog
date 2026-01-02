@@ -37,6 +37,8 @@ jobs:
         run: |
           sed -i "s|VITE_SUPABASE_URL|${{ secrets.SUPABASE_URL }}|g" script.js
           sed -i "s|VITE_SUPABASE_KEY|${{ secrets.SUPABASE_KEY }}|g" script.js
+          sed -i "s|VITE_SUPABASE_URL|${{ secrets.SUPABASE_URL }}|g" anticode.js
+          sed -i "s|VITE_SUPABASE_KEY|${{ secrets.SUPABASE_KEY }}|g" anticode.js
 
       - name: Build and Obfuscate
         run: npm run build
