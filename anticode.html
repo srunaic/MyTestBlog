@@ -19,15 +19,33 @@
             <div class="sidebar-header">
                 <h2>ANTICODE</h2>
             </div>
+
+            <div class="user-profile-section" id="current-user-info">
+                <!-- User info & UID here -->
+            </div>
+
             <div class="channel-list-container">
+                <!-- Group: Friends -->
                 <div class="channel-group">
                     <div class="group-header">
-                        <span class="group-label">텍스트 채널</span>
-                        <button id="open-create-channel" class="add-channel-btn">+</button>
+                        <span class="group-label">친구 목록</span>
+                        <button id="open-add-friend" class="add-channel-btn">+</button>
                     </div>
-                    <ul id="channel-list">
-                        <!-- Channels rendered here -->
+                    <ul id="friend-list" class="sidebar-list">
+                        <!-- Friends rendered here -->
                     </ul>
+                </div>
+
+                <!-- Group: Channels by Category -->
+                <div id="categorized-channels">
+                    <!-- Categories and channels rendered dynamically -->
+                    <div class="channel-group">
+                        <div class="group-header">
+                            <span class="group-label">텍스트 채널</span>
+                            <button id="open-create-channel" class="add-channel-btn">+</button>
+                        </div>
+                        <ul id="channel-list" class="sidebar-list"></ul>
+                    </div>
                 </div>
             </div>
             <div class="user-info-section" id="current-user-info">
@@ -89,13 +107,61 @@
                     <label>채널 유형</label>
                     <select id="new-channel-type">
                         <option value="general">일반 채팅</option>
-                        <option value="secret">비밀 채팅</option>
+                        <option value="secret">비밀 채팅 (비밀번호)</option>
                         <option value="qna">질문 답변</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>카테고리</label>
+                    <select id="new-channel-category">
+                        <option value="chat">채팅방</option>
+                        <option value="karaoke">노래방</option>
+                        <option value="voice">보이스 톡</option>
+                        <option value="game">게임 방</option>
+                    </select>
+                </div>
+                <div id="password-field-group" class="form-group" style="display:none;">
+                    <label>방 비밀번호</label>
+                    <input type="password" id="new-channel-password" placeholder="숫자 4자리 권장">
                 </div>
                 <div class="modal-btns">
                     <button type="submit" class="submit-btn">생성</button>
                     <button type="button" id="close-channel-modal" class="cancel-btn">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Friend Modal -->
+    <div id="add-friend-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h2>친구 추가</h2>
+            <form id="add-friend-form">
+                <div class="form-group">
+                    <label>친구 UID 코드</label>
+                    <input type="text" id="friend-uid-input" required placeholder="예: 123456" maxlength="6">
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" class="submit-btn">추가</button>
+                    <button type="button" id="close-friend-modal" class="cancel-btn">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Entry Modal -->
+    <div id="password-entry-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h2>비밀 채팅방 입장</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">이 방은 비밀번호가 설정되어 있습니다.</p>
+            <form id="password-entry-form">
+                <div class="form-group">
+                    <label>비밀번호</label>
+                    <input type="password" id="entry-password-input" required autofocus>
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" class="submit-btn">입장</button>
+                    <button type="button" id="close-password-modal" class="cancel-btn">취소</button>
                 </div>
             </form>
         </div>

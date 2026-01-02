@@ -118,6 +118,74 @@
     color: var(--accent);
 }
 
+/* User Profile Section */
+.user-profile-section {
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+.uid-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.sidebar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Friend List Styling */
+.friend-item {
+    padding: 6px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+    margin: 2px 8px;
+    color: var(--text-muted);
+}
+
+.friend-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.friend-item.online .avatar-sm {
+    border: 2px solid #23a559;
+}
+
+.friend-item.offline {
+    opacity: 0.5;
+}
+
+.delete-channel-btn {
+    background: transparent;
+    border: 1px solid #da373c;
+    color: #da373c;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-left: 10px;
+}
+
+.delete-channel-btn:hover {
+    background: #da373c;
+    color: #fff;
+}
+
 .user-info-section {
     height: 52px;
     background-color: #232428;
