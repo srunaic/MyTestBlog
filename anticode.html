@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AntiCode | Nanodoroshi Community</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="anticode.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap"
+        rel="stylesheet">
 </head>
+
 <body class="anticode-body">
     <div id="anticode-container">
         <!-- Sidebar: Channels -->
@@ -17,12 +21,12 @@
             </div>
             <div class="channel-list-container">
                 <div class="channel-group">
-                    <span class="group-label">텍스트 채널</span>
+                    <div class="group-header">
+                        <span class="group-label">텍스트 채널</span>
+                        <button id="open-create-channel" class="add-channel-btn">+</button>
+                    </div>
                     <ul id="channel-list">
                         <!-- Channels rendered here -->
-                        <li class="channel-item active" data-id="general"># 일상-채팅</li>
-                        <li class="channel-item" data-id="qna"># 질문-답변</li>
-                        <li class="channel-item" data-id="notice"># 공지사항</li>
                     </ul>
                 </div>
             </div>
@@ -72,15 +76,32 @@
         </aside>
     </div>
 
-    <!-- Auth Guard Overlay -->
-    <div id="auth-guard" class="auth-guard" style="display:none;">
-        <div class="guard-content">
-            <h2>접근 제한</h2>
-            <p>AntiCode를 이용하시려면 로그인이 필요합니다.</p>
-            <button onclick="location.href='index.html?action=login'">로그인하러 가기</button>
+    <!-- Create Channel Modal -->
+    <div id="create-channel-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h2>채널 생성</h2>
+            <form id="create-channel-form">
+                <div class="form-group">
+                    <label>채널 이름</label>
+                    <input type="text" id="new-channel-name" required placeholder="예: 축구-채팅">
+                </div>
+                <div class="form-group">
+                    <label>채널 유형</label>
+                    <select id="new-channel-type">
+                        <option value="general">일반 채팅</option>
+                        <option value="secret">비밀 채팅</option>
+                        <option value="qna">질문 답변</option>
+                    </select>
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" class="submit-btn">생성</button>
+                    <button type="button" id="close-channel-modal" class="cancel-btn">취소</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script type="module" src="anticode.js"></script>
 </body>
+
 </html>

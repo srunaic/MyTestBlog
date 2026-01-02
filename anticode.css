@@ -62,12 +62,34 @@
     margin-bottom: 20px;
 }
 
+.group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 8px;
+    margin-bottom: 4px;
+}
+
 .group-label {
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     padding-left: 8px;
+}
+
+.add-channel-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: 0.2s;
+}
+
+.add-channel-btn:hover {
+    color: var(--text-primary);
 }
 
 #channel-list {
@@ -227,6 +249,90 @@
     gap: 16px;
 }
 
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #2b2d31;
+    padding: 30px;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90%;
+    border: 1px solid var(--border-color);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    background-color: #1e1f22;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    color: var(--text-primary);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.modal-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.submit-btn {
+    background-color: var(--accent);
+    color: #000;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    background-color: transparent;
+    color: var(--text-primary);
+    border: none;
+    padding: 10px 16px;
+    cursor: pointer;
+}
+
+.cancel-btn:hover {
+    text-decoration: underline;
+}
+
 .user-avatar {
     width: 40px;
     height: 40px;
@@ -363,13 +469,16 @@
 ::-webkit-scrollbar {
     width: 8px;
 }
+
 ::-webkit-scrollbar-track {
     background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
     background: #1a1b1e;
     border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: #121214;
 }
