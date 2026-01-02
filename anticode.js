@@ -296,15 +296,36 @@ class AntiCodeApp {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
         this.activeChannel = channel;
-        this.unlockedChannels.add(channelId); // Mark as unlocked for this session
+        this.unlockedChannels.add(channelId);
         this.renderChannels();
-        const header = document.querySelector('.chat-header');
-        header.innerHTML = channel.renderHeader(channel.owner_id === this.currentUser.username) + `
-            <div class="header-right"><a href="index.html" class="back-link">블로그로 돌아가기</a></div>
-        `;
+
+        // Update header info safely to preserve mobile buttons
+        const nameEl = document.getElementById('current-channel-name');
+        if (nameEl) nameEl.textContent = channel.name;
+
+        const hashEl = document.querySelector('.channel-hash');
+        if (hashEl) hashEl.textContent = channel.type === 'secret' ? '🔒' : '#';
+
+        // Handle delete button for owners
+        let delBtn = document.getElementById('delete-channel-btn');
+        if (channel.owner_id === this.currentUser.username) {
+            if (!delBtn) {
+                const left = document.querySelector('.header-left');
+                if (left) {
+                    const btn = document.createElement('button');
+                    btn.id = 'delete-channel-btn';
+                    btn.className = 'delete-channel-btn';
+                    btn.textContent = '채널 삭제';
+                    left.appendChild(btn);
+                    delBtn = btn;
+                }
+            }
+            if (delBtn) delBtn.onclick = () => this.deleteChannel(channel.id);
+        } else if (delBtn) {
+            delBtn.remove();
+        }
+
         document.getElementById('chat-input').placeholder = channel.getPlaceholder();
-        const delBtn = document.getElementById('delete-channel-btn');
-        if (delBtn) delBtn.onclick = () => this.deleteChannel(channel.id);
         await this.loadMessages(channel.id);
         this.setupMessageSubscription(channel.id);
     }
