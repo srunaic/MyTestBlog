@@ -647,12 +647,6 @@
         z-index: 1000 !important;
     }
 
-    .header-left,
-    .header-right {
-        display: flex !important;
-        align-items: center !important;
-        gap: 5px;
-    }
 
     #anticode-container {
         position: relative;
@@ -697,17 +691,41 @@
 
     /* Header adjustments */
     .chat-header {
-        padding: 0 15px;
+        padding: 0 10px;
+        display: flex !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+    }
+
+    .header-left {
+        flex: 1 !important;
+        min-width: 0 !important;
+        /* Allows shrinking for ellipsis */
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .header-right {
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
     }
 
     #current-channel-name {
-        font-size: 1rem;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     /* Back link smaller for space */
     .back-link {
-        font-size: 0.7rem;
-        padding: 2px 8px;
+        font-size: 0.65rem;
+        padding: 4px 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     /* Chat message padding */
