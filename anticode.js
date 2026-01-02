@@ -14,6 +14,17 @@ const CATEGORY_NAMES = {
     game: '🎮 게임 방'
 };
 
+const formatDistanceToNow = (date) => {
+    if (!date) return '오프라인';
+    const now = new Date();
+    const diff = Math.floor((now - new Date(date)) / 1000); // seconds
+    if (diff < 60) return '방금 전';
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+    return '오래 전';
+};
+
 // ==========================================
 // 2. CHANNEL CLASS (OO Design)
 // ==========================================
@@ -222,12 +233,32 @@ class AntiCodeApp {
 
     renderFriends() {
         const list = document.getElementById('friend-list');
-        list.innerHTML = this.friends.map(f => `
-            <li class="friend-item ${f.online ? 'online' : 'offline'}">
-                ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${f.nickname[0]}</div>`}
-                <div class="member-name-text">${f.nickname} <small>#${f.uid}</small></div>
+        if (!list) return;
+
+        const displayFriends = this.friends.slice(0, 3);
+        const hasMore = this.friends.length > 3;
+
+        let html = displayFriends.map(f => `
+            <li class="friend-item ${f.online ? 'online' : 'offline'}" data-username="${f.username}">
+                <div class="avatar-sm-container">
+                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${f.nickname[0]}</div>`}
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="friend-info">
+                    <span class="friend-nickname">${f.nickname} <small>#${f.uid}</small></span>
+                    <span class="friend-status-text">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
+                </div>
             </li>
         `).join('');
+
+        if (hasMore) {
+            html += `
+                <li class="view-all-friends" onclick="document.getElementById('friend-modal').style.display='flex'">
+                    친구 더 보기...
+                </li>
+            `;
+        }
+        list.innerHTML = html;
     }
 
     async loadChannels() {
@@ -398,29 +429,78 @@ class AntiCodeApp {
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
-                    await this.presenceChannel.track({
+                    const trackData = {
                         username: this.currentUser.username,
                         nickname: this.currentUser.nickname,
                         uid: this.currentUser.uid,
                         avatar_url: this.currentUser.avatar_url,
                         online_at: new Date().toISOString(),
-                    });
+                    };
+                    await this.presenceChannel.track(trackData);
+
+                    // Periodic last_seen update in DB
+                    this.updateLastSeen();
+                    if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
+                    this.lastSeenInterval = setInterval(() => this.updateLastSeen(), 60000); // Every minute
                 }
             });
     }
 
+    async updateLastSeen() {
+        if (!this.currentUser) return;
+        try {
+            await this.supabase
+                .from('anticode_users')
+                .update({ last_seen: new Date().toISOString() })
+                .eq('username', this.currentUser.username);
+        } catch (e) {
+            console.error('Failed to update last_seen:', e);
+        }
+    }
+
     async updateOnlineUsers(state) {
         const memberList = document.getElementById('member-list');
-        const onlineCount = document.getElementById('online-count');
-        const users = [];
-        for (const id in state) users.push(state[id][0]);
-        onlineCount.innerText = users.length;
-        memberList.innerHTML = users.map(user => `
-            <div class="member-card online">
-                ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${user.nickname[0]}</div>`}
-                <span class="member-name-text">${user.nickname}</span>
+        const onlineCountText = document.getElementById('online-count');
+        if (!memberList) return;
+
+        const onlineUsers = [];
+        for (const id in state) onlineUsers.push(state[id][0]);
+        if (onlineCountText) onlineCountText.innerText = onlineUsers.length;
+
+        const friendUsernames = new Set(this.friends.map(f => f.username));
+
+        // Members list will show online users first, then offline friends
+        const offlineFriends = this.friends.filter(f => !f.online);
+
+        let html = onlineUsers.map(user => {
+            const isFriend = friendUsernames.has(user.username);
+            return `
+                <div class="member-card online">
+                    <div class="avatar-wrapper">
+                        ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${user.nickname[0]}</div>`}
+                        <span class="online-dot"></span>
+                    </div>
+                    <div class="member-info">
+                        <span class="member-name-text">${user.nickname} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
+                        <span class="member-status-sub">온라인</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        html += offlineFriends.map(f => `
+            <div class="member-card offline">
+                <div class="avatar-wrapper">
+                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${f.nickname[0]}</div>`}
+                </div>
+                <div class="member-info">
+                    <span class="member-name-text">${f.nickname} <span class="friend-badge">[친구]</span></span>
+                    <span class="member-status-sub">${formatDistanceToNow(f.last_seen)}</span>
+                </div>
             </div>
         `).join('');
+
+        memberList.innerHTML = html;
     }
 
     syncFriendStatus(state) {
