@@ -490,24 +490,35 @@ class AntiCodeApp {
     }
 
     setupEventListeners() {
+        const _safeBind = (id, event, fn) => {
+            const el = typeof id === 'string' ? document.getElementById(id) : id;
+            if (el) el[event] = fn;
+        };
         const input = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-msg-btn');
-        sendBtn.onclick = () => this.sendMessage();
-        input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendMessage(); } };
-
-        // Auto-resize textarea
-        input.oninput = () => {
-            input.style.height = 'auto';
-            input.style.height = input.scrollHeight + 'px';
-        };
+        _safeBind('send-msg-btn', 'onclick', () => this.sendMessage());
+        if (input) {
+            input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendMessage(); } };
+            input.oninput = () => {
+                input.style.height = 'auto';
+                input.style.height = input.scrollHeight + 'px';
+            };
+        }
 
         // Profile Management
-        document.getElementById('current-user-info').onclick = () => {
-            document.getElementById('edit-nickname').value = this.currentUser.nickname;
-            document.getElementById('edit-avatar-url').value = this.currentUser.avatar_url || '';
-            document.getElementById('profile-modal').style.display = 'flex';
-        };
-        document.getElementById('close-profile-modal').onclick = () => document.getElementById('profile-modal').style.display = 'none';
+        _safeBind('current-user-info', 'onclick', () => {
+            const nick = document.getElementById('edit-nickname');
+            const av = document.getElementById('edit-avatar-url');
+            if (nick) nick.value = this.currentUser.nickname;
+            if (av) av.value = this.currentUser.avatar_url || '';
+            const mod = document.getElementById('profile-modal');
+            if (mod) mod.style.display = 'flex';
+        });
+
+        _safeBind('close-profile-modal', 'onclick', () => {
+            const mod = document.getElementById('profile-modal');
+            if (mod) mod.style.display = 'none';
+        });
         document.getElementById('profile-form').onsubmit = async (e) => {
             e.preventDefault();
             const nickname = document.getElementById('edit-nickname').value;
@@ -552,46 +563,49 @@ class AntiCodeApp {
             membersSide.classList.remove('open');
         };
         // Channel Modal
-        const modal = document.getElementById('create-channel-modal');
-        const closeBtn = document.getElementById('close-channel-modal');
-        const form = document.getElementById('create-channel-form');
+        // Channel Modal
+        const cModal = document.getElementById('create-channel-modal');
         const typeSelect = document.getElementById('new-channel-type');
         const passGroup = document.getElementById('password-field-group');
+        const cForm = document.getElementById('create-channel-form');
 
-        document.getElementById('open-create-channel').onclick = () => modal.style.display = 'flex';
-        typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
-        closeBtn.onclick = () => modal.style.display = 'none';
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const success = await this.createChannel(document.getElementById('new-channel-name').value, typeSelect.value, document.getElementById('new-channel-category').value, document.getElementById('new-channel-password').value);
-            if (success) { modal.style.display = 'none'; form.reset(); }
-        };
+        _safeBind('open-create-channel', 'onclick', () => cModal && (cModal.style.display = 'flex'));
+        _safeBind('close-channel-modal', 'onclick', () => cModal && (cModal.style.display = 'none'));
+        if (typeSelect && passGroup) typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
+        if (cForm) {
+            cForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const success = await this.createChannel(document.getElementById('new-channel-name').value, typeSelect.value, document.getElementById('new-channel-category').value, document.getElementById('new-channel-password').value);
+                if (success) { cModal.style.display = 'none'; cForm.reset(); }
+            };
+        }
 
         // Friend Modal
         const fModal = document.getElementById('add-friend-modal');
-        const fOpen = document.getElementById('open-add-friend');
-        const fClose = document.getElementById('close-friend-modal');
         const fForm = document.getElementById('add-friend-form');
-        fOpen.onclick = () => fModal.style.display = 'flex';
-        fClose.onclick = () => fModal.style.display = 'none';
-        fForm.onsubmit = async (e) => {
-            e.preventDefault();
-            if (await this.addFriendByUID(document.getElementById('friend-uid-input').value)) { fModal.style.display = 'none'; fForm.reset(); }
-        };
+        _safeBind('open-add-friend', 'onclick', () => fModal && (fModal.style.display = 'flex'));
+        _safeBind('close-friend-modal', 'onclick', () => fModal && (fModal.style.display = 'none'));
+        if (fForm) {
+            fForm.onsubmit = async (e) => {
+                e.preventDefault();
+                if (await this.addFriendByUID(document.getElementById('friend-uid-input').value)) { fModal.style.display = 'none'; fForm.reset(); }
+            };
+        }
 
         // Password Entry
         const pModal = document.getElementById('password-entry-modal');
-        const pClose = document.getElementById('close-password-modal');
         const pForm = document.getElementById('password-entry-form');
-        pClose.onclick = () => pModal.style.display = 'none';
-        pForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const channel = this.channels.find(c => c.id === this.pendingChannelId);
-            if (channel && channel.password === document.getElementById('entry-password-input').value) {
-                pModal.style.display = 'none'; pForm.reset();
-                await this.switchChannel(this.pendingChannelId);
-            } else alert('비밀번호가 틀렸습니다.');
-        };
+        _safeBind('close-password-modal', 'onclick', () => pModal && (pModal.style.display = 'none'));
+        if (pForm) {
+            pForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const channel = this.channels.find(c => c.id === this.pendingChannelId);
+                if (channel && channel.password === document.getElementById('entry-password-input').value) {
+                    pModal.style.display = 'none'; pForm.reset();
+                    await this.switchChannel(this.pendingChannelId);
+                } else alert('비밀번호가 틀렸습니다.');
+            };
+        }
     }
 }
 
