@@ -70,7 +70,8 @@ class AntiCodeApp {
         this.activeChannel = null;
         this.presenceChannel = null;
         this.messageSubscription = null;
-        this.unlockedChannels = new Set(); // Session-based password persistence
+        this.unlockedChannels = new Set();
+        this.sentMessageCache = new Set(); // To prevent duplicates in Optimistic UI
     }
 
     async init() {
@@ -338,11 +339,22 @@ class AntiCodeApp {
 
     setupMessageSubscription(channelId) {
         if (this.messageSubscription) this.supabase.removeChannel(this.messageSubscription);
+
+        console.log(`Subscribing to real-time messages for channel: ${channelId}`);
         this.messageSubscription = this.supabase
             .channel(`channel_${channelId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'anticode_messages', filter: `channel_id=eq.${channelId}` },
-                payload => this.appendMessage(payload.new))
-            .subscribe();
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'anticode_messages',
+                filter: `channel_id=eq.${channelId}`
+            }, payload => {
+                console.log('Real-time message received:', payload.new);
+                this.appendMessage(payload.new);
+            })
+            .subscribe((status) => {
+                console.log(`Subscription status for ${channelId}:`, status);
+            });
     }
 
     setupPresence() {
@@ -391,25 +403,52 @@ class AntiCodeApp {
         const input = document.getElementById('chat-input');
         const content = input.value.trim();
         if (!content || !this.activeChannel) return;
+
+        const tempId = 'msg_' + Date.now();
         const newMessage = {
+            id: tempId, // Temporary ID for collision check
             channel_id: this.activeChannel.id,
             user_id: this.currentUser.username,
             author: this.currentUser.nickname,
             content: content,
             created_at: new Date().toISOString()
         };
+
+        // 1. Optimistic Rendering: Display immediately
         input.value = '';
         input.style.height = 'auto';
-        await this.supabase.from('anticode_messages').insert([newMessage]);
+        this.sentMessageCache.add(content + newMessage.created_at);
+        await this.appendMessage(newMessage, true);
+
+        // 2. Real Server Push
+        const { data, error } = await this.supabase.from('anticode_messages').insert([{
+            channel_id: this.activeChannel.id,
+            user_id: this.currentUser.username,
+            author: this.currentUser.nickname,
+            content: content
+        }]).select();
+
+        if (error) {
+            console.error('Failed to send message:', error);
+            // Optionally: Mark message as "failed" in UI
+        }
     }
 
-    async appendMessage(msg) {
+    async appendMessage(msg, isOptimistic = false) {
+        // Prevent duplicates from real-time events if already rendered optimistically
+        const cacheKey = msg.content + msg.created_at;
+        if (!isOptimistic && this.sentMessageCache.has(cacheKey)) {
+            this.sentMessageCache.delete(cacheKey);
+            return;
+        }
+
         const container = document.getElementById('message-container');
         const msgEl = document.createElement('div');
         msgEl.className = 'message-item';
+        if (isOptimistic) msgEl.style.opacity = '0.7';
+
         const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        // Use cache/fetch for avatar
         const info = await this.getUserInfo(msg.user_id);
         const avatarHtml = info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar">` : `<div class="user-avatar">${msg.author[0]}</div>`;
 
@@ -418,13 +457,16 @@ class AntiCodeApp {
             <div class="message-content-wrapper">
                 <div class="message-meta">
                     <span class="member-name">${info.nickname}</span>
-                    <span class="timestamp">${timeStr}</span>
+                    <span class="timestamp">${timeStr} ${isOptimistic ? '(전송 중...)' : ''}</span>
                 </div>
                 <div class="message-text">${msg.content}</div>
             </div>
         `;
         container.appendChild(msgEl);
         container.scrollTop = container.scrollHeight;
+
+        // If it was optimistic, we might want to "finalize" it when the real event arrives,
+        // but for now, simple duplicate prevention is more efficient.
     }
 
     renderUserInfo() {
