@@ -87,6 +87,63 @@ class Channel {
 // ==========================================
 // 3. NOTIFICATION MANAGER
 // ==========================================
+const SoundFX = {
+    ctx: null,
+    unlocked: false,
+
+    ensure() {
+        if (this.unlocked) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        try {
+            this.ctx = new AC();
+            // Resume best-effort (requires user gesture on most browsers)
+            this.ctx.resume?.().catch(() => { });
+            this.unlocked = true;
+        } catch (_) {
+            this.ctx = null;
+            this.unlocked = false;
+        }
+    },
+
+    _beep({ freq = 880, durationMs = 70, gain = 0.04, type = 'sine', delayMs = 0 } = {}) {
+        if (!NotificationManager.isSoundOn) return;
+        this.ensure();
+        const ctx = this.ctx;
+        if (!ctx || ctx.state !== 'running') return;
+        const t0 = ctx.currentTime + (delayMs / 1000);
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t0);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + (durationMs / 1000));
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + (durationMs / 1000) + 0.02);
+    },
+
+    micOn() {
+        // Upward double chirp
+        this._beep({ freq: 880, durationMs: 55, gain: 0.05, type: 'triangle' });
+        this._beep({ freq: 1320, durationMs: 55, gain: 0.05, type: 'triangle', delayMs: 70 });
+    },
+
+    micOff() {
+        // Downward double chirp
+        this._beep({ freq: 660, durationMs: 55, gain: 0.05, type: 'triangle' });
+        this._beep({ freq: 440, durationMs: 65, gain: 0.05, type: 'triangle', delayMs: 70 });
+    },
+
+    notifFallback() {
+        // Short "ping" when HTMLAudio is blocked (common on mobile until interaction)
+        this._beep({ freq: 1046, durationMs: 60, gain: 0.04, type: 'sine' });
+        this._beep({ freq: 1568, durationMs: 45, gain: 0.03, type: 'sine', delayMs: 65 });
+    }
+};
+
 const NotificationManager = {
     count: 0,
     isSoundOn: localStorage.getItem('nano_notif_sound') !== 'off',
@@ -149,7 +206,13 @@ const NotificationManager = {
         const audio = document.getElementById('notif-sound');
         if (audio) {
             audio.currentTime = 0;
-            audio.play().catch(e => console.warn('Sound play blocked by browser policy. Interaction needed.'));
+            const p = audio.play();
+            if (p && typeof p.catch === 'function') {
+                p.catch(e => {
+                    console.warn('Sound play blocked by browser policy. Using fallback beep.', e);
+                    SoundFX.notifFallback();
+                });
+            }
         }
     },
 
@@ -559,13 +622,13 @@ class AntiCodeApp {
     async toggleVoice() {
         if (!this.activeChannel) return alert('먼저 채널을 선택하세요.');
         if (this.voiceEnabled) {
-            await this.stopVoice();
+            await this.stopVoice({ playFx: true });
         } else {
-            await this.startVoice();
+            await this.startVoice({ playFx: true });
         }
     }
 
-    async startVoice() {
+    async startVoice({ playFx = false } = {}) {
         if (!this.activeChannel) return;
         // Secret channels: invited-only
         if (this.activeChannel.type === 'secret' && !this._isAllowedInChannel(this.activeChannel.id)) {
@@ -578,6 +641,7 @@ class AntiCodeApp {
             this.localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
             this.voiceEnabled = true;
             this._setVoiceButtonState(true);
+            if (playFx) SoundFX.micOn();
 
             // Join signaling channel for this room
             this._setupVoiceSignaling(this.activeChannel.id);
@@ -604,13 +668,14 @@ class AntiCodeApp {
         } catch (e) {
             console.error('startVoice error:', e);
             alert('마이크 권한이 필요합니다.\\n' + (e?.message || e));
-            await this.stopVoice();
+            await this.stopVoice({ playFx: false });
         }
     }
 
-    async stopVoice() {
+    async stopVoice({ playFx = false } = {}) {
         this.voiceEnabled = false;
         this._setVoiceButtonState(false);
+        if (playFx) SoundFX.micOff();
 
         // Update presence voice flag off
         try {
@@ -970,6 +1035,11 @@ class AntiCodeApp {
 
         // Initialize Notifications Early
         NotificationManager.init();
+        // One-time audio unlock on first user interaction (helps mobile play effects reliably)
+        try {
+            document.addEventListener('click', () => SoundFX.ensure(), { once: true, capture: true });
+            document.addEventListener('touchstart', () => SoundFX.ensure(), { once: true, capture: true });
+        } catch (_) { }
 
         this.currentUser = this.getAuth();
         if (!this.currentUser) {
@@ -1371,7 +1441,7 @@ class AntiCodeApp {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
         // Voice is per-channel; stop when switching channels
-        if (this.voiceEnabled) await this.stopVoice();
+        if (this.voiceEnabled) await this.stopVoice({ playFx: false });
         this.activeChannel = channel;
         this._resetMessageDedupeState();
         this.unlockedChannels.add(channelId);
