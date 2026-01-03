@@ -168,12 +168,14 @@ const NotificationManager = {
         const btns = document.querySelectorAll('.notif-toggle-btn');
         btns.forEach(btn => {
             const isHeader = btn.id === 'notif-toggle-pc';
+            const isSidebar = btn.classList.contains('sidebar-notif-btn');
+
             if (this.isSoundOn) {
                 btn.classList.add('on');
-                btn.innerHTML = isHeader ? '🔔 ON' : '🔔 알림 소리 ON';
+                btn.innerHTML = (isHeader) ? '🔔 ON' : '🔔 알림 소리 ON';
             } else {
                 btn.classList.remove('on');
-                btn.innerHTML = isHeader ? '🔕 OFF' : '🔕 알림 소리 OFF';
+                btn.innerHTML = (isHeader) ? '🔕 OFF' : '🔕 알림 소리 OFF';
             }
         });
     },
@@ -224,6 +226,9 @@ class AntiCodeApp {
     async init() {
         console.log('AntiCode Feature App initializing...');
 
+        // Initialize Notifications Early
+        NotificationManager.init();
+
         this.currentUser = this.getAuth();
         if (!this.currentUser) {
             document.getElementById('auth-guard').style.display = 'flex';
@@ -249,9 +254,6 @@ class AntiCodeApp {
             if (this.channels.length > 0) {
                 await this.switchChannel(this.channels[0].id);
             }
-
-            // Notification System
-            NotificationManager.init();
         } catch (e) {
             console.error('App Init Error:', e);
         }
