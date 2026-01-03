@@ -4,9 +4,19 @@ const path = require('path');
 const files = ['script.js', 'anticode.js'];
 console.log("[Env Inject] Available Environment Keys:", Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('VITE')));
 
+const findEnv = (namePart) => {
+    // Look for exact match first
+    if (process.env[namePart]) return process.env[namePart];
+    if (process.env['VITE_' + namePart]) return process.env['VITE_' + namePart];
+
+    // Fallback: look for any key that contains the part (e.g. "SUPABASE_URL" or "VITE_SUPABASE_URL")
+    const foundKey = Object.keys(process.env).find(k => k.includes(namePart));
+    return foundKey ? process.env[foundKey] : null;
+};
+
 const envVars = {
-    'VITE_SUPABASE_URL': process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-    'VITE_SUPABASE_KEY': process.env.VITE_SUPABASE_KEY || process.env.SUPABASE_KEY
+    'VITE_SUPABASE_URL': findEnv('SUPABASE_URL'),
+    'VITE_SUPABASE_KEY': findEnv('SUPABASE_KEY')
 };
 
 console.log("[Env Inject] Resolved Keys:", Object.keys(envVars).filter(k => envVars[k]));
