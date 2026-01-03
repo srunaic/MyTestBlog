@@ -27,6 +27,11 @@ const envVars = {
 
 console.log("[Env Inject] Resolved Keys:", Object.keys(envVars).filter(k => envVars[k]));
 
+const toJsStringLiteral = (value) => {
+    // Produce a safe JS string literal (quoted + escaped), and strip accidental whitespace/newlines.
+    return JSON.stringify(String(value ?? '').trim());
+};
+
 if (!fs.existsSync(BUILD_DIR)) fs.mkdirSync(BUILD_DIR, { recursive: true });
 
 INPUT_FILES.forEach(file => {
@@ -43,9 +48,29 @@ INPUT_FILES.forEach(file => {
     // Direct replacement of the placeholder strings
     for (const [placeholder, value] of Object.entries(envVars)) {
         if (value) {
-            const pieces = content.split(placeholder);
-            if (pieces.length > 1) {
-                content = pieces.join(value);
+            let did = false;
+            const safe = toJsStringLiteral(value);
+
+            // Prefer replacing quoted placeholders, e.g. 'VITE_X' or "VITE_X"
+            if (content.includes(`'${placeholder}'`)) {
+                content = content.split(`'${placeholder}'`).join(safe);
+                did = true;
+            }
+            if (content.includes(`"${placeholder}"`)) {
+                content = content.split(`"${placeholder}"`).join(safe);
+                did = true;
+            }
+
+            // Fallback: unquoted replacement (legacy)
+            if (!did) {
+                const pieces = content.split(placeholder);
+                if (pieces.length > 1) {
+                    content = pieces.join(String(value).trim());
+                    did = true;
+                }
+            }
+
+            if (did) {
                 replacedCount++;
                 console.log(`[Env Inject] ✅ Replaced ${placeholder} in ${file}`);
             }
