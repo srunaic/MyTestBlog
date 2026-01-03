@@ -1,5 +1,6 @@
 # Build Artifacts
 public/
+.build/
 obfuscator-log.txt
 TestHost.txt
 diagnostic.txt

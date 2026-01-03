@@ -207,8 +207,43 @@ class AntiCodeApp {
         this.userRequestCache = {}; // Dedup in-flight user info requests
         this.processedMessageIds = new Set(); // To prevent duplicates (Broadcast vs Postgres)
         this.recentMessageFingerprints = new Map(); // Dedup Broadcast vs Postgres when IDs differ
+        this.friendsSchema = null; // Cache detected anticode_friends column names
         this.messageQueue = [];
         this.isProcessingQueue = false;
+    }
+
+    normalizeUID(input) {
+        // Convert full-width digits (０-９) to ASCII (0-9) and strip whitespace/symbols
+        if (input == null) return '';
+        let s = String(input).trim();
+        s = s.replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFF10 + 0x30));
+        s = s.replace(/[^\d]/g, '');
+        return s;
+    }
+
+    async _fetchFriendUsernames() {
+        // Try common schemas to avoid hard-failing with PostgREST 400 when columns differ
+        const schemas = [
+            { userCol: 'user_username', friendCol: 'friend_username' },
+            { userCol: 'user_id', friendCol: 'friend_id' },
+            { userCol: 'user_id', friendCol: 'friend_username' },
+            { userCol: 'username', friendCol: 'friend_username' }
+        ];
+
+        let lastError = null;
+        for (const schema of schemas) {
+            const { data, error } = await this.supabase
+                .from('anticode_friends')
+                .select(schema.friendCol)
+                .eq(schema.userCol, this.currentUser.username);
+
+            if (!error) {
+                this.friendsSchema = schema;
+                return data || [];
+            }
+            lastError = error;
+        }
+        throw lastError;
     }
 
     async uploadFile(file, bucket = 'uploads') {
@@ -360,20 +395,16 @@ class AntiCodeApp {
 
     async loadFriends() {
         try {
-            // Step 1: Fetch friend usernames
-            const { data: friendsData, error: friendsError } = await this.supabase
-                .from('anticode_friends')
-                .select('friend_username')
-                .eq('user_username', this.currentUser.username);
-
-            if (friendsError) throw friendsError;
+            // Step 1: Fetch friend usernames (robust to schema differences)
+            const friendsData = await this._fetchFriendUsernames();
             if (!friendsData || friendsData.length === 0) {
                 this.friends = [];
                 this.renderFriends();
                 return;
             }
 
-            const usernames = friendsData.map(f => f.friend_username);
+            const friendCol = this.friendsSchema?.friendCol || 'friend_username';
+            const usernames = friendsData.map(f => f[friendCol]).filter(Boolean);
 
             // Step 2: Batch fetch user info for all friends to populate cache
             const { data: usersData, error: usersError } = await this.supabase
@@ -413,18 +444,28 @@ class AntiCodeApp {
     }
 
     async addFriendByUID(uid) {
+        const normalizedUID = this.normalizeUID(uid);
+        if (!normalizedUID) { alert('사용자를 찾을 수 없습니다.'); return false; }
+
         const { data: target, error: searchError } = await this.supabase
             .from('anticode_users')
             .select('username')
-            .eq('uid', uid)
-            .single();
+            .eq('uid', normalizedUID)
+            .maybeSingle();
 
         if (searchError || !target) { alert('사용자를 찾을 수 없습니다.'); return false; }
         if (target.username === this.currentUser.username) { alert('자기 자신은 친구로 추가할 수 없습니다.'); return false; }
 
+        // Ensure we use the right anticode_friends schema for insert
+        if (!this.friendsSchema) {
+            try { await this._fetchFriendUsernames(); } catch (_) { /* ignore */ }
+        }
+        const userCol = this.friendsSchema?.userCol || 'user_username';
+        const friendCol = this.friendsSchema?.friendCol || 'friend_username';
+
         const { error: addError } = await this.supabase
             .from('anticode_friends')
-            .insert([{ user_username: this.currentUser.username, friend_username: target.username }]);
+            .insert([{ [userCol]: this.currentUser.username, [friendCol]: target.username }]);
 
         if (addError) { alert('이미 친구거나 오류가 발생했습니다.'); return false; }
 

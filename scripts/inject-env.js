@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const files = ['script.js', 'anticode.js'];
+// Generate injected copies into .build/ (never mutate source files)
+const INPUT_FILES = ['script.js', 'anticode.js'];
+const BUILD_DIR = path.join(__dirname, '..', '.build');
+
 // Never log secret values. Only log which env var names are present.
 console.log("[Env Inject] Available Environment Keys:", Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('VITE')));
 
@@ -22,25 +25,26 @@ const envVars = {
 
 console.log("[Env Inject] Resolved Keys:", Object.keys(envVars).filter(k => envVars[k]));
 
-files.forEach(file => {
-    const filePath = path.join(__dirname, '..', file);
-    if (!fs.existsSync(filePath)) {
+if (!fs.existsSync(BUILD_DIR)) fs.mkdirSync(BUILD_DIR, { recursive: true });
+
+INPUT_FILES.forEach(file => {
+    const inPath = path.join(__dirname, '..', file);
+    const outPath = path.join(BUILD_DIR, file.replace(/\.js$/, '') + '.injected.js');
+    if (!fs.existsSync(inPath)) {
         console.log(`[Env Inject] Skipping ${file} (not found)`);
         return;
     }
 
-    let content = fs.readFileSync(filePath, 'utf8');
+    let content = fs.readFileSync(inPath, 'utf8');
     let replacedCount = 0;
 
     // Direct replacement of the placeholder strings
     for (const [placeholder, value] of Object.entries(envVars)) {
         if (value) {
-            // Using a simple split/join to replace all occurrences of the placeholder string
             const pieces = content.split(placeholder);
             if (pieces.length > 1) {
                 content = pieces.join(value);
                 replacedCount++;
-                // Do not print any portion of the value (keys/URLs may be sensitive depending on user setup).
                 console.log(`[Env Inject] ✅ Replaced ${placeholder} in ${file}`);
             }
         } else {
@@ -48,9 +52,8 @@ files.forEach(file => {
         }
     }
 
-    if (replacedCount > 0) {
-        fs.writeFileSync(filePath, content);
-    } else {
-        console.log(`[Env Inject] ℹ️ No placeholders found in ${file}`);
+    fs.writeFileSync(outPath, content);
+    if (replacedCount === 0) {
+        console.log(`[Env Inject] ℹ️ No placeholders found in ${file} (wrote injected copy anyway)`);
     }
 });
