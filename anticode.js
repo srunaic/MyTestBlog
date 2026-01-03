@@ -605,12 +605,85 @@ class AntiCodeApp {
 
         if (hasMore) {
             html += `
-                <li class="view-all-friends" onclick="document.getElementById('friend-modal').style.display='flex'">
+                <li class="view-all-friends" onclick="window.app && window.app.openFriendModal && window.app.openFriendModal()">
                     친구 더 보기...
                 </li>
             `;
         }
         list.innerHTML = html;
+    }
+
+    openFriendModal() {
+        const modal = document.getElementById('friend-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        this.renderFriendModalList();
+    }
+
+    closeFriendModal() {
+        const modal = document.getElementById('friend-modal');
+        if (!modal) return;
+        modal.style.display = 'none';
+    }
+
+    renderFriendModalList() {
+        const container = document.getElementById('friend-modal-list');
+        if (!container) return;
+
+        const activeChannelName = this.activeChannel?.name || '';
+        const canInvite = !!this.activeChannel;
+
+        if (!this.friends || this.friends.length === 0) {
+            container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">친구가 없습니다.</div>`;
+            return;
+        }
+
+        container.innerHTML = this.friends.map(f => `
+            <div class="member-card ${f.online ? 'online' : 'offline'}" style="margin-bottom:8px;">
+                <div class="avatar-wrapper">
+                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                    <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${(f.nickname || f.username)[0]}</div>
+                    ${f.online ? '<span class="online-dot"></span>' : ''}
+                </div>
+                <div class="member-info" style="flex:1;">
+                    <span class="member-name-text">${f.nickname} <small>#${f.uid}</small></span>
+                    <span class="member-status-sub">${f.online ? '온라인' : '오프라인'}</span>
+                </div>
+                <button class="notif-toggle-btn" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}"
+                    ${canInvite ? '' : 'disabled'}
+                    onclick="window.app && window.app.inviteFriendToActiveChannel && window.app.inviteFriendToActiveChannel('${f.username}')">
+                    ${canInvite ? `초대 (${activeChannelName})` : '채널 선택 필요'}
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async inviteFriendToActiveChannel(friendUsername) {
+        if (!this.activeChannel) return alert('먼저 채널을 선택하세요.');
+        if (!friendUsername) return;
+
+        // 친구만 초대 가능
+        const isFriend = this.friends?.some(f => f.username === friendUsername);
+        if (!isFriend) return alert('친구만 초대할 수 있습니다.');
+
+        try {
+            const payload = {
+                channel_id: this.activeChannel.id,
+                username: friendUsername,
+                invited_by: this.currentUser.username,
+                created_at: new Date().toISOString()
+            };
+            const { error } = await this.supabase.from('anticode_channel_members').insert([payload]);
+            if (error) {
+                console.error('Invite error:', error);
+                alert('초대 실패: ' + error.message + '\\n\\n(필요 테이블: anticode_channel_members)');
+                return;
+            }
+            alert('초대 완료!');
+        } catch (e) {
+            console.error('Invite exception:', e);
+            alert('초대 실패: ' + (e?.message || e));
+        }
     }
 
     async loadChannels() {
@@ -1276,6 +1349,10 @@ class AntiCodeApp {
                 if (await this.addFriendByUID(document.getElementById('friend-uid-input').value)) { fModal.style.display = 'none'; fForm.reset(); }
             };
         }
+
+        // Friend List Modal (view all + invite)
+        const friendModal = document.getElementById('friend-modal');
+        _safeBind('close-friend-list-modal', 'onclick', () => friendModal && (friendModal.style.display = 'none'));
 
         // Settings Modal
         const sModal = document.getElementById('app-settings-modal');
