@@ -206,6 +206,8 @@ class AntiCodeApp {
         this.isAdminMode = false;
         this.userRequestCache = {}; // Dedup in-flight user info requests
         this.processedMessageIds = new Set(); // To prevent duplicates (Broadcast vs Postgres)
+        this.messageQueue = [];
+        this.isProcessingQueue = false;
     }
 
     async uploadFile(file, bucket = 'uploads') {
@@ -307,16 +309,21 @@ class AntiCodeApp {
         if (this.userRequestCache[username]) return this.userRequestCache[username];
 
         const fetchInfo = async () => {
-            const { data, error } = await this.supabase
-                .from('anticode_users')
-                .select('nickname, avatar_url')
-                .eq('username', username)
-                .single();
+            try {
+                const { data, error } = await this.supabase
+                    .from('anticode_users')
+                    .select('nickname, avatar_url')
+                    .eq('username', username)
+                    .single();
 
-            if (!error && data) {
-                this.userCache[username] = data;
+                if (!error && data) {
+                    this.userCache[username] = data;
+                    return data;
+                }
+            } catch (e) {
+                console.error('getUserInfo error:', e);
+            } finally {
                 delete this.userRequestCache[username];
-                return data;
             }
             return { nickname: username, avatar_url: null };
         };
@@ -324,22 +331,28 @@ class AntiCodeApp {
         this.userRequestCache[username] = fetchInfo();
         return this.userRequestCache[username];
     }
-    async updateProfile(nickname, avatarUrl) {
-        const { error } = await this.supabase
-            .from('anticode_users')
-            .update({ nickname, avatar_url: avatarUrl })
-            .eq('username', this.currentUser.username);
 
-        if (!error) {
-            this.currentUser.nickname = nickname;
-            this.currentUser.avatar_url = avatarUrl;
-            this.userCache[this.currentUser.username] = { nickname, avatar_url: avatarUrl };
-            this.renderUserInfo();
-            // Update session if needed
-            const session = JSON.parse(localStorage.getItem(SESSION_KEY));
-            session.nickname = nickname;
-            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-            return true;
+    async updateProfile(nickname, avatarUrl) {
+        try {
+            const { error } = await this.supabase
+                .from('anticode_users')
+                .update({ nickname, avatar_url: avatarUrl })
+                .eq('username', this.currentUser.username);
+
+            if (!error) {
+                this.currentUser.nickname = nickname;
+                this.currentUser.avatar_url = avatarUrl;
+                this.userCache[this.currentUser.username] = { nickname, avatar_url: avatarUrl };
+                this.renderUserInfo();
+                const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+                if (session) {
+                    session.nickname = nickname;
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+                }
+                return true;
+            }
+        } catch (e) {
+            console.error('Update profile error:', e);
         }
         return false;
     }
@@ -582,27 +595,44 @@ class AntiCodeApp {
         this.messageSubscription = this.supabase
             .channel(`channel_${channelId}`, {
                 config: {
-                    broadcast: { self: false } // We handle self-delivery via optimistic UI
+                    broadcast: { self: false }
                 }
             })
-            // 1. Broadcast: Instant Fast-track (Sub-second)
             .on('broadcast', { event: 'chat' }, payload => {
-                console.log('Broadcast message received:', payload.payload);
-                this.appendMessage(payload.payload);
+                this.queueMessage(payload.payload);
             })
-            // 2. Postgres: Reliable persistence (Follow-up)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'anticode_messages',
                 filter: `channel_id=eq.${channelId}`
             }, payload => {
-                console.log('Postgres message received:', payload.new);
-                this.appendMessage(payload.new);
+                this.queueMessage(payload.new);
             })
             .subscribe((status) => {
                 console.log(`Subscription status for ${channelId}:`, status);
             });
+    }
+
+    queueMessage(msg, isOptimistic = false) {
+        this.messageQueue.push({ msg, isOptimistic });
+        this.processQueue();
+    }
+
+    async processQueue() {
+        if (this.isProcessingQueue || this.messageQueue.length === 0) return;
+        this.isProcessingQueue = true;
+
+        while (this.messageQueue.length > 0) {
+            const { msg, isOptimistic } = this.messageQueue.shift();
+            try {
+                await this.appendMessage(msg, isOptimistic);
+            } catch (e) {
+                console.error('Error processing message in queue:', e, msg);
+            }
+        }
+
+        this.isProcessingQueue = false;
     }
 
     setupPresence() {
@@ -717,7 +747,7 @@ class AntiCodeApp {
         input.value = '';
         input.style.height = 'auto';
         this.sentMessageCache.add(tempId); // Track by ID for precision
-        await this.appendMessage({ ...newMessage }, true);
+        this.queueMessage({ ...newMessage }, true);
 
         // 2. Broadcast: Instant Fast-track to others
         if (this.messageSubscription) {
@@ -744,72 +774,86 @@ class AntiCodeApp {
     }
 
     async appendMessage(msg, isOptimistic = false) {
-        const container = document.getElementById('message-container');
-        if (!container) return;
+        try {
+            const container = document.getElementById('message-container');
+            if (!container) return;
 
-        // Message Deduplication & Optimistic Finalization
-        // We track processed IDs to prevent duplicates (Broadcast vs Postgres)
+            // Message Deduplication & Optimistic Finalization
+            if (!isOptimistic) {
+                // Priority 1: Match by exact ID (Broadcast/Postgres)
+                if (msg.id && this.processedMessageIds.has(msg.id)) return;
 
-        // If it's a real message (not optimistic), check for duplicates
-        if (!isOptimistic) {
-            // Priority 1: Match by exact ID (Broadcast/Postgres)
-            if (msg.id && this.processedMessageIds.has(msg.id)) return;
-
-            // Priority 2: Finalize my own optimistic message
-            if (msg.user_id === this.currentUser.username) {
+                // Priority 2: Finalize my own optimistic message
                 const optimisticMsgs = container.querySelectorAll('.message-item[data-optimistic="true"]');
                 for (let i = optimisticMsgs.length - 1; i >= 0; i--) {
                     const opt = optimisticMsgs[i];
-                    const text = opt.querySelector('.message-text')?.innerText.trim();
-                    // Match by content for self messages as DB ID is only known now
-                    if (text === (msg.content || '').trim()) {
-                        opt.style.opacity = '1';
-                        opt.removeAttribute('data-optimistic');
-                        const statusText = opt.querySelector('.sending-status');
-                        if (statusText) statusText.remove();
-                        if (msg.id) this.processedMessageIds.add(msg.id);
-                        return; // Found and finalized, so stop here
+
+                    // Match by temp ID if available
+                    if (msg.id && opt.dataset.tempId === msg.id) {
+                        this.finalizeOptimistic(opt, msg.id);
+                        return;
+                    }
+
+                    // Fallback to content matching for Postgres events (where tempId is lost)
+                    if (msg.user_id === this.currentUser.username) {
+                        const textContentElement = opt.querySelector('.message-text');
+                        const text = textContentElement?.innerText.trim();
+                        if (text === (msg.content || '').trim()) {
+                            this.finalizeOptimistic(opt, msg.id);
+                            return;
+                        }
                     }
                 }
+
+                if (msg.id) this.processedMessageIds.add(msg.id);
             }
 
-            // Register this ID as processed
-            if (msg.id) this.processedMessageIds.add(msg.id);
-        }
+            const msgEl = document.createElement('div');
+            msgEl.className = 'message-item';
+            if (isOptimistic) {
+                msgEl.style.opacity = '0.7';
+                msgEl.setAttribute('data-optimistic', 'true');
+                if (msg.id) msgEl.dataset.tempId = msg.id; // Store tempId for matching
+            }
 
-        const msgEl = document.createElement('div');
-        msgEl.className = 'message-item';
-        if (isOptimistic) {
-            msgEl.style.opacity = '0.7';
-            msgEl.setAttribute('data-optimistic', 'true');
-        }
+            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        const info = await this.getUserInfo(msg.user_id);
-        const avatarHtml = `
+            const info = await this.getUserInfo(msg.user_id);
+            const avatarHtml = `
             <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0;">
                 ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                 <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${msg.author[0]}</div>
             </div>
         `;
 
-        msgEl.innerHTML = `
-            ${avatarHtml}
-            <div class="message-content-wrapper">
-                <div class="message-meta">
-                    <span class="member-name">${info.nickname}</span>
-                    <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
+            msgEl.innerHTML = `
+                ${avatarHtml}
+                <div class="message-content-wrapper">
+                    <div class="message-meta">
+                        <span class="member-name">${info.nickname}</span>
+                        <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
+                    </div>
+                    <div class="message-text">
+                        ${msg.content}
+                        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
+                    </div>
                 </div>
-                <div class="message-text">
-                    ${msg.content}
-                    ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
-                </div>
-            </div>
-        `;
-        container.appendChild(msgEl);
-        container.scrollTop = container.scrollHeight;
+            `;
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+        } catch (e) {
+            console.error('Failed to append message:', e, msg);
+        }
     }
+
+    finalizeOptimistic(opt, realId) {
+        opt.style.opacity = '1';
+        opt.removeAttribute('data-optimistic');
+        const statusText = opt.querySelector('.sending-status');
+        if (statusText) statusText.remove();
+        if (realId) this.processedMessageIds.add(realId);
+    }
+
 
     renderUserInfo() {
         const info = document.getElementById('current-user-info');
@@ -1086,6 +1130,7 @@ class AntiCodeApp {
             };
         }
     }
+}
 }
 
 const app = new AntiCodeApp();
