@@ -56,12 +56,16 @@ class Channel {
         `;
     }
 
-    renderSidebarItem(isActive) {
+    renderSidebarItem(isActive, isAdmin) {
         const hash = this.type === 'secret' ? '🔒' : '#';
         const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
+        const deleteHtml = isAdmin ? `<button class="delete-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.deleteChannel('${this.id}')" title="채널 삭제">&times;</button>` : '';
         return `
             <div class="channel-group-item ${isActive ? 'active' : ''}">
-                <div class="channel-name-label">${hash} ${this.name}</div>
+                <div class="channel-name-row">
+                    <div class="channel-name-label">${hash} ${this.name}</div>
+                    ${deleteHtml}
+                </div>
                 <div class="channel-sub-link" data-id="${this.id}">
                     <span class="sub-link-icon">${categoryLabel}</span>
                 </div>
@@ -199,6 +203,7 @@ class AntiCodeApp {
         this.messageSubscription = null;
         this.unlockedChannels = new Set();
         this.sentMessageCache = new Set(); // To prevent duplicates in Optimistic UI
+        this.isAdminMode = false;
     }
 
     async uploadFile(file, bucket = 'uploads') {
@@ -233,6 +238,7 @@ class AntiCodeApp {
             document.getElementById('auth-guard').style.display = 'flex';
             return;
         }
+        this.isAdminMode = this.currentUser.role === 'admin';
 
         try {
             this.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -432,7 +438,7 @@ class AntiCodeApp {
                     ${catId === 'chat' ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
                 </div>
                 <div class="sidebar-list">
-                    ${chans.map(c => c.renderSidebarItem(this.activeChannel && c.id === this.activeChannel.id)).join('')}
+                    ${chans.map(c => c.renderSidebarItem(this.activeChannel && c.id === this.activeChannel.id, this.isAdminMode)).join('')}
                 </div>
             `;
             container.appendChild(group);
@@ -505,12 +511,24 @@ class AntiCodeApp {
     }
 
     async deleteChannel(channelId) {
-        if (!confirm('정말로 이 채널을 삭제하시겠습니까?')) return;
+        if (!confirm('정말로 이 채널을 삭제하시겠습니까? 채널의 모든 메시지 기록이 영구적으로 삭제됩니다.')) return;
+
+        // 1. Delete associated messages
+        await this.supabase.from('anticode_messages').delete().eq('channel_id', channelId);
+
+        // 2. Delete the channel itself
         const { error } = await this.supabase.from('anticode_channels').delete().eq('id', channelId);
         if (!error) {
             this.channels = this.channels.filter(c => c.id !== channelId);
-            if (this.channels.length > 0) this.switchChannel(this.channels[0].id);
-            else location.reload();
+            this.renderChannels();
+
+            if (this.channels.length > 0) {
+                await this.switchChannel(this.channels[0].id);
+            } else {
+                location.reload();
+            }
+        } else {
+            alert('삭제에 실패했습니다: ' + error.message);
         }
     }
 

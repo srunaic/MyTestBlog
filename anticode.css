@@ -100,6 +100,49 @@
     margin: 8px 0 0 0;
 }
 
+/* Global Channel Item Styles */
+.channel-group-item {
+    margin: 6px 0;
+    padding: 0 4px;
+}
+
+.channel-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.channel-name-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.delete-channel-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 1.1rem;
+    line-height: 1;
+    transition: 0.2s;
+    opacity: 0;
+    /* Hidden by default */
+}
+
+.channel-group-item:hover .delete-channel-btn {
+    opacity: 0.6;
+}
+
+.delete-channel-btn:hover {
+    color: #ff4747 !important;
+    transform: scale(1.2);
+    opacity: 1 !important;
+}
+
 /* Notification Toggle Buttons in AntiCode */
 .notif-toggle-btn {
     background: rgba(255, 255, 255, 0.05);
@@ -980,15 +1023,30 @@
         align-items: center;
     }
 
-    .channel-sub-link:hover {
-        background: rgba(0, 242, 255, 0.05);
-        border-color: var(--accent);
+    .channel-name-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
     }
 
-    .channel-group-item.active .channel-sub-link {
-        background: rgba(0, 242, 255, 0.1);
-        border-color: var(--accent);
-        color: var(--accent);
+    .delete-channel-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0 4px;
+        font-size: 1.2rem;
+        line-height: 1;
+        transition: 0.2s;
+        opacity: 0.5;
+        font-family: Arial, sans-serif;
+    }
+
+    .delete-channel-btn:hover {
+        color: #ff4747;
+        transform: scale(1.1);
+        opacity: 1;
     }
 
     .sub-link-icon {
