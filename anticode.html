@@ -263,6 +263,19 @@
                     <button type="button" id="chat-cleanup-run-now" class="notif-toggle-btn">지금 실행</button>
                 </div>
             </div>
+            <div class="setting-item-group">
+                <div class="setting-label">
+                    <span class="label-title">🎙️ 마이크(입력 장치)</span>
+                    <span class="label-desc">USB 마이크를 재설정/선택할 수 있습니다. (보이스 톡 사용 전 권장)</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; width:100%;">
+                    <select id="voice-mic-select" style="flex:1; min-width: 0;">
+                        <option value="">기본 마이크</option>
+                    </select>
+                    <button type="button" id="voice-mic-refresh" class="notif-toggle-btn">새로고침</button>
+                    <button type="button" id="voice-mic-apply" class="notif-toggle-btn">적용</button>
+                </div>
+            </div>
             <div class="modal-btns">
                 <button type="button" id="close-settings-modal" class="submit-btn">확인</button>
             </div>

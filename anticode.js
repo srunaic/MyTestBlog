@@ -219,6 +219,7 @@ class AntiCodeApp {
         this.voiceChannel = null; // Supabase broadcast channel for WebRTC signaling (per room)
         this.peerConnections = new Map(); // username -> RTCPeerConnection
         this.remoteAudioEls = new Map(); // username -> HTMLAudioElement
+        this.voiceDeviceId = null; // preferred microphone deviceId (per user)
     }
 
     _resetMessageDedupeState() {
@@ -483,6 +484,68 @@ class AntiCodeApp {
         btn.title = on ? '보이스 톡 OFF' : '보이스 톡 ON';
     }
 
+    _getVoiceDeviceKey() {
+        const u = this.currentUser?.username || 'anonymous';
+        return `anticode_voice_device::${u}`;
+    }
+
+    loadVoiceDevicePreference() {
+        try {
+            const raw = localStorage.getItem(this._getVoiceDeviceKey());
+            this.voiceDeviceId = raw ? String(raw) : null;
+        } catch (_) {
+            this.voiceDeviceId = null;
+        }
+    }
+
+    saveVoiceDevicePreference(deviceId) {
+        try {
+            const v = deviceId ? String(deviceId) : '';
+            if (v) localStorage.setItem(this._getVoiceDeviceKey(), v);
+            else localStorage.removeItem(this._getVoiceDeviceKey());
+            this.voiceDeviceId = v || null;
+        } catch (_) { }
+    }
+
+    async refreshMicDeviceList({ requestPermissionIfNeeded = false } = {}) {
+        const sel = document.getElementById('voice-mic-select');
+        if (!sel) return;
+
+        // On many browsers, device labels are empty until mic permission is granted once.
+        // If asked, briefly request permission so USB mic names show up.
+        if (requestPermissionIfNeeded && navigator?.mediaDevices?.getUserMedia) {
+            try {
+                const tmp = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                tmp.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
+            } catch (_) { /* ignore */ }
+        }
+
+        let devices = [];
+        try {
+            devices = await navigator.mediaDevices.enumerateDevices();
+        } catch (e) {
+            console.warn('enumerateDevices failed:', e);
+        }
+        const mics = (devices || []).filter(d => d.kind === 'audioinput');
+        const current = this.voiceDeviceId || '';
+
+        sel.innerHTML = '';
+        const opt0 = document.createElement('option');
+        opt0.value = '';
+        opt0.textContent = '기본 마이크';
+        sel.appendChild(opt0);
+
+        mics.forEach((d, idx) => {
+            const opt = document.createElement('option');
+            opt.value = d.deviceId;
+            opt.textContent = d.label || `마이크 ${idx + 1}`;
+            sel.appendChild(opt);
+        });
+
+        sel.value = current;
+        if (!sel.value) sel.value = '';
+    }
+
     async toggleVoice() {
         if (!this.activeChannel) return alert('먼저 채널을 선택하세요.');
         if (this.voiceEnabled) {
@@ -501,7 +564,8 @@ class AntiCodeApp {
         }
         try {
             // Must be called from user gesture (button click) on mobile
-            this.localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            const audioConstraint = this.voiceDeviceId ? { deviceId: { exact: this.voiceDeviceId } } : true;
+            this.localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
             this.voiceEnabled = true;
             this._setVoiceButtonState(true);
 
@@ -909,6 +973,8 @@ class AntiCodeApp {
 
             // Restore secret-channel unlocks for this user (password once per device/account)
             this._loadUnlockedChannels();
+            // Restore preferred mic device (USB mic selection)
+            this.loadVoiceDevicePreference();
 
             // Admin-only: auto-clean old chat messages on a 90-day cadence
             await this.maybeAutoCleanupMessages();
@@ -1950,9 +2016,37 @@ class AntiCodeApp {
                 }
                 if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
             }
+
+            // Voice mic selector: populate list and restore saved selection
+            const micSel = document.getElementById('voice-mic-select');
+            if (micSel) {
+                // If labels are blank, user can hit "새로고침" to request permission.
+                this.refreshMicDeviceList({ requestPermissionIfNeeded: false });
+            }
         });
         _safeBind('close-settings-modal', 'onclick', () => {
             if (sModal) sModal.style.display = 'none';
+        });
+
+        // Voice mic selector actions
+        _safeBind('voice-mic-refresh', 'onclick', async () => {
+            const sel = document.getElementById('voice-mic-select');
+            const needsPerm = !!sel && [...sel.options].slice(1).every(o => !o.textContent || /^마이크\s+\d+$/.test(o.textContent));
+            const askPerm = !this.voiceEnabled && needsPerm
+                ? confirm('마이크 장치 이름(USB 마이크)을 정확히 보려면 권한이 필요할 수 있어요. 지금 권한을 요청할까요?')
+                : false;
+            await this.refreshMicDeviceList({ requestPermissionIfNeeded: askPerm });
+        });
+        _safeBind('voice-mic-apply', 'onclick', async () => {
+            const sel = document.getElementById('voice-mic-select');
+            const deviceId = sel ? sel.value : '';
+            this.saveVoiceDevicePreference(deviceId || null);
+            alert('마이크 설정이 저장되었습니다.' + (this.voiceEnabled ? ' (보이스 톡을 재시작합니다)' : ''));
+            if (this.voiceEnabled) {
+                // Restart voice to apply device change
+                await this.stopVoice();
+                await this.startVoice();
+            }
         });
 
         _safeBind('chat-cleanup-toggle', 'onclick', () => {
