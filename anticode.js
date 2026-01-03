@@ -213,6 +213,41 @@ class AntiCodeApp {
         this.isProcessingQueue = false;
     }
 
+    _resetMessageDedupeState() {
+        // Important: if we keep processed IDs across channel switches,
+        // initial history render can get skipped and the chat looks empty.
+        this.processedMessageIds = new Set();
+        this.recentMessageFingerprints = new Map();
+        this.sentMessageCache = new Set();
+        this.messageQueue = [];
+        this.isProcessingQueue = false;
+    }
+
+    async compressImageFile(file, maxDim = 1280, quality = 0.78) {
+        // Client-side resize/compress to speed up uploads on slow networks.
+        try {
+            if (!file || !file.type || !file.type.startsWith('image/')) return file;
+            const img = await createImageBitmap(file);
+            const w = img.width, h = img.height;
+            const scale = Math.min(1, maxDim / Math.max(w, h));
+            const tw = Math.max(1, Math.round(w * scale));
+            const th = Math.max(1, Math.round(h * scale));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = tw; canvas.height = th;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, tw, th);
+            img.close?.();
+
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+            if (!blob) return file;
+            const safeName = (file.name || 'image').replace(/\.[^/.]+$/, '') + '.jpg';
+            return new File([blob], safeName, { type: 'image/jpeg' });
+        } catch (_) {
+            return file;
+        }
+    }
+
     _getCleanupSettingsKey() {
         const u = this.currentUser?.username || 'anonymous';
         return `anticode_chat_cleanup_settings::${u}`;
@@ -763,6 +798,7 @@ class AntiCodeApp {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
         this.activeChannel = channel;
+        this._resetMessageDedupeState();
         this.unlockedChannels.add(channelId);
         this._saveUnlockedChannels();
         this.renderChannels();
@@ -1436,9 +1472,12 @@ class AntiCodeApp {
                 const originalBtnText = attachBtn.textContent;
                 attachBtn.textContent = '...';
                 try {
-                    const url = await this.uploadFile(file);
-                    // Send directly as an image message
-                    const tempId = 'msg_' + Date.now();
+                    // Compress first for faster upload
+                    const optimized = await this.compressImageFile(file);
+                    const url = await this.uploadFile(optimized);
+
+                    // Use same optimistic + finalize flow as text messages
+                    const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
                     const newMessage = {
                         id: tempId,
                         channel_id: this.activeChannel.id,
@@ -1448,14 +1487,35 @@ class AntiCodeApp {
                         image_url: url,
                         created_at: new Date().toISOString()
                     };
-                    await this.appendMessage(newMessage, true);
-                    await this.supabase.from('anticode_messages').insert([{
+
+                    this.sentMessageCache.add(tempId);
+                    this.queueMessage({ ...newMessage }, true);
+
+                    if (this.messageSubscription) {
+                        this.messageSubscription.send({
+                            type: 'broadcast',
+                            event: 'chat',
+                            payload: newMessage
+                        });
+                    }
+
+                    const { data, error } = await this.supabase.from('anticode_messages').insert([{
                         channel_id: this.activeChannel.id,
                         user_id: this.currentUser.username,
                         author: this.currentUser.nickname,
                         content: '',
                         image_url: url
-                    }]);
+                    }]).select('id, created_at').single();
+
+                    if (error) {
+                        console.error('Failed to send image message:', error);
+                        return;
+                    }
+
+                    try {
+                        const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+                        if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
+                    } catch (_) { }
                 } catch (err) {
                     alert('이미지 업로드 실패: ' + err.message);
                 } finally {
@@ -1475,7 +1535,8 @@ class AntiCodeApp {
 
                 uploadAvatarBtn.textContent = '업로드 중...';
                 try {
-                    const url = await this.uploadFile(file);
+                    const optimized = await this.compressImageFile(file);
+                    const url = await this.uploadFile(optimized);
                     document.getElementById('edit-avatar-url').value = url;
                     alert('프로필 이미지가 업로드되었습니다. 저장 버튼을 눌러 확정하세요.');
                 } catch (err) {
