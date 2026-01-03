@@ -55,6 +55,7 @@ serve(async (req) => {
     if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
       return new Response("Missing VAPID keys", { status: 500, headers: corsHeaders });
     }
+    const vapidSubjectOk = VAPID_SUBJECT.startsWith("mailto:") || VAPID_SUBJECT.startsWith("https://") || VAPID_SUBJECT.startsWith("http://");
 
     const payload: PushReq = await req.json();
     const title = payload.title ?? "Nanodoroshi / Anticode";
@@ -198,6 +199,19 @@ serve(async (req) => {
       disabled,
       failByStatus,
       sampleFail,
+      debug: {
+        endpointHosts: Array.from(new Set(targets.map((t) => {
+          try { return new URL(t.endpoint).hostname; } catch (_) { return "invalid"; }
+        }))),
+        vapid: {
+          subjectOk: vapidSubjectOk,
+          subjectPrefix: VAPID_SUBJECT.slice(0, 10),
+          publicLen: VAPID_PUBLIC.length,
+          privateLen: VAPID_PRIVATE.length,
+          publicLooksLikeBase64Url: /^[A-Za-z0-9_-]+$/.test(VAPID_PUBLIC),
+          privateLooksLikeBase64Url: /^[A-Za-z0-9_-]+$/.test(VAPID_PRIVATE),
+        }
+      }
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
