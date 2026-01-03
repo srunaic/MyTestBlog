@@ -1,5 +1,5 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v1.5'; // Increment version to force refresh
+const CACHE_NAME = 'nanodoroshi-v1.6'; // Increment version to force refresh
 const ASSETS = [
     '/',
     '/index.html',

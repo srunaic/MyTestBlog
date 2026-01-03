@@ -204,6 +204,8 @@ class AntiCodeApp {
         this.unlockedChannels = new Set();
         this.sentMessageCache = new Set(); // To prevent duplicates in Optimistic UI
         this.isAdminMode = false;
+        this.userRequestCache = {}; // Dedup in-flight user info requests
+        this.processedMessageIds = new Set(); // To prevent duplicates (Broadcast vs Postgres)
     }
 
     async uploadFile(file, bucket = 'uploads') {
@@ -302,20 +304,26 @@ class AntiCodeApp {
 
     async getUserInfo(username) {
         if (this.userCache[username]) return this.userCache[username];
+        if (this.userRequestCache[username]) return this.userRequestCache[username];
 
-        const { data, error } = await this.supabase
-            .from('anticode_users')
-            .select('nickname, avatar_url')
-            .eq('username', username)
-            .single();
+        const fetchInfo = async () => {
+            const { data, error } = await this.supabase
+                .from('anticode_users')
+                .select('nickname, avatar_url')
+                .eq('username', username)
+                .single();
 
-        if (!error && data) {
-            this.userCache[username] = data;
-            return data;
-        }
-        return { nickname: username, avatar_url: null };
+            if (!error && data) {
+                this.userCache[username] = data;
+                delete this.userRequestCache[username];
+                return data;
+            }
+            return { nickname: username, avatar_url: null };
+        };
+
+        this.userRequestCache[username] = fetchInfo();
+        return this.userRequestCache[username];
     }
-
     async updateProfile(nickname, avatarUrl) {
         const { error } = await this.supabase
             .from('anticode_users')
@@ -337,19 +345,27 @@ class AntiCodeApp {
     }
 
     async loadFriends() {
+        // Fetch friend list with basic user info to pre-cache
         const { data, error } = await this.supabase
             .from('anticode_friends')
-            .select('friend_id, anticode_users(username, nickname, uid, avatar_url)')
-            .eq('user_id', this.currentUser.username);
+            .select(`
+                friend_username,
+                friend_info:anticode_users!anticode_friends_friend_username_fkey (username, nickname, uid, avatar_url)
+            `)
+            .eq('user_username', this.currentUser.username);
 
         if (!error && data) {
-            this.friends = data.map(d => ({
-                username: d.anticode_users.username,
-                nickname: d.anticode_users.nickname,
-                uid: d.anticode_users.uid,
-                avatar_url: d.anticode_users.avatar_url,
-                online: false
-            }));
+            this.friends = data.map(f => {
+                const info = f.friend_info;
+                if (info) this.userCache[f.friend_username] = info;
+                return {
+                    username: f.friend_username,
+                    nickname: info ? info.nickname : f.friend_username,
+                    uid: info ? info.uid : '000000',
+                    avatar_url: info ? info.avatar_url : null,
+                    online: false
+                };
+            });
             this.renderFriends();
         }
     }
@@ -366,7 +382,7 @@ class AntiCodeApp {
 
         const { error: addError } = await this.supabase
             .from('anticode_friends')
-            .insert([{ user_id: this.currentUser.username, friend_id: target.username }]);
+            .insert([{ user_username: this.currentUser.username, friend_username: target.username }]);
 
         if (addError) { alert('이미 친구거나 오류가 발생했습니다.'); return false; }
 
@@ -564,14 +580,24 @@ class AntiCodeApp {
 
         console.log(`Subscribing to real-time messages for channel: ${channelId}`);
         this.messageSubscription = this.supabase
-            .channel(`channel_${channelId}`)
+            .channel(`channel_${channelId}`, {
+                config: {
+                    broadcast: { self: false } // We handle self-delivery via optimistic UI
+                }
+            })
+            // 1. Broadcast: Instant Fast-track (Sub-second)
+            .on('broadcast', { event: 'chat' }, payload => {
+                console.log('Broadcast message received:', payload.payload);
+                this.appendMessage(payload.payload);
+            })
+            // 2. Postgres: Reliable persistence (Follow-up)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'anticode_messages',
                 filter: `channel_id=eq.${channelId}`
             }, payload => {
-                console.log('Real-time message received:', payload.new);
+                console.log('Postgres message received:', payload.new);
                 this.appendMessage(payload.new);
             })
             .subscribe((status) => {
@@ -677,9 +703,9 @@ class AntiCodeApp {
         const content = input.value.trim();
         if (!content || !this.activeChannel) return;
 
-        const tempId = 'msg_' + Date.now();
+        const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
         const newMessage = {
-            id: tempId, // Temporary ID for collision check
+            id: tempId,
             channel_id: this.activeChannel.id,
             user_id: this.currentUser.username,
             author: this.currentUser.nickname,
@@ -690,10 +716,19 @@ class AntiCodeApp {
         // 1. Optimistic Rendering: Display immediately
         input.value = '';
         input.style.height = 'auto';
-        this.sentMessageCache.add(content); // Use content for matching
+        this.sentMessageCache.add(tempId); // Track by ID for precision
         await this.appendMessage({ ...newMessage }, true);
 
-        // 2. Real Server Push
+        // 2. Broadcast: Instant Fast-track to others
+        if (this.messageSubscription) {
+            this.messageSubscription.send({
+                type: 'broadcast',
+                event: 'chat',
+                payload: newMessage
+            });
+        }
+
+        // 3. Persistent Storage
         const { data, error } = await this.supabase.from('anticode_messages').insert([{
             channel_id: this.activeChannel.id,
             user_id: this.currentUser.username,
@@ -704,7 +739,7 @@ class AntiCodeApp {
 
         if (error) {
             console.error('Failed to send message:', error);
-            // Optionally: Mark message as "failed" in UI
+            // Revert optimistic state if needed
         }
     }
 
@@ -712,26 +747,34 @@ class AntiCodeApp {
         const container = document.getElementById('message-container');
         if (!container) return;
 
-        // Duplicate prevention and Optimistic UI finalization
-        if (!isOptimistic && msg.user_id === this.currentUser.username && this.sentMessageCache.has(msg.content)) {
-            // Find the MOST RECENT optimistic message with same content
-            const optimisticMsgs = container.querySelectorAll('.message-item[data-optimistic="true"]');
-            let matched = false;
-            for (let i = optimisticMsgs.length - 1; i >= 0; i--) {
-                const opt = optimisticMsgs[i];
-                const text = opt.querySelector('.message-text')?.innerText.trim();
-                // Simple match by content. In real app, IDs are better.
-                if (text === msg.content.trim()) {
-                    opt.style.opacity = '1';
-                    opt.removeAttribute('data-optimistic');
-                    const statusText = opt.querySelector('.sending-status');
-                    if (statusText) statusText.remove();
-                    this.sentMessageCache.delete(msg.content);
-                    matched = true;
-                    break;
+        // Message Deduplication & Optimistic Finalization
+        // We track processed IDs to prevent duplicates (Broadcast vs Postgres)
+
+        // If it's a real message (not optimistic), check for duplicates
+        if (!isOptimistic) {
+            // Priority 1: Match by exact ID (Broadcast/Postgres)
+            if (msg.id && this.processedMessageIds.has(msg.id)) return;
+
+            // Priority 2: Finalize my own optimistic message
+            if (msg.user_id === this.currentUser.username) {
+                const optimisticMsgs = container.querySelectorAll('.message-item[data-optimistic="true"]');
+                for (let i = optimisticMsgs.length - 1; i >= 0; i--) {
+                    const opt = optimisticMsgs[i];
+                    const text = opt.querySelector('.message-text')?.innerText.trim();
+                    // Match by content for self messages as DB ID is only known now
+                    if (text === (msg.content || '').trim()) {
+                        opt.style.opacity = '1';
+                        opt.removeAttribute('data-optimistic');
+                        const statusText = opt.querySelector('.sending-status');
+                        if (statusText) statusText.remove();
+                        if (msg.id) this.processedMessageIds.add(msg.id);
+                        return; // Found and finalized, so stop here
+                    }
                 }
             }
-            if (matched) return;
+
+            // Register this ID as processed
+            if (msg.id) this.processedMessageIds.add(msg.id);
         }
 
         const msgEl = document.createElement('div');
