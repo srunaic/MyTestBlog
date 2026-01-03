@@ -1842,7 +1842,30 @@ body {
     box-shadow: 0 5px 30px rgba(0, 242, 255, 0.2);
 }
 
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 768px) {
+    .header-title {
+        font-size: clamp(2rem, 12vw, 4rem);
+        letter-spacing: -2px;
+    }
+
+    .header-subtitle {
+        letter-spacing: 4px;
+        font-size: 0.8rem;
+    }
+
+    .modern-header {
+        height: 400px;
+    }
+
+    body {
+        overflow-x: hidden;
+        width: 100vw;
+    }
+
+    #blog-container {
+        padding: 0 10px;
+    }
+
     .layout-switcher {
         display: flex;
     }

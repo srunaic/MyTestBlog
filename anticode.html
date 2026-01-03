@@ -25,7 +25,7 @@
                 <!-- User info & UID rendered here by JS -->
             </div>
             <div class="sidebar-settings">
-                <button onclick="toggleNotifSound()" class="notif-toggle-btn sidebar-notif-btn">🔔 알림 소리 ON</button>
+                <button id="open-settings-btn" class="settings-cog-btn" title="설정">⚙️</button>
             </div>
 
             <div class="channel-list-container">
@@ -72,7 +72,6 @@
                         <button onclick="toggleNotifSound()" class="notif-toggle-btn">🔔 알림 소리 ON</button>
                     </div>
                     <button id="mobile-members-toggle" class="mobile-only-btn">👥</button>
-                    <button id="notif-toggle-pc" class="notif-toggle-btn" onclick="toggleNotifSound()">🔔 ON</button>
                     <a href="index.html" class="back-link">블로그로 돌아가기</a>
                 </div>
             </header>
@@ -222,6 +221,23 @@
                     <button type="button" id="close-profile-modal" class="cancel-btn">취소</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- App Settings Modal -->
+    <div id="app-settings-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h2>⚙️ 환경 설정</h2>
+            <div class="setting-item-group">
+                <div class="setting-label">
+                    <span class="label-title">🔔 알림 소리</span>
+                    <span class="label-desc">새 메시지 도착 시 소리로 알립니다.</span>
+                </div>
+                <button onclick="toggleNotifSound()" id="notif-toggle-settings" class="notif-toggle-btn">🔔 ON</button>
+            </div>
+            <div class="modal-btns">
+                <button type="button" id="close-settings-modal" class="submit-btn">확인</button>
+            </div>
         </div>
     </div>
 

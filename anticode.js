@@ -167,15 +167,14 @@ const NotificationManager = {
     updateButtons() {
         const btns = document.querySelectorAll('.notif-toggle-btn');
         btns.forEach(btn => {
-            const isHeader = btn.id === 'notif-toggle-pc';
-            const isSidebar = btn.classList.contains('sidebar-notif-btn');
+            const isSettings = btn.id === 'notif-toggle-settings';
 
             if (this.isSoundOn) {
                 btn.classList.add('on');
-                btn.innerHTML = (isHeader) ? '🔔 ON' : '🔔 알림 소리 ON';
+                btn.innerHTML = (isSettings) ? '🔔 ON' : '🔔 알림 소리 ON';
             } else {
                 btn.classList.remove('on');
-                btn.innerHTML = (isHeader) ? '🔕 OFF' : '🔕 알림 소리 OFF';
+                btn.innerHTML = (isSettings) ? '🔕 OFF' : '🔕 알림 소리 OFF';
             }
         });
     },
@@ -893,6 +892,18 @@ class AntiCodeApp {
                 if (await this.addFriendByUID(document.getElementById('friend-uid-input').value)) { fModal.style.display = 'none'; fForm.reset(); }
             };
         }
+
+        // Settings Modal
+        const sModal = document.getElementById('app-settings-modal');
+        _safeBind('open-settings-btn', 'onclick', () => {
+            if (sModal) {
+                sModal.style.display = 'flex';
+                this.updateButtons();
+            }
+        });
+        _safeBind('close-settings-modal', 'onclick', () => {
+            if (sModal) sModal.style.display = 'none';
+        });
 
         // Password Entry
         const pModal = document.getElementById('password-entry-modal');

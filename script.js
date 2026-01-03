@@ -1239,16 +1239,25 @@ function setupEventListeners() {
     const postFileInput = document.getElementById('post-file-input');
     const uploadPostImgBtn = document.getElementById('upload-post-img-btn');
     if (uploadPostImgBtn && postFileInput) {
-        uploadPostImgBtn.onclick = () => postFileInput.click();
+        uploadPostImgBtn.onclick = () => {
+            console.log('Post image upload button clicked');
+            postFileInput.click();
+        }
         postFileInput.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            uploadPostImgBtn.textContent = '...';
+            console.log('File selected:', file.name);
+            uploadPostImgBtn.textContent = '업로드 중...';
             try {
                 const url = await uploadToSupabase(file);
-                document.getElementById('post-img').value = url;
+                console.log('Upload successful:', url);
+                const postImgInput = document.getElementById('post-img');
+                if (postImgInput) postImgInput.value = url;
                 alert('이미지가 업로드되었습니다.');
-            } catch (err) { alert('업로드 실패: ' + err.message); }
+            } catch (err) {
+                console.error('Upload failed:', err);
+                alert('업로드 실패: ' + err.message);
+            }
             finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
         };
     }

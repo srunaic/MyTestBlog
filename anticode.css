@@ -128,8 +128,31 @@
 }
 
 .sidebar-settings {
-    padding: 10px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.settings-cog-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.settings-cog-btn:hover {
+    color: var(--accent);
+    background: rgba(0, 242, 255, 0.1);
+    transform: rotate(45deg);
 }
 
 .sidebar-notif-btn {
@@ -869,7 +892,7 @@
         flex-shrink: 0 !important;
         display: flex !important;
         align-items: center !important;
-        gap: 4px !important;
+        gap: 8px !important;
     }
 
     .header-title-group {
