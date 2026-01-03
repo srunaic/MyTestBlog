@@ -91,6 +91,27 @@ class AntiCodeApp {
         this.sentMessageCache = new Set(); // To prevent duplicates in Optimistic UI
     }
 
+    async uploadFile(file, bucket = 'uploads') {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { data, error } = await this.supabase.storage
+            .from(bucket)
+            .upload(filePath, file);
+
+        if (error) {
+            console.error('Upload error:', error);
+            throw error;
+        }
+
+        const { data: { publicUrl } } = this.supabase.storage
+            .from(bucket)
+            .getPublicUrl(filePath);
+
+        return publicUrl;
+    }
+
     async init() {
         console.log('AntiCode Feature App initializing...');
 
@@ -539,7 +560,8 @@ class AntiCodeApp {
             channel_id: this.activeChannel.id,
             user_id: this.currentUser.username,
             author: this.currentUser.nickname,
-            content: content
+            content: content,
+            image_url: newMessage.image_url || null
         }]).select();
 
         if (error) {
@@ -573,7 +595,11 @@ class AntiCodeApp {
                     <span class="member-name">${info.nickname}</span>
                     <span class="timestamp">${timeStr} ${isOptimistic ? '(전송 중...)' : ''}</span>
                 </div>
-                <div class="message-text">${msg.content}</div>
+                </div>
+                <div class="message-text">
+                    ${msg.content}
+                    ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
+                </div>
             </div>
         `;
         container.appendChild(msgEl);
@@ -766,6 +792,69 @@ class AntiCodeApp {
                     pModal.style.display = 'none'; pForm.reset();
                     await this.switchChannel(this.pendingChannelId);
                 } else alert('비밀번호가 틀렸습니다.');
+            };
+        }
+
+        // --- NEW: Image Upload Handlers ---
+        const chatFileInput = document.getElementById('chat-file-input');
+        const attachBtn = document.getElementById('attach-btn');
+        if (attachBtn && chatFileInput) {
+            attachBtn.onclick = () => chatFileInput.click();
+            chatFileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const originalBtnText = attachBtn.textContent;
+                attachBtn.textContent = '...';
+                try {
+                    const url = await this.uploadFile(file);
+                    // Send directly as an image message
+                    const tempId = 'msg_' + Date.now();
+                    const newMessage = {
+                        id: tempId,
+                        channel_id: this.activeChannel.id,
+                        user_id: this.currentUser.username,
+                        author: this.currentUser.nickname,
+                        content: '', // Empty text for image-only
+                        image_url: url,
+                        created_at: new Date().toISOString()
+                    };
+                    await this.appendMessage(newMessage, true);
+                    await this.supabase.from('anticode_messages').insert([{
+                        channel_id: this.activeChannel.id,
+                        user_id: this.currentUser.username,
+                        author: this.currentUser.nickname,
+                        content: '',
+                        image_url: url
+                    }]);
+                } catch (err) {
+                    alert('이미지 업로드 실패: ' + err.message);
+                } finally {
+                    attachBtn.textContent = originalBtnText;
+                    chatFileInput.value = '';
+                }
+            };
+        }
+
+        const avatarFileInput = document.getElementById('avatar-file-input');
+        const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+        if (uploadAvatarBtn && avatarFileInput) {
+            uploadAvatarBtn.onclick = () => avatarFileInput.click();
+            avatarFileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                uploadAvatarBtn.textContent = '업로드 중...';
+                try {
+                    const url = await this.uploadFile(file);
+                    document.getElementById('edit-avatar-url').value = url;
+                    alert('프로필 이미지가 업로드되었습니다. 저장 버튼을 눌러 확정하세요.');
+                } catch (err) {
+                    alert('이미지 업로드 실패: ' + err.message);
+                } finally {
+                    uploadAvatarBtn.textContent = '파일 선택';
+                    avatarFileInput.value = '';
+                }
             };
         }
     }

@@ -82,6 +82,8 @@
             <div class="chat-input-container">
                 <div class="input-wrapper">
                     <button id="emoji-btn" class="emoji-trigger-btn">😀</button>
+                    <button id="attach-btn" class="emoji-trigger-btn">📷</button>
+                    <input type="file" id="chat-file-input" accept="image/*" style="display:none;">
                     <textarea id="chat-input" placeholder="메시지 보내기..." rows="1"></textarea>
 
                     <!-- Emoji Picker Popover -->
@@ -200,9 +202,15 @@
                     <input type="text" id="edit-nickname" required>
                 </div>
                 <div class="form-group">
-                    <label>프로필 이미지 URL</label>
-                    <input type="url" id="edit-avatar-url" placeholder="https://example.com/photo.jpg">
-                    <small style="color: var(--text-muted); font-size: 0.65rem;">가로세로 비율이 1:1인 이미지가 가장 잘 보입니다.</small>
+                    <label>프로필 이미지</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="url" id="edit-avatar-url" placeholder="https://example.com/photo.jpg"
+                            style="flex: 1;">
+                        <button type="button" id="upload-avatar-btn" class="sm-btn"
+                            style="white-space: nowrap; font-size: 0.7rem;">파일 선택</button>
+                    </div>
+                    <input type="file" id="avatar-file-input" accept="image/*" style="display:none;">
+                    <small style="color: var(--text-muted); font-size: 0.65rem;">직접 올리거나 주소를 입력하세요. (1:1 비율 권장)</small>
                 </div>
                 <div class="modal-btns">
                     <button type="submit" class="submit-btn">저장</button>
