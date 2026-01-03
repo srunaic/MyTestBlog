@@ -435,7 +435,7 @@ class AntiCodeApp {
             group.innerHTML = `
                 <div class="group-header">
                     <span class="group-label">${CATEGORY_NAMES[catId]}</span>
-                    ${catId === 'chat' ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
+                    ${(catId === 'chat' && this.isAdminMode) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
                 </div>
                 <div class="sidebar-list">
                     ${chans.map(c => c.renderSidebarItem(this.activeChannel && c.id === this.activeChannel.id, this.isAdminMode)).join('')}
@@ -533,6 +533,10 @@ class AntiCodeApp {
     }
 
     async createChannel(name, type, category, password) {
+        if (!this.isAdminMode) {
+            alert('방장만 채널을 생성할 수 있습니다.');
+            return false;
+        }
         const { data, error } = await this.supabase.from('anticode_channels').insert([{
             name, type, category, password: type === 'secret' ? password : null,
             owner_id: this.currentUser.username, order: this.channels.length
@@ -881,12 +885,19 @@ class AntiCodeApp {
         _safeBind('menu-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
         _safeBind('menu-friends', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
         _safeBind('menu-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
-        _safeBind('menu-add', 'onclick', (e) => {
-            e.stopPropagation();
-            if (dropdown) dropdown.style.display = 'none';
-            const m = document.getElementById('create-channel-modal');
-            if (m) m.style.display = 'flex';
-        });
+        const menuAdd = document.getElementById('menu-add');
+        if (menuAdd) {
+            if (this.isAdminMode) {
+                menuAdd.onclick = (e) => {
+                    e.stopPropagation();
+                    if (dropdown) dropdown.style.display = 'none';
+                    const m = document.getElementById('create-channel-modal');
+                    if (m) m.style.display = 'flex';
+                };
+            } else {
+                menuAdd.style.display = 'none';
+            }
+        }
         _safeBind('menu-profile', 'onclick', (e) => {
             e.stopPropagation();
             if (dropdown) dropdown.style.display = 'none';
@@ -912,7 +923,14 @@ class AntiCodeApp {
         const passGroup = document.getElementById('password-field-group');
         const cForm = document.getElementById('create-channel-form');
 
-        _safeBind('open-create-channel', 'onclick', () => cModal && (cModal.style.display = 'flex'));
+        const openCreateBtn = document.getElementById('open-create-channel');
+        if (openCreateBtn) {
+            if (this.isAdminMode) {
+                openCreateBtn.onclick = () => cModal && (cModal.style.display = 'flex');
+            } else {
+                openCreateBtn.style.display = 'none';
+            }
+        }
         _safeBind('close-channel-modal', 'onclick', () => cModal && (cModal.style.display = 'none'));
         if (typeSelect && passGroup) typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
         if (cForm) {
