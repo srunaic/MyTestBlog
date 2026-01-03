@@ -26,3 +26,6 @@ yarn-error.log*
 .localhost
 .vscode/
 .idea/
+
+# Local secrets (do not commit)
+.secrets/
