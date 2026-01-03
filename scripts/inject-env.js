@@ -9,23 +9,30 @@ const envVars = {
 
 files.forEach(file => {
     const filePath = path.join(__dirname, '..', file);
-    if (!fs.existsSync(filePath)) return;
+    if (!fs.existsSync(filePath)) {
+        console.log(`[Env Inject] Skipping ${file} (not found)`);
+        return;
+    }
 
     let content = fs.readFileSync(filePath, 'utf8');
-    let replaced = false;
+    let replacedCount = 0;
 
     for (const [key, value] of Object.entries(envVars)) {
-        if (value && content.includes(key)) {
-            // Replace strings like 'VITE_SUPABASE_URL' or "VITE_SUPABASE_URL"
-            // specifically targeting the constant assignments
+        if (value) {
             const regex = new RegExp(`(['"])${key}(['"])`, 'g');
-            content = content.replace(regex, `$1${value}$2`);
-            replaced = true;
-            console.log(`Replaced ${key} in ${file}`);
+            if (content.match(regex)) {
+                content = content.replace(regex, `$1${value}$2`);
+                replacedCount++;
+                console.log(`[Env Inject] ✅ Injected ${key} into ${file} (Value starts with: ${value.substring(0, 5)}...)`);
+            }
+        } else {
+            console.log(`[Env Inject] ⚠️ Missing value for ${key}`);
         }
     }
 
-    if (replaced) {
+    if (replacedCount > 0) {
         fs.writeFileSync(filePath, content);
+    } else {
+        console.log(`[Env Inject] ℹ️ No placeholders found in ${file}`);
     }
 });
