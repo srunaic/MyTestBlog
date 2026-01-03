@@ -259,6 +259,19 @@ class AntiCodeApp {
             .replace(/'/g, '&#39;');
     }
 
+    linkify(escapedText) {
+        // escapedText must already be HTML-escaped.
+        const text = String(escapedText ?? '');
+        const urlRe = /(https?:\/\/[^\s<]+[^\s<\.)\],!?])/g;
+        return text.replace(urlRe, (rawUrl) => {
+            const url = rawUrl;
+            const lower = url.toLowerCase();
+            const isYouTube = lower.includes('youtube.com') || lower.includes('youtu.be');
+            const label = isYouTube ? '🎬 YouTube 링크' : url;
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        });
+    }
+
     filterProfanity(text) {
         const input = String(text ?? '');
         if (!input) return { text: input, flagged: false };
@@ -1393,7 +1406,7 @@ class AntiCodeApp {
                         <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
                     </div>
                     <div class="message-text">
-                        ${this.escapeHtml(filtered.text)}
+                        ${this.linkify(this.escapeHtml(filtered.text))}
                         ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
                     </div>
                 </div>
@@ -1685,19 +1698,27 @@ class AntiCodeApp {
                 const originalBtnText = attachBtn.textContent;
                 attachBtn.textContent = '...';
                 try {
-                    // Compress first for faster upload
-                    const optimized = await this.compressImageFile(file);
-                    const url = await this.uploadFile(optimized);
+                    const isImage = !!file.type && file.type.startsWith('image/');
+                    // Very small limits for non-image attachments (as requested)
+                    const maxBytes = isImage ? (5 * 1024 * 1024) : (file.name?.toLowerCase().endsWith('.zip') ? (1 * 1024 * 1024) : (200 * 1024));
+                    if (file.size > maxBytes) {
+                        alert(`파일 용량이 너무 큽니다.\\n- 이미지: 최대 5MB\\n- ZIP: 최대 1MB\\n- TXT: 최대 200KB`);
+                        return;
+                    }
+
+                    const uploadFile = isImage ? await this.compressImageFile(file) : file;
+                    const url = await this.uploadFile(uploadFile);
 
                     // Use same optimistic + finalize flow as text messages
                     const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
+                    const fileLabel = isImage ? '' : `📎 ${file.name}\\n${url}`;
                     const newMessage = {
                         id: tempId,
                         channel_id: this.activeChannel.id,
                         user_id: this.currentUser.username,
                         author: this.currentUser.nickname,
-                        content: '', // Empty text for image-only
-                        image_url: url,
+                        content: isImage ? '' : fileLabel,
+                        image_url: isImage ? url : null,
                         created_at: new Date().toISOString()
                     };
 
@@ -1716,8 +1737,8 @@ class AntiCodeApp {
                         channel_id: this.activeChannel.id,
                         user_id: this.currentUser.username,
                         author: this.currentUser.nickname,
-                        content: '',
-                        image_url: url
+                        content: isImage ? '' : fileLabel,
+                        image_url: isImage ? url : null
                     }]).select('id, created_at').single();
 
                     if (error) {
