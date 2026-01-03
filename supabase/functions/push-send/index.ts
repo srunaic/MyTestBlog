@@ -110,12 +110,19 @@ serve(async (req) => {
 
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 
+    const targets = (subsRes.data ?? []).map((s: any) => ({
+      username: String(s.username),
+      endpoint: String(s.endpoint),
+      p256dh: String(s.p256dh),
+      auth: String(s.auth),
+    }));
+
     const results = await Promise.allSettled(
-      (subsRes.data ?? []).map((s: any) =>
+      targets.map((t) =>
         webpush.sendNotification(
           {
-            endpoint: s.endpoint,
-            keys: { p256dh: s.p256dh, auth: s.auth },
+            endpoint: t.endpoint,
+            keys: { p256dh: t.p256dh, auth: t.auth },
           },
           JSON.stringify({
             title,
@@ -129,9 +136,36 @@ serve(async (req) => {
 
     let ok = 0;
     let fail = 0;
-    for (const r of results) (r.status === "fulfilled") ? ok++ : fail++;
+    let disabled = 0;
+    const disableEndpoints: string[] = [];
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      if (r.status === "fulfilled") {
+        ok++;
+        continue;
+      }
+      fail++;
+      const reason: any = (r as any).reason;
+      const statusCode = Number(reason?.statusCode ?? reason?.status ?? 0);
+      // 404/410 typically means the subscription is gone; disable it automatically
+      if (statusCode === 404 || statusCode === 410) {
+        disableEndpoints.push(targets[i]?.endpoint);
+      }
+    }
 
-    return new Response(JSON.stringify({ ok, fail, targeted: subsRes.data?.length ?? 0 }), {
+    if (disableEndpoints.length > 0) {
+      try {
+        const upd = await supabase
+          .from("anticode_push_subscriptions")
+          .update({ enabled: false })
+          .in("endpoint", disableEndpoints);
+        if (!upd.error) disabled = disableEndpoints.length;
+      } catch (_) {
+        // ignore
+      }
+    }
+
+    return new Response(JSON.stringify({ ok, fail, targeted: subsRes.data?.length ?? 0, disabled }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
