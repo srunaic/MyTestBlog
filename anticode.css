@@ -159,6 +159,13 @@
     transition: 0.3s;
 }
 
+/* Settings modal readability: add spacing + divider between groups */
+.setting-item-group + .setting-item-group {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .notif-toggle-btn:hover {
     background: rgba(0, 242, 255, 0.1);
     border-color: var(--accent);

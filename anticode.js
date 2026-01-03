@@ -169,7 +169,9 @@ const NotificationManager = {
     },
 
     updateButtons() {
-        const btns = document.querySelectorAll('.notif-toggle-btn');
+        // Important: `.notif-toggle-btn` is also used as a general small button style.
+        // Only update actual notification-sound toggle buttons.
+        const btns = document.querySelectorAll('.notif-sound-toggle');
         btns.forEach(btn => {
             const isSettings = btn.id === 'notif-toggle-settings';
 
