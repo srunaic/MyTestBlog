@@ -577,9 +577,9 @@ class AntiCodeApp {
                     await this.presenceChannel.track(trackData);
 
                     // Periodic last_seen update in DB
-                    // this.updateLastSeen(); // Disabled due to missing DB column
-                    // if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
-                    // this.lastSeenInterval = setInterval(() => this.updateLastSeen(), 60000); 
+                    this.updateLastSeen();
+                    if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
+                    this.lastSeenInterval = setInterval(() => this.updateLastSeen(), 60000);
                 }
             });
     }
@@ -676,8 +676,8 @@ class AntiCodeApp {
             channel_id: this.activeChannel.id,
             user_id: this.currentUser.username,
             author: this.currentUser.nickname,
-            content: content
-            // image_url: newMessage.image_url || null // Hidden until DB column is added
+            content: content,
+            image_url: newMessage.image_url || null
         }]).select();
 
         if (error) {
@@ -973,8 +973,8 @@ class AntiCodeApp {
                         channel_id: this.activeChannel.id,
                         user_id: this.currentUser.username,
                         author: this.currentUser.nickname,
-                        content: `[이미지 첨부: ${url}]` // Fallback text until image_url column is added
-                        // image_url: url
+                        content: '',
+                        image_url: url
                     }]);
                 } catch (err) {
                     alert('이미지 업로드 실패: ' + err.message);
