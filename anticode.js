@@ -202,6 +202,7 @@ class AntiCodeApp {
         this.presenceChannel = null;
         this.messageSubscription = null;
         this.unlockedChannels = new Set();
+        this.unlockedStorageKey = null; // per-user localStorage key (set after auth)
         this.sentMessageCache = new Set(); // To prevent duplicates in Optimistic UI
         this.isAdminMode = false;
         this.userRequestCache = {}; // Dedup in-flight user info requests
@@ -210,6 +211,30 @@ class AntiCodeApp {
         this.friendsSchema = null; // Cache detected anticode_friends column names
         this.messageQueue = [];
         this.isProcessingQueue = false;
+    }
+
+    _getUnlockedStorageKey() {
+        const u = this.currentUser?.username || 'anonymous';
+        return `anticode_unlocked_channels::${u}`;
+    }
+
+    _loadUnlockedChannels() {
+        try {
+            this.unlockedStorageKey = this._getUnlockedStorageKey();
+            const raw = localStorage.getItem(this.unlockedStorageKey);
+            if (!raw) return;
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+                arr.forEach((id) => id && this.unlockedChannels.add(String(id)));
+            }
+        } catch (_) { /* ignore */ }
+    }
+
+    _saveUnlockedChannels() {
+        try {
+            if (!this.unlockedStorageKey) this.unlockedStorageKey = this._getUnlockedStorageKey();
+            localStorage.setItem(this.unlockedStorageKey, JSON.stringify(Array.from(this.unlockedChannels)));
+        } catch (_) { /* ignore */ }
     }
 
     normalizeUID(input) {
@@ -282,6 +307,9 @@ class AntiCodeApp {
 
         try {
             this.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            // Restore secret-channel unlocks for this user (password once per device/account)
+            this._loadUnlockedChannels();
 
             // 1. Sync User Metadata
             await this.syncUserMetadata();
@@ -574,6 +602,7 @@ class AntiCodeApp {
         if (!channel) return;
         this.activeChannel = channel;
         this.unlockedChannels.add(channelId);
+        this._saveUnlockedChannels();
         this.renderChannels();
 
         // Update header info safely
