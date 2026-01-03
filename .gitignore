@@ -1,4 +1,6 @@
-# Temporary & Diagnostic Files
+# Build Artifacts
+public/
+obfuscator-log.txt
 TestHost.txt
 diagnostic.txt
 
