@@ -358,34 +358,56 @@ class AntiCodeApp {
     }
 
     async loadFriends() {
-        // Fetch friend list with basic user info to pre-cache
-        // Use a simpler join hint (column name) if the constraint name is uncertain
-        const { data, error } = await this.supabase
-            .from('anticode_friends')
-            .select(`
-                friend_username,
-                friend_info:anticode_users!friend_username (username, nickname, uid, avatar_url)
-            `)
-            .eq('user_username', this.currentUser.username);
+        try {
+            // Step 1: Fetch friend usernames
+            const { data: friendsData, error: friendsError } = await this.supabase
+                .from('anticode_friends')
+                .select('friend_username')
+                .eq('user_username', this.currentUser.username);
 
-        if (error) {
-            console.error('Failed to load friends:', error);
-            return;
-        }
+            if (friendsError) throw friendsError;
+            if (!friendsData || friendsData.length === 0) {
+                this.friends = [];
+                this.renderFriends();
+                return;
+            }
 
-        if (data) {
-            this.friends = data.map(f => {
-                const info = f.friend_info;
-                if (info) this.userCache[f.friend_username] = info;
+            const usernames = friendsData.map(f => f.friend_username);
+
+            // Step 2: Batch fetch user info for all friends to populate cache
+            const { data: usersData, error: usersError } = await this.supabase
+                .from('anticode_users')
+                .select('username, nickname, uid, avatar_url')
+                .in('username', usernames);
+
+            if (usersError) throw usersError;
+
+            // Update user cache
+            if (usersData) {
+                usersData.forEach(u => {
+                    this.userCache[u.username] = {
+                        nickname: u.nickname,
+                        uid: u.uid,
+                        avatar_url: u.avatar_url
+                    };
+                });
+            }
+
+            // Construct friends list from cache
+            this.friends = usernames.map(uname => {
+                const info = this.userCache[uname];
                 return {
-                    username: f.friend_username,
-                    nickname: info ? info.nickname : f.friend_username,
+                    username: uname,
+                    nickname: info ? info.nickname : uname,
                     uid: info ? info.uid : '000000',
                     avatar_url: info ? info.avatar_url : null,
                     online: false
                 };
             });
+
             this.renderFriends();
+        } catch (error) {
+            console.error('Failed to load friends:', error);
         }
     }
 
