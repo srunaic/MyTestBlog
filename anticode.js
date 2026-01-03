@@ -519,9 +519,31 @@ class AntiCodeApp {
             return;
         }
         const reg = await this._getSwRegistration();
+        const desiredKey = this._base64UrlToUint8Array(VAPID_PUBLIC_KEY);
+
+        // If a subscription already exists but was created with a different VAPID public key,
+        // APNs (iOS) returns VapidPkHashMismatch. Auto-recreate the subscription in that case.
+        try {
+            const existing = await reg.pushManager.getSubscription();
+            const reminderEq = (a, b) => {
+                try {
+                    const ua = a instanceof Uint8Array ? a : new Uint8Array(a);
+                    const ub = b instanceof Uint8Array ? b : new Uint8Array(b);
+                    if (ua.length !== ub.length) return false;
+                    for (let i = 0; i < ua.length; i++) if (ua[i] !== ub[i]) return false;
+                    return true;
+                } catch (_) { return false; }
+            };
+            const existingKey = existing?.options?.applicationServerKey;
+            if (existing && existingKey && !reminderEq(existingKey, desiredKey)) {
+                try { await existing.unsubscribe(); } catch (_) { }
+                try { await this._disablePushSubscriptionInDb(existing); } catch (_) { }
+            }
+        } catch (_) { }
+
         const sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: this._base64UrlToUint8Array(VAPID_PUBLIC_KEY)
+            applicationServerKey: desiredKey
         });
         await this._savePushSubscriptionToDb(sub);
         this.pushEnabled = true;
