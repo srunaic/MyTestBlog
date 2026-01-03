@@ -87,6 +87,30 @@ const SessionManager = {
 var SUPABASE_URL = 'VITE_SUPABASE_URL';
 var SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 
+// --- NEW: Storage Upload Utility ---
+async function uploadToSupabase(file, bucket = 'uploads') {
+    if (!supabase) throw new Error('Supabase not initialized');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+    if (error) {
+        console.error('Upload error:', error);
+        throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+
+    return publicUrl;
+}
+
 // Initialize Client Immediate (Modules are awaited)
 var supabase = null;
 try {
@@ -1045,10 +1069,16 @@ function setupEventListeners() {
             const newN = document.getElementById('acc-nickname').value.trim();
             const newU = document.getElementById('acc-username').value.trim();
             const newP = document.getElementById('acc-password').value.trim();
+            const newA = document.getElementById('acc-avatar-url').value.trim();
             if (newP.length < 8) return alert('비밀번호는 8자 이상.');
 
             if (supabase) {
-                const { error } = await supabase.from('users').update({ nickname: newN, username: newU, password: newP }).eq('id', currentUser.id);
+                const { error } = await supabase.from('users').update({
+                    nickname: newN,
+                    username: newU,
+                    password: newP,
+                    avatar_url: newA
+                }).eq('id', currentUser.id);
                 if (error) { alert('수정 실패: ' + error.message); }
                 else { alert('정보 수정 완료. 다시 로그인해주세요.'); logout(); closeAccountModal(); }
             } else {
@@ -1077,6 +1107,42 @@ function setupEventListeners() {
     const mobBtn = document.getElementById('force-mobile-btn');
     if (pcBtn) pcBtn.onclick = () => toggleViewMode('pc');
     if (mobBtn) mobBtn.onclick = () => toggleViewMode('mobile');
+
+    // --- NEW: Blog Post Image Upload ---
+    const postFileInput = document.getElementById('post-file-input');
+    const uploadPostImgBtn = document.getElementById('upload-post-img-btn');
+    if (uploadPostImgBtn && postFileInput) {
+        uploadPostImgBtn.onclick = () => postFileInput.click();
+        postFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            uploadPostImgBtn.textContent = '...';
+            try {
+                const url = await uploadToSupabase(file);
+                document.getElementById('post-img').value = url;
+                alert('이미지가 업로드되었습니다.');
+            } catch (err) { alert('업로드 실패: ' + err.message); }
+            finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
+        };
+    }
+
+    // --- NEW: Account Avatar Upload ---
+    const accAvatarFileInput = document.getElementById('acc-avatar-file-input');
+    const uploadAccAvatarBtn = document.getElementById('upload-acc-avatar-btn');
+    if (uploadAccAvatarBtn && accAvatarFileInput) {
+        uploadAccAvatarBtn.onclick = () => accAvatarFileInput.click();
+        accAvatarFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            uploadAccAvatarBtn.textContent = '...';
+            try {
+                const url = await uploadToSupabase(file);
+                document.getElementById('acc-avatar-url').value = url;
+                alert('프로필 이미지가 업로드되었습니다.');
+            } catch (err) { alert('업로드 실패: ' + err.message); }
+            finally { uploadAccAvatarBtn.textContent = '이미지 업로드'; accAvatarFileInput.value = ''; }
+        };
+    }
 }
 
 function openModal(post = null) {
@@ -1219,6 +1285,8 @@ window.openAccountModal = () => {
     document.getElementById('acc-nickname').value = currentUser.nickname;
     document.getElementById('acc-username').value = currentUser.username;
     document.getElementById('acc-password').value = currentUser.password;
+    const avatarInput = document.getElementById('acc-avatar-url');
+    if (avatarInput) avatarInput.value = currentUser.avatar_url || '';
 
     // Initial activity render
     renderUserActivity();

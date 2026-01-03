@@ -317,8 +317,13 @@
                     <input type="text" id="post-title" required placeholder="제목을 그려내세요">
                 </div>
                 <div class="form-group">
-                    <label>IMAGE URL (OPTIONAL)</label>
-                    <input type="text" id="post-img" placeholder="http://...">
+                    <label>IMAGE (UPLOAD OR URL)</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="post-img" placeholder="http://..." style="flex: 1;">
+                        <button type="button" id="upload-post-img-btn" class="sm-btn"
+                            style="white-space: nowrap; font-size: 0.7rem;">이미지 업로드</button>
+                    </div>
+                    <input type="file" id="post-file-input" accept="image/*" style="display:none;">
                 </div>
                 <div class="form-group">
                     <label>CONTENT</label>
@@ -377,6 +382,15 @@
                 <div class="form-group">
                     <label>PASSWORD (8+ CHARS)</label>
                     <input type="password" id="acc-password" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label>PROFILE IMAGE</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="url" id="acc-avatar-url" placeholder="https://..." style="flex: 1;">
+                        <button type="button" id="upload-acc-avatar-btn" class="sm-btn"
+                            style="white-space: nowrap; font-size: 0.7rem;">이미지 업로드</button>
+                    </div>
+                    <input type="file" id="acc-avatar-file-input" accept="image/*" style="display:none;">
                 </div>
                 <div class="modal-btns">
                     <button type="submit" class="submit-btn">UPDATE</button>
