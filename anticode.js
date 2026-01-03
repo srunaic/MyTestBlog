@@ -75,8 +75,117 @@ class Channel {
 }
 
 // ==========================================
-// 3. CHAT APPLICATION CLASS
+// 3. NOTIFICATION MANAGER
 // ==========================================
+const NotificationManager = {
+    count: 0,
+    isSoundOn: localStorage.getItem('nano_notif_sound') !== 'off',
+    initialized: false,
+
+    async init() {
+        if (this.initialized) return;
+        this.updateBadge();
+        this.updateButtons();
+
+        // Use a small delay to ensure supabase is ready
+        setTimeout(() => this.setupSubscriptions(), 2000);
+
+        this.initialized = true;
+    },
+
+    setupSubscriptions() {
+        if (!window.app || !window.app.supabase) return;
+        const supabase = window.app.supabase;
+        console.log('Setting up notification subscriptions for AntiCode...');
+
+        // Post Notifications
+        supabase.channel('notif-posts-ac')
+            .on('postgres_changes', { event: 'INSERT', table: 'posts' }, payload => {
+                this.notify('post', payload.new);
+            })
+            .on('postgres_changes', { event: 'UPDATE', table: 'posts' }, payload => {
+                this.notify('post-update', payload.new);
+            })
+            .subscribe();
+
+        // Comment Notifications
+        supabase.channel('notif-comments-ac')
+            .on('postgres_changes', { event: 'INSERT', table: 'comments' }, payload => {
+                this.notify('comment', payload.new);
+            })
+            .on('postgres_changes', { event: 'UPDATE', table: 'comments' }, payload => {
+                this.notify('comment-update', payload.new);
+            })
+            .subscribe();
+
+        // AntiCode Notifications
+        supabase.channel('chat-notif-ac')
+            .on('postgres_changes', { event: 'INSERT', table: 'anticode_messages' }, payload => {
+                this.notify('chat', payload.new);
+            }).subscribe();
+    },
+
+    notify(type, data) {
+        // Increment count
+        this.count++;
+        if (this.count > 100) this.count = 100;
+
+        this.updateBadge();
+        this.playSound();
+    },
+
+    playSound() {
+        if (!this.isSoundOn) return;
+        const audio = document.getElementById('notif-sound');
+        if (audio) {
+            audio.currentTime = 0;
+            audio.play().catch(e => console.warn('Sound play blocked by browser policy. Interaction needed.'));
+        }
+    },
+
+    updateBadge() {
+        const badge = document.getElementById('notif-badge');
+        const display = document.getElementById('notif-count-display');
+        if (!badge || !display) return;
+
+        if (this.count > 0) {
+            badge.classList.add('active');
+            display.style.display = 'block';
+            display.textContent = this.count > 99 ? '99+' : this.count;
+        } else {
+            badge.classList.remove('active');
+            display.style.display = 'none';
+        }
+    },
+
+    toggleSound() {
+        this.isSoundOn = !this.isSoundOn;
+        localStorage.setItem('nano_notif_sound', this.isSoundOn ? 'on' : 'off');
+        this.updateButtons();
+    },
+
+    updateButtons() {
+        const btns = document.querySelectorAll('.notif-toggle-btn');
+        btns.forEach(btn => {
+            const isHeader = btn.id === 'notif-toggle-pc';
+            if (this.isSoundOn) {
+                btn.classList.add('on');
+                btn.innerHTML = isHeader ? '🔔 ON' : '🔔 알림 소리 ON';
+            } else {
+                btn.classList.remove('on');
+                btn.innerHTML = isHeader ? '🔕 OFF' : '🔕 알림 소리 OFF';
+            }
+        });
+    },
+
+    clearNotifications() {
+        this.count = 0;
+        this.updateBadge();
+    }
+};
+
+window.toggleNotifSound = () => NotificationManager.toggleSound();
+window.clearNotifications = () => NotificationManager.clearNotifications();
 class AntiCodeApp {
     constructor() {
         this.supabase = null;
@@ -140,6 +249,9 @@ class AntiCodeApp {
             if (this.channels.length > 0) {
                 await this.switchChannel(this.channels[0].id);
             }
+
+            // Notification System
+            NotificationManager.init();
         } catch (e) {
             console.error('App Init Error:', e);
         }
@@ -861,4 +973,5 @@ class AntiCodeApp {
 }
 
 const app = new AntiCodeApp();
+window.app = app;
 app.init();

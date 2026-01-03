@@ -82,6 +82,118 @@ const SessionManager = {
 };
 
 // ==========================================
+// 2. NOTIFICATION MANAGER
+// ==========================================
+const NotificationManager = {
+    count: 0,
+    isSoundOn: localStorage.getItem('nano_notif_sound') !== 'off',
+    initialized: false,
+
+    async init() {
+        if (this.initialized) return;
+        this.updateBadge();
+        this.updateButtons();
+
+        // Use a small delay to ensure supabase is ready
+        setTimeout(() => this.setupSubscriptions(), 2000);
+
+        this.initialized = true;
+    },
+
+    setupSubscriptions() {
+        if (!supabase) return;
+        console.log('Setting up notification subscriptions...');
+
+        // Post Notifications
+        supabase.channel('notif-posts')
+            .on('postgres_changes', { event: 'INSERT', table: 'posts' }, payload => {
+                this.notify('post', payload.new);
+            })
+            .on('postgres_changes', { event: 'UPDATE', table: 'posts' }, payload => {
+                this.notify('post-update', payload.new);
+            })
+            .subscribe();
+
+        // Comment Notifications
+        supabase.channel('notif-comments')
+            .on('postgres_changes', { event: 'INSERT', table: 'comments' }, payload => {
+                this.notify('comment', payload.new);
+            })
+            .on('postgres_changes', { event: 'UPDATE', table: 'comments' }, payload => {
+                this.notify('comment-update', payload.new);
+            })
+            .subscribe();
+
+        // AntiCode Notifications
+        supabase.channel('chat-notif')
+            .on('postgres_changes', { event: 'INSERT', table: 'anticode_messages' }, payload => {
+                this.notify('chat', payload.new);
+            }).subscribe();
+    },
+
+    notify(type, data) {
+        // Increment count
+        this.count++;
+        if (this.count > 100) this.count = 100;
+
+        this.updateBadge();
+        this.playSound();
+    },
+
+    playSound() {
+        if (!this.isSoundOn) return;
+        const audio = document.getElementById('notif-sound');
+        if (audio) {
+            audio.currentTime = 0;
+            audio.play().catch(e => console.warn('Sound play blocked by browser policy. Interaction needed.'));
+        }
+    },
+
+    updateBadge() {
+        const badge = document.getElementById('notif-badge');
+        const display = document.getElementById('notif-count-display');
+        if (!badge || !display) return;
+
+        if (this.count > 0) {
+            badge.classList.add('active');
+            display.style.display = 'block';
+            display.textContent = this.count > 99 ? '99+' : this.count;
+        } else {
+            badge.classList.remove('active');
+            display.style.display = 'none';
+        }
+    },
+
+    toggleSound() {
+        this.isSoundOn = !this.isSoundOn;
+        localStorage.setItem('nano_notif_sound', this.isSoundOn ? 'on' : 'off');
+        this.updateButtons();
+    },
+
+    updateButtons() {
+        const btns = document.querySelectorAll('.notif-toggle-btn');
+        btns.forEach(btn => {
+            const isHeader = btn.id === 'notif-toggle-pc';
+            if (this.isSoundOn) {
+                btn.classList.add('on');
+                btn.innerHTML = isHeader ? '🔔 ON' : '🔔 알림 소리 ON';
+            } else {
+                btn.classList.remove('on');
+                btn.innerHTML = isHeader ? '🔕 OFF' : '🔕 알림 소리 OFF';
+            }
+        });
+    },
+
+    clearNotifications() {
+        this.count = 0;
+        this.updateBadge();
+    }
+};
+
+window.toggleNotifSound = () => NotificationManager.toggleSound();
+window.clearNotifications = () => NotificationManager.clearNotifications();
+
+// ==========================================
 // 2. SUPABASE CONFIGURATION
 // ==========================================
 var SUPABASE_URL = 'VITE_SUPABASE_URL';
@@ -262,6 +374,14 @@ window.toggleViewMode = (mode) => {
     setTimeout(() => window.location.reload(), 100);
 };
 
+window.toggleMobileMore = () => {
+    const menu = document.getElementById('mobile-more-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+        if (menu.style.display === 'flex') NotificationManager.updateButtons();
+    }
+};
+
 async function init() {
     console.log('Initializing Blog...');
     applyViewMode(); // Apply saved mode immediately
@@ -287,6 +407,7 @@ async function init() {
     initChatbot();
     initEmoticonPicker();
     setupActivityTabs();
+    NotificationManager.init();
 
     if (submitCommentBtn) {
         submitCommentBtn.onclick = submitComment;
@@ -475,6 +596,12 @@ function updateUserNav() {
     const statusIndicator = document.getElementById('db-status-indicator');
     if (statusIndicator) {
         statusIndicator.style.display = isAdminMode ? 'block' : 'none';
+    }
+
+    // Show notification toggle on PC
+    const notifTogglePc = document.getElementById('notif-toggle-pc');
+    if (notifTogglePc) {
+        notifTogglePc.style.display = 'flex';
     }
 
     renderPosts();
