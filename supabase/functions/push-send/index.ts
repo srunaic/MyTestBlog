@@ -137,6 +137,8 @@ serve(async (req) => {
     let ok = 0;
     let fail = 0;
     let disabled = 0;
+    const failByStatus: Record<string, number> = {};
+    let sampleFail: { statusCode?: number; message?: string; body?: string } | null = null;
     const disableEndpoints: string[] = [];
     for (let i = 0; i < results.length; i++) {
       const r = results[i];
@@ -147,6 +149,30 @@ serve(async (req) => {
       fail++;
       const reason: any = (r as any).reason;
       const statusCode = Number(reason?.statusCode ?? reason?.status ?? 0);
+      const statusKey = String(statusCode || "unknown");
+      failByStatus[statusKey] = (failByStatus[statusKey] ?? 0) + 1;
+
+      // Log detailed failure on the server for debugging (does not expose keys)
+      try {
+        const host = (() => {
+          try { return new URL(targets[i]?.endpoint || "").hostname; } catch (_) { return "unknown"; }
+        })();
+        console.error("[push-send] failed", {
+          statusCode,
+          host,
+          username: targets[i]?.username,
+          message: String(reason?.message ?? ""),
+          body: typeof reason?.body === "string" ? reason.body.slice(0, 400) : undefined,
+        });
+      } catch (_) { }
+
+      if (!sampleFail) {
+        sampleFail = {
+          statusCode: statusCode || undefined,
+          message: reason?.message ? String(reason.message).slice(0, 240) : undefined,
+          body: typeof reason?.body === "string" ? reason.body.slice(0, 240) : undefined,
+        };
+      }
       // 404/410 typically means the subscription is gone; disable it automatically
       if (statusCode === 404 || statusCode === 410) {
         disableEndpoints.push(targets[i]?.endpoint);
@@ -165,7 +191,14 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok, fail, targeted: subsRes.data?.length ?? 0, disabled }), {
+    return new Response(JSON.stringify({
+      ok,
+      fail,
+      targeted: subsRes.data?.length ?? 0,
+      disabled,
+      failByStatus,
+      sampleFail,
+    }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
