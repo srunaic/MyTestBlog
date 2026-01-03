@@ -291,6 +291,18 @@ class AntiCodeApp {
         this.peerConnections = new Map(); // username -> RTCPeerConnection
         this.remoteAudioEls = new Map(); // username -> HTMLAudioElement
         this.voiceDeviceId = null; // preferred microphone deviceId (per user)
+        this.micGain = 1.0; // 0.0 ~ 2.0
+        // Shared mic pipeline (used by voice + mic test)
+        this._micUsers = { voice: false, test: false };
+        this._micDeviceIdInUse = null;
+        this._micRawStream = null;
+        this._micAudioCtx = null;
+        this._micSource = null;
+        this._micAnalyser = null;
+        this._micGainNode = null;
+        this._micDest = null; // MediaStreamDestination
+        this._micMonitorConnected = false; // whether gain is connected to speakers
+        this._micMeterRaf = null;
     }
 
     _resetMessageDedupeState() {
@@ -562,12 +574,27 @@ class AntiCodeApp {
         return `anticode_voice_device::${u}`;
     }
 
+    _getMicGainKey() {
+        const u = this.currentUser?.username || 'anonymous';
+        return `anticode_mic_gain::${u}`;
+    }
+
     loadVoiceDevicePreference() {
         try {
             const raw = localStorage.getItem(this._getVoiceDeviceKey());
             this.voiceDeviceId = raw ? String(raw) : null;
         } catch (_) {
             this.voiceDeviceId = null;
+        }
+    }
+
+    loadMicGainPreference() {
+        try {
+            const raw = localStorage.getItem(this._getMicGainKey());
+            const n = raw == null ? 1.0 : Number(raw);
+            this.micGain = Number.isFinite(n) ? Math.min(2, Math.max(0, n)) : 1.0;
+        } catch (_) {
+            this.micGain = 1.0;
         }
     }
 
@@ -578,6 +605,160 @@ class AntiCodeApp {
             else localStorage.removeItem(this._getVoiceDeviceKey());
             this.voiceDeviceId = v || null;
         } catch (_) { }
+    }
+
+    saveMicGainPreference(gain) {
+        try {
+            const g = Number(gain);
+            const clamped = Number.isFinite(g) ? Math.min(2, Math.max(0, g)) : 1.0;
+            localStorage.setItem(this._getMicGainKey(), String(clamped));
+            this.micGain = clamped;
+        } catch (_) { }
+    }
+
+    async _ensureMicPipeline({ requireMonitor = false } = {}) {
+        const desiredDeviceId = this.voiceDeviceId || null;
+        const deviceChanged = this._micDeviceIdInUse !== desiredDeviceId;
+        const needCreate = !this._micAudioCtx || !this._micDest || !this._micRawStream;
+
+        if (needCreate || deviceChanged) {
+            await this._teardownMicPipeline({ force: true });
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) throw new Error('이 브라우저는 AudioContext를 지원하지 않습니다.');
+
+            const audioConstraint = desiredDeviceId ? { deviceId: { exact: desiredDeviceId } } : true;
+            this._micRawStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
+            this._micAudioCtx = new AC();
+            await this._micAudioCtx.resume?.().catch(() => { });
+
+            this._micSource = this._micAudioCtx.createMediaStreamSource(this._micRawStream);
+            this._micAnalyser = this._micAudioCtx.createAnalyser();
+            this._micAnalyser.fftSize = 512;
+            this._micGainNode = this._micAudioCtx.createGain();
+            this._micGainNode.gain.value = this.micGain;
+            this._micDest = this._micAudioCtx.createMediaStreamDestination();
+
+            // source -> analyser -> gain -> destination (processed stream)
+            this._micSource.connect(this._micAnalyser);
+            this._micAnalyser.connect(this._micGainNode);
+            this._micGainNode.connect(this._micDest);
+
+            this._micDeviceIdInUse = desiredDeviceId;
+            this.localAudioStream = this._micDest.stream; // processed stream for WebRTC
+        } else {
+            // Ensure gain is up-to-date
+            if (this._micGainNode) this._micGainNode.gain.value = this.micGain;
+            // Ensure localAudioStream points at processed stream
+            if (this._micDest?.stream) this.localAudioStream = this._micDest.stream;
+        }
+
+        // Monitor (hear yourself) only when testing
+        if (requireMonitor) {
+            this._setMicMonitor(true);
+        }
+    }
+
+    _setMicMonitor(on) {
+        const ctx = this._micAudioCtx;
+        const gain = this._micGainNode;
+        if (!ctx || !gain) return;
+        if (on && !this._micMonitorConnected) {
+            try { gain.connect(ctx.destination); } catch (_) { }
+            this._micMonitorConnected = true;
+        } else if (!on && this._micMonitorConnected) {
+            try { gain.disconnect(ctx.destination); } catch (_) { }
+            this._micMonitorConnected = false;
+        }
+    }
+
+    async _teardownMicPipeline({ force = false } = {}) {
+        if (!force && (this._micUsers.voice || this._micUsers.test)) return;
+        this._setMicMonitor(false);
+        try { this._micSource?.disconnect?.(); } catch (_) { }
+        try { this._micAnalyser?.disconnect?.(); } catch (_) { }
+        try { this._micGainNode?.disconnect?.(); } catch (_) { }
+        try { this._micDest?.disconnect?.(); } catch (_) { }
+        try {
+            if (this._micRawStream) this._micRawStream.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
+        } catch (_) { }
+        try { await this._micAudioCtx?.close?.(); } catch (_) { }
+        this._micDeviceIdInUse = null;
+        this._micRawStream = null;
+        this._micAudioCtx = null;
+        this._micSource = null;
+        this._micAnalyser = null;
+        this._micGainNode = null;
+        this._micDest = null;
+        this._micMonitorConnected = false;
+        // If voice/test aren't using it, also clear localAudioStream pointer
+        if (!this._micUsers.voice && !this._micUsers.test) {
+            this.localAudioStream = null;
+        }
+    }
+
+    _startMicMeter() {
+        const bar = document.getElementById('voice-mic-meter-bar');
+        if (!bar || !this._micAnalyser) return;
+        const analyser = this._micAnalyser;
+        const buf = new Uint8Array(analyser.fftSize);
+        const tick = () => {
+            try {
+                analyser.getByteTimeDomainData(buf);
+                // RMS amplitude (0..1)
+                let sum = 0;
+                for (let i = 0; i < buf.length; i++) {
+                    const v = (buf[i] - 128) / 128;
+                    sum += v * v;
+                }
+                const rms = Math.sqrt(sum / buf.length);
+                const pct = Math.min(100, Math.max(0, Math.round(rms * 180))); // scale for UI
+                bar.style.width = pct + '%';
+            } catch (_) { }
+            this._micMeterRaf = requestAnimationFrame(tick);
+        };
+        if (this._micMeterRaf) cancelAnimationFrame(this._micMeterRaf);
+        this._micMeterRaf = requestAnimationFrame(tick);
+    }
+
+    _stopMicMeter() {
+        if (this._micMeterRaf) cancelAnimationFrame(this._micMeterRaf);
+        this._micMeterRaf = null;
+        const bar = document.getElementById('voice-mic-meter-bar');
+        if (bar) bar.style.width = '0%';
+    }
+
+    async toggleMicTest() {
+        const btn = document.getElementById('voice-mic-test-toggle');
+        const running = !!this._micUsers.test;
+        if (running) {
+            this._micUsers.test = false;
+            this._setMicMonitor(false);
+            this._stopMicMeter();
+            if (btn) btn.textContent = '테스트 시작';
+            await this._teardownMicPipeline({ force: false });
+            return;
+        }
+
+        if (this.voiceEnabled) {
+            const ok = confirm('보이스 톡 중에는 테스트(스피커 출력)로 인해 에코가 생길 수 있어요.\\n보이스 톡을 잠시 끄고 테스트할까요?');
+            if (!ok) return;
+            await this.stopVoice({ playFx: false });
+        }
+
+        try {
+            this._micUsers.test = true;
+            await this._ensureMicPipeline({ requireMonitor: true });
+            this._startMicMeter();
+            if (btn) btn.textContent = '테스트 중지';
+        } catch (e) {
+            console.error('Mic test error:', e);
+            alert('마이크 테스트 실패: ' + (e?.message || e));
+            this._micUsers.test = false;
+            this._setMicMonitor(false);
+            this._stopMicMeter();
+            if (btn) btn.textContent = '테스트 시작';
+            await this._teardownMicPipeline({ force: true });
+        }
     }
 
     async refreshMicDeviceList({ requestPermissionIfNeeded = false } = {}) {
@@ -637,8 +818,8 @@ class AntiCodeApp {
         }
         try {
             // Must be called from user gesture (button click) on mobile
-            const audioConstraint = this.voiceDeviceId ? { deviceId: { exact: this.voiceDeviceId } } : true;
-            this.localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
+            this._micUsers.voice = true;
+            await this._ensureMicPipeline({ requireMonitor: false });
             this.voiceEnabled = true;
             this._setVoiceButtonState(true);
             if (playFx) SoundFX.micOn();
@@ -668,6 +849,7 @@ class AntiCodeApp {
         } catch (e) {
             console.error('startVoice error:', e);
             alert('마이크 권한이 필요합니다.\\n' + (e?.message || e));
+            this._micUsers.voice = false;
             await this.stopVoice({ playFx: false });
         }
     }
@@ -676,6 +858,7 @@ class AntiCodeApp {
         this.voiceEnabled = false;
         this._setVoiceButtonState(false);
         if (playFx) SoundFX.micOff();
+        this._micUsers.voice = false;
 
         // Update presence voice flag off
         try {
@@ -701,14 +884,8 @@ class AntiCodeApp {
             try { el.srcObject = null; el.remove(); } catch (_) { }
             this.remoteAudioEls.delete(u);
         }
-        // Stop local stream
-        try {
-            if (this.localAudioStream) {
-                this.localAudioStream.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
-            }
-        } finally {
-            this.localAudioStream = null;
-        }
+        // Stop mic pipeline only if not used by mic test
+        await this._teardownMicPipeline({ force: false });
         // Leave signaling channel
         try {
             if (this.voiceChannel) this.supabase.removeChannel(this.voiceChannel);
@@ -1055,6 +1232,7 @@ class AntiCodeApp {
             this._loadUnlockedChannels();
             // Restore preferred mic device (USB mic selection)
             this.loadVoiceDevicePreference();
+            this.loadMicGainPreference();
 
             // Admin-only: auto-clean old chat messages on a 90-day cadence
             await this.maybeAutoCleanupMessages();
@@ -2107,6 +2285,17 @@ class AntiCodeApp {
                 // If labels are blank, user can hit "새로고침" to request permission.
                 this.refreshMicDeviceList({ requestPermissionIfNeeded: false });
             }
+
+            // Init mic gain UI from stored value
+            try {
+                const gainEl = document.getElementById('voice-mic-gain');
+                const gainValEl = document.getElementById('voice-mic-gain-value');
+                if (gainEl) {
+                    const pct = Math.round((this.micGain || 1) * 100);
+                    gainEl.value = String(pct);
+                    if (gainValEl) gainValEl.textContent = `${pct}%`;
+                }
+            } catch (_) { }
         });
         _safeBind('close-settings-modal', 'onclick', () => {
             if (sModal) sModal.style.display = 'none';
@@ -2131,7 +2320,37 @@ class AntiCodeApp {
                 await this.stopVoice();
                 await this.startVoice();
             }
+            // If mic test is running, restart pipeline so it uses the new device
+            if (this._micUsers.test) {
+                await this._ensureMicPipeline({ requireMonitor: true });
+            }
         });
+
+        // Mic test + gain controls
+        _safeBind('voice-mic-test-toggle', 'onclick', async () => {
+            await this.toggleMicTest();
+        });
+
+        const gainEl = document.getElementById('voice-mic-gain');
+        const gainValEl = document.getElementById('voice-mic-gain-value');
+        const updateGainUi = (pct) => {
+            if (gainValEl) gainValEl.textContent = `${pct}%`;
+        };
+        if (gainEl) {
+            // init from stored preference
+            const pct = Math.round((this.micGain || 1) * 100);
+            gainEl.value = String(pct);
+            updateGainUi(pct);
+
+            gainEl.oninput = async () => {
+                const pct2 = Number(gainEl.value);
+                updateGainUi(pct2);
+                const g = Math.min(2, Math.max(0, pct2 / 100));
+                this.saveMicGainPreference(g);
+                // apply live if pipeline exists
+                if (this._micGainNode) this._micGainNode.gain.value = this.micGain;
+            };
+        }
 
         _safeBind('chat-cleanup-toggle', 'onclick', () => {
             if (!this.isAdminMode) return;

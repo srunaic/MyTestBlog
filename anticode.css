@@ -189,6 +189,24 @@
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.mic-meter {
+    flex: 1;
+    min-width: 160px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    overflow: hidden;
+}
+
+.mic-meter-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(0, 242, 255, 0.4), rgba(0, 242, 255, 0.9));
+    transition: width 0.08s linear;
+}
+
 .notif-toggle-btn:hover {
     background: rgba(0, 242, 255, 0.1);
     border-color: var(--accent);

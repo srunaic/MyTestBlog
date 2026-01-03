@@ -276,6 +276,23 @@
                     <button type="button" id="voice-mic-apply" class="notif-toggle-btn">적용</button>
                 </div>
             </div>
+            <div class="setting-item-group">
+                <div class="setting-label">
+                    <span class="label-title">🧪 마이크 테스트</span>
+                    <span class="label-desc">내 마이크 소리가 들리는지 확인하고(테스트 중에는 스피커로 출력), 입력 레벨을 확인할 수 있습니다.</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; width:100%; flex-wrap:wrap;">
+                    <button type="button" id="voice-mic-test-toggle" class="notif-toggle-btn">테스트 시작</button>
+                    <div class="mic-meter" title="마이크 입력 레벨">
+                        <div id="voice-mic-meter-bar" class="mic-meter-bar" style="width:0%"></div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; margin-top:10px; width:100%;">
+                    <div style="min-width:110px; color:var(--text-muted); font-size:0.75rem; font-weight:700;">마이크 볼륨</div>
+                    <input id="voice-mic-gain" type="range" min="0" max="200" step="5" value="100" style="flex:1;">
+                    <span id="voice-mic-gain-value" style="min-width:48px; text-align:right; color:var(--text-muted); font-size:0.75rem;">100%</span>
+                </div>
+            </div>
             <div class="modal-btns">
                 <button type="button" id="close-settings-modal" class="submit-btn">확인</button>
             </div>
