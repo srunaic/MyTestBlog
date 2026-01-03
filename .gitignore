@@ -5,6 +5,9 @@ obfuscator-log.txt
 TestHost.txt
 diagnostic.txt
 
+# Local tools (do not commit)
+.tools/
+
 # OS Specific Files
 .DS_Store
 Thumbs.db
