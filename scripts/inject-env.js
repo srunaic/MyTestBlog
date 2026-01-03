@@ -21,16 +21,18 @@ files.forEach(file => {
     let content = fs.readFileSync(filePath, 'utf8');
     let replacedCount = 0;
 
-    for (const [key, value] of Object.entries(envVars)) {
+    // Direct replacement of the placeholder strings
+    for (const [placeholder, value] of Object.entries(envVars)) {
         if (value) {
-            const regex = new RegExp(`(['"])${key}(['"])`, 'g');
-            if (content.match(regex)) {
-                content = content.replace(regex, `$1${value}$2`);
+            // Using a simple split/join to replace all occurrences of the placeholder string
+            const pieces = content.split(placeholder);
+            if (pieces.length > 1) {
+                content = pieces.join(value);
                 replacedCount++;
-                console.log(`[Env Inject] ✅ Injected ${key} into ${file} (Value starts with: ${value.substring(0, 5)}...)`);
+                console.log(`[Env Inject] ✅ Replaced ${placeholder} in ${file} (Value: ${value.substring(0, 5)}...)`);
             }
         } else {
-            console.log(`[Env Inject] ⚠️ Missing value for ${key}`);
+            console.log(`[Env Inject] ⚠️ No value provided for ${placeholder}`);
         }
     }
 

@@ -1,3 +1,4 @@
+// [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:35
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 // ==========================================
