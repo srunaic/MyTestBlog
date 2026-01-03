@@ -38,11 +38,14 @@ supabase functions deploy push-send
 
 Supabase Functions > Secrets 에 아래를 추가하세요:
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `PROJECT_URL` (예: `https://xefallpzdgyjufsxpsnk.supabase.co`)
+- `SERVICE_ROLE_KEY` (Supabase Settings → API Keys 화면의 service_role 키)
 - `VAPID_PUBLIC_KEY`
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT` (예: `mailto:admin@example.com`)
+
+> 참고: Supabase 대시보드 Secrets는 이름이 `SUPABASE_`로 시작하면 생성이 막힙니다.
+> 그래서 위처럼 `PROJECT_URL`, `SERVICE_ROLE_KEY`로 저장하세요.
 
 ## 5) 동작 확인
 

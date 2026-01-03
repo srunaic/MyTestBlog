@@ -2,8 +2,10 @@
 // Sends Web Push notifications to stored subscriptions.
 //
 // Required secrets (Supabase Functions -> Secrets):
-// - SUPABASE_URL
-// - SUPABASE_SERVICE_ROLE_KEY
+// NOTE: Secret names cannot start with "SUPABASE_" in the dashboard UI.
+// Use these names instead:
+// - PROJECT_URL (or rely on built-in SUPABASE_URL if present)
+// - SERVICE_ROLE_KEY
 // - VAPID_PUBLIC_KEY
 // - VAPID_PRIVATE_KEY
 // - VAPID_SUBJECT (e.g. "mailto:you@example.com")
@@ -40,14 +42,15 @@ serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    // Prefer built-in env if available, otherwise fall back to custom secret names
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? Deno.env.get("PROJECT_URL") ?? "";
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY") ?? "";
     const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
     const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
     const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:admin@example.com";
 
     if (!SUPABASE_URL || !SERVICE_KEY) {
-      return new Response("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY", { status: 500, headers: corsHeaders });
+      return new Response("Missing PROJECT_URL/SUPABASE_URL or SERVICE_ROLE_KEY", { status: 500, headers: corsHeaders });
     }
     if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
       return new Response("Missing VAPID keys", { status: 500, headers: corsHeaders });
