@@ -213,6 +213,12 @@ class AntiCodeApp {
         this.channelMembers = []; // usernames invited/joined for current channel
         this.messageQueue = [];
         this.isProcessingQueue = false;
+        // Voice chat
+        this.voiceEnabled = false;
+        this.localAudioStream = null;
+        this.voiceChannel = null; // Supabase broadcast channel for WebRTC signaling (per room)
+        this.peerConnections = new Map(); // username -> RTCPeerConnection
+        this.remoteAudioEls = new Map(); // username -> HTMLAudioElement
     }
 
     _resetMessageDedupeState() {
@@ -450,6 +456,10 @@ class AntiCodeApp {
             .on('presence', { event: 'sync' }, async () => {
                 const state = this.channelPresenceChannel.presenceState();
                 await this.updateChannelMemberPanel(state);
+                // If voice is enabled, opportunistically connect to peers in this channel
+                if (this.voiceEnabled) {
+                    await this._reconcileVoicePeersFromPresence(state);
+                }
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
@@ -463,6 +473,265 @@ class AntiCodeApp {
                     try { await this.channelPresenceChannel.track(trackData); } catch (_) { }
                 }
             });
+    }
+
+    _setVoiceButtonState(on) {
+        const btn = document.getElementById('voice-toggle-btn');
+        if (!btn) return;
+        btn.classList.toggle('on', !!on);
+        btn.textContent = on ? '🎙️' : '🎤';
+        btn.title = on ? '보이스 톡 OFF' : '보이스 톡 ON';
+    }
+
+    async toggleVoice() {
+        if (!this.activeChannel) return alert('먼저 채널을 선택하세요.');
+        if (this.voiceEnabled) {
+            await this.stopVoice();
+        } else {
+            await this.startVoice();
+        }
+    }
+
+    async startVoice() {
+        if (!this.activeChannel) return;
+        // Secret channels: invited-only
+        if (this.activeChannel.type === 'secret' && !this._isAllowedInChannel(this.activeChannel.id)) {
+            alert('초대된 멤버만 이 비밀 채팅방의 보이스 톡을 사용할 수 있습니다.');
+            return;
+        }
+        try {
+            // Must be called from user gesture (button click) on mobile
+            this.localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            this.voiceEnabled = true;
+            this._setVoiceButtonState(true);
+
+            // Join signaling channel for this room
+            this._setupVoiceSignaling(this.activeChannel.id);
+
+            // Notify presence by rebroadcasting track data with voice flag
+            try {
+                if (this.channelPresenceChannel) {
+                    await this.channelPresenceChannel.track({
+                        username: this.currentUser.username,
+                        nickname: this.currentUser.nickname,
+                        uid: this.currentUser.uid,
+                        avatar_url: this.currentUser.avatar_url,
+                        online_at: new Date().toISOString(),
+                        voice: true
+                    });
+                }
+            } catch (_) { }
+
+            // Connect to peers who are already voice-enabled
+            try {
+                const state = this.channelPresenceChannel?.presenceState?.() || {};
+                await this._reconcileVoicePeersFromPresence(state);
+            } catch (_) { }
+        } catch (e) {
+            console.error('startVoice error:', e);
+            alert('마이크 권한이 필요합니다.\\n' + (e?.message || e));
+            await this.stopVoice();
+        }
+    }
+
+    async stopVoice() {
+        this.voiceEnabled = false;
+        this._setVoiceButtonState(false);
+
+        // Update presence voice flag off
+        try {
+            if (this.channelPresenceChannel) {
+                await this.channelPresenceChannel.track({
+                    username: this.currentUser.username,
+                    nickname: this.currentUser.nickname,
+                    uid: this.currentUser.uid,
+                    avatar_url: this.currentUser.avatar_url,
+                    online_at: new Date().toISOString(),
+                    voice: false
+                });
+            }
+        } catch (_) { }
+
+        // Close peer connections
+        for (const [u, pc] of this.peerConnections.entries()) {
+            try { pc.close(); } catch (_) { }
+            this.peerConnections.delete(u);
+        }
+        // Remove audio elements
+        for (const [u, el] of this.remoteAudioEls.entries()) {
+            try { el.srcObject = null; el.remove(); } catch (_) { }
+            this.remoteAudioEls.delete(u);
+        }
+        // Stop local stream
+        try {
+            if (this.localAudioStream) {
+                this.localAudioStream.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
+            }
+        } finally {
+            this.localAudioStream = null;
+        }
+        // Leave signaling channel
+        try {
+            if (this.voiceChannel) this.supabase.removeChannel(this.voiceChannel);
+        } catch (_) { }
+        this.voiceChannel = null;
+    }
+
+    _setupVoiceSignaling(channelId) {
+        // Recreate signaling channel on each start to ensure room isolation.
+        try { if (this.voiceChannel) this.supabase.removeChannel(this.voiceChannel); } catch (_) { }
+        this.voiceChannel = this.supabase.channel(`voice_${channelId}`, {
+            config: { broadcast: { self: true } }
+        });
+
+        this.voiceChannel.on('broadcast', { event: 'webrtc' }, async (payload) => {
+            const msg = payload?.payload;
+            if (!msg) return;
+            if (msg.to && msg.to !== this.currentUser.username) return;
+            if (msg.from === this.currentUser.username) return;
+
+            if (msg.type === 'offer') await this._onOffer(msg.from, msg.sdp);
+            if (msg.type === 'answer') await this._onAnswer(msg.from, msg.sdp);
+            if (msg.type === 'ice') await this._onIce(msg.from, msg.candidate);
+            if (msg.type === 'leave') await this._onPeerLeave(msg.from);
+        }).subscribe();
+    }
+
+    async _reconcileVoicePeersFromPresence(state) {
+        const peers = [];
+        for (const k in (state || {})) {
+            const meta = state[k]?.[0];
+            if (!meta) continue;
+            if (meta.username === this.currentUser.username) continue;
+            if (meta.voice) peers.push(meta.username);
+        }
+        // Create offers to peers we aren't connected to yet
+        for (const uname of peers) {
+            if (!this.peerConnections.has(uname)) {
+                await this._createOffer(uname);
+            }
+        }
+    }
+
+    _createPeerConnection(remoteUsername) {
+        const pc = new RTCPeerConnection({
+            iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }]
+        });
+
+        pc.onicecandidate = (e) => {
+            if (!e.candidate) return;
+            this.voiceChannel?.send({
+                type: 'broadcast',
+                event: 'webrtc',
+                payload: { type: 'ice', from: this.currentUser.username, to: remoteUsername, candidate: e.candidate }
+            });
+        };
+
+        pc.ontrack = (e) => {
+            const stream = e.streams?.[0];
+            if (!stream) return;
+            let audio = this.remoteAudioEls.get(remoteUsername);
+            if (!audio) {
+                audio = document.createElement('audio');
+                audio.autoplay = true;
+                audio.playsInline = true;
+                audio.controls = false;
+                audio.style.display = 'none';
+                document.body.appendChild(audio);
+                this.remoteAudioEls.set(remoteUsername, audio);
+            }
+            audio.srcObject = stream;
+            // Mobile sometimes requires explicit play after user gesture; this is best-effort
+            audio.play?.().catch(() => {});
+        };
+
+        pc.onconnectionstatechange = () => {
+            const st = pc.connectionState;
+            if (st === 'failed' || st === 'disconnected' || st === 'closed') {
+                this._onPeerLeave(remoteUsername);
+            }
+        };
+
+        // Add local tracks
+        if (this.localAudioStream) {
+            this.localAudioStream.getTracks().forEach(t => pc.addTrack(t, this.localAudioStream));
+        }
+
+        return pc;
+    }
+
+    async _createOffer(remoteUsername) {
+        if (!this.voiceEnabled || !this.voiceChannel) return;
+        const pc = this._createPeerConnection(remoteUsername);
+        this.peerConnections.set(remoteUsername, pc);
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        this.voiceChannel.send({
+            type: 'broadcast',
+            event: 'webrtc',
+            payload: { type: 'offer', from: this.currentUser.username, to: remoteUsername, sdp: pc.localDescription }
+        });
+    }
+
+    async _onOffer(fromUsername, sdp) {
+        if (!this.voiceEnabled || !this.voiceChannel) return;
+        let pc = this.peerConnections.get(fromUsername);
+        const isNew = !pc;
+        if (!pc) {
+            pc = this._createPeerConnection(fromUsername);
+            this.peerConnections.set(fromUsername, pc);
+        }
+
+        // Basic glare handling (polite based on username ordering)
+        const polite = String(this.currentUser.username) > String(fromUsername);
+        const collision = pc.signalingState !== 'stable';
+        if (collision && !polite) return;
+        if (collision && polite) {
+            try { await pc.setLocalDescription({ type: 'rollback' }); } catch (_) { }
+        }
+
+        await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        this.voiceChannel.send({
+            type: 'broadcast',
+            event: 'webrtc',
+            payload: { type: 'answer', from: this.currentUser.username, to: fromUsername, sdp: pc.localDescription }
+        });
+    }
+
+    async _onAnswer(fromUsername, sdp) {
+        const pc = this.peerConnections.get(fromUsername);
+        if (!pc) return;
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        } catch (e) {
+            console.warn('setRemoteDescription(answer) failed:', e);
+        }
+    }
+
+    async _onIce(fromUsername, candidate) {
+        const pc = this.peerConnections.get(fromUsername);
+        if (!pc || !candidate) return;
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+            console.warn('addIceCandidate failed:', e);
+        }
+    }
+
+    async _onPeerLeave(fromUsername) {
+        const pc = this.peerConnections.get(fromUsername);
+        if (pc) {
+            try { pc.close(); } catch (_) { }
+            this.peerConnections.delete(fromUsername);
+        }
+        const el = this.remoteAudioEls.get(fromUsername);
+        if (el) {
+            try { el.srcObject = null; el.remove(); } catch (_) { }
+            this.remoteAudioEls.delete(fromUsername);
+        }
     }
 
     _getCleanupSettingsKey() {
@@ -1021,6 +1290,8 @@ class AntiCodeApp {
     async switchChannel(channelId) {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
+        // Voice is per-channel; stop when switching channels
+        if (this.voiceEnabled) await this.stopVoice();
         this.activeChannel = channel;
         this._resetMessageDedupeState();
         this.unlockedChannels.add(channelId);
@@ -1540,6 +1811,17 @@ class AntiCodeApp {
                 input.value += em.innerText;
                 input.focus();
             };
+        });
+
+        // Voice toggle (mic)
+        _safeBind('voice-toggle-btn', 'onclick', async (e) => {
+            try {
+                e?.stopPropagation?.();
+                await this.toggleVoice();
+            } catch (err) {
+                console.error('toggleVoice error:', err);
+                alert('보이스 톡 오류: ' + (err?.message || err));
+            }
         });
 
         // Mobile Toggles & Nav

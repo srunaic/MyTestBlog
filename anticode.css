@@ -243,6 +243,11 @@
     transform: scale(1.2);
 }
 
+#voice-toggle-btn.on {
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.35);
+}
+
 .emoji-picker-popover {
     position: absolute;
     bottom: 50px;
