@@ -4,7 +4,7 @@
     "description": "Futuristic Cyber-Minimalist Blog",
     "main": "script.js",
     "scripts": {
-        "build": "node scripts/inject-env.js && npx rimraf public && npx shx mkdir -p public && npx shx cp index.html style.css manifest.json robots.txt sitemap.xml anticode.html anticode.css lotto.html public/ && npx javascript-obfuscator ./script.js --output ./public/script.js --compact true --self-defending true --string-array true --string-array-rotate true --string-array-shuffle true --string-array-index-shift true && npx javascript-obfuscator ./sw.js --output ./public/sw.js --compact true && npx javascript-obfuscator ./anticode.js --output ./public/anticode.js --compact true"
+        "build": "node scripts/inject-env.js && npx rimraf public && npx shx mkdir -p public && npx shx cp index.html style.css manifest.json robots.txt sitemap.xml anticode.html anticode.css lotto.html public/ && npx javascript-obfuscator ./script.js --output ./public/script.js --compact true --self-defending true --string-array true --string-array-rotate true --string-array-shuffle true --string-array-index-shift true && npx shx cp ./sw.js ./public/sw.js && npx javascript-obfuscator ./anticode.js --output ./public/anticode.js --compact true"
     },
     "devDependencies": {
         "javascript-obfuscator": "^4.1.0"
