@@ -60,3 +60,20 @@ self.addEventListener('fetch', event => {
             })
     );
 });
+
+// Notification click: focus/open the app
+self.addEventListener('notificationclick', (event) => {
+    try { event.notification.close(); } catch (_) { }
+    event.waitUntil((async () => {
+        const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of allClients) {
+            if ('focus' in client) {
+                await client.focus();
+                return;
+            }
+        }
+        if (self.clients.openWindow) {
+            await self.clients.openWindow('/anticode.html');
+        }
+    })());
+});

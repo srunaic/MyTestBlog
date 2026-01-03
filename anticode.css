@@ -207,6 +207,39 @@
     transition: width 0.08s linear;
 }
 
+.inapp-notif-toast {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    max-width: min(520px, calc(100vw - 24px));
+    width: max-content;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(10, 12, 18, 0.92);
+    border: 1px solid rgba(0, 242, 255, 0.22);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+}
+
+.inapp-notif-toast .toast-title {
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+}
+
+.inapp-notif-toast .toast-body {
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
 .notif-toggle-btn:hover {
     background: rgba(0, 242, 255, 0.1);
     border-color: var(--accent);

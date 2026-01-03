@@ -250,7 +250,16 @@
                     <span class="label-title">🔔 알림 소리</span>
                     <span class="label-desc">새 메시지 도착 시 소리로 알립니다.</span>
                 </div>
-                <button onclick="toggleNotifSound()" id="notif-toggle-settings" class="notif-toggle-btn notif-sound-toggle">🔔 ON</button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button onclick="toggleNotifSound()" id="notif-toggle-settings" class="notif-toggle-btn notif-sound-toggle">🔔 ON</button>
+                    <button type="button" id="notif-os-permission" class="notif-toggle-btn">OS 알림 허용</button>
+                    <button type="button" id="notif-test-btn" class="notif-toggle-btn">알림 테스트</button>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; margin-top:10px; width:100%;">
+                    <div style="min-width:110px; color:var(--text-muted); font-size:0.75rem; font-weight:700;">알림 볼륨</div>
+                    <input id="notif-volume" type="range" min="0" max="100" step="5" value="80" style="flex:1;">
+                    <span id="notif-volume-value" style="min-width:48px; text-align:right; color:var(--text-muted); font-size:0.75rem;">80%</span>
+                </div>
             </div>
             <div id="chat-cleanup-setting" class="setting-item-group" style="display:none;">
                 <div class="setting-label">
@@ -309,6 +318,10 @@
     </div>
 
     <!-- Real-time Notification UI -->
+    <div id="inapp-notif-toast" class="inapp-notif-toast" style="display:none;">
+        <div class="toast-title">Nanodoroshi / Anticode</div>
+        <div id="inapp-notif-toast-body" class="toast-body">알림</div>
+    </div>
     <div id="notif-badge" class="notif-badge" onclick="clearNotifications()">
         <span class="notif-icon">🔔</span>
         <span id="notif-count-display" class="notif-count" style="display:none;">0</span>

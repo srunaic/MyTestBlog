@@ -111,13 +111,15 @@ const SoundFX = {
         this.ensure();
         const ctx = this.ctx;
         if (!ctx || ctx.state !== 'running') return;
+        const vol = Number(NotificationManager.volume ?? 0.8);
+        const gainScaled = gain * (Number.isFinite(vol) ? Math.max(0, Math.min(1, vol)) : 0.8);
         const t0 = ctx.currentTime + (delayMs / 1000);
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, t0);
         g.gain.setValueAtTime(0.0001, t0);
-        g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gainScaled), t0 + 0.01);
         g.gain.exponentialRampToValueAtTime(0.0001, t0 + (durationMs / 1000));
         osc.connect(g);
         g.connect(ctx.destination);
@@ -147,12 +149,19 @@ const SoundFX = {
 const NotificationManager = {
     count: 0,
     isSoundOn: localStorage.getItem('nano_notif_sound') !== 'off',
+    volume: (() => {
+        const raw = localStorage.getItem('nano_notif_volume');
+        const n = raw == null ? 0.8 : Number(raw);
+        return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0.8;
+    })(),
     initialized: false,
 
     async init() {
         if (this.initialized) return;
         this.updateBadge();
         this.updateButtons();
+        this.applyVolume();
+        this.updateOsPermissionButton();
 
         // Use a small delay to ensure supabase is ready
         setTimeout(() => this.setupSubscriptions(), 2000);
@@ -193,18 +202,64 @@ const NotificationManager = {
     },
 
     notify(type, data) {
+        // Skip notifying myself for chat events
+        try {
+            const me = window.app?.currentUser?.username;
+            if (type === 'chat' && me && (data?.user_id === me || data?.author === me)) return;
+        } catch (_) { }
+
         // Increment count
         this.count++;
         if (this.count > 100) this.count = 100;
 
         this.updateBadge();
         this.playSound();
+
+        const msg = this._formatMessage(type, data);
+        this.showInAppToast(msg);
+
+        // OS notification: show when tab is not active (background)
+        try {
+            if ((document.hidden || !document.hasFocus()) && this.isOsNotifEnabled()) {
+                this.showOsNotification('Nanodoroshi / Anticode', {
+                    body: msg,
+                    tag: type === 'chat' ? `anticode_chat_${data?.channel_id || ''}` : `nano_${type}`,
+                    renotify: false,
+                    silent: false,
+                    data: { kind: type, channel_id: data?.channel_id || null }
+                });
+            }
+        } catch (_) { }
+    },
+
+    _formatMessage(type, data) {
+        if (type === 'chat') {
+            const author = data?.author || data?.user_id || '익명';
+            const content = String(data?.content ?? '').slice(0, 140);
+            return `[채팅] ${author}: ${content}`;
+        }
+        if (type === 'post') return `[새 글] ${data?.title || '새 게시글'}`;
+        if (type === 'post-update') return `[글 수정] ${data?.title || '게시글 업데이트'}`;
+        if (type === 'comment') return `[새 댓글] ${data?.content ? String(data.content).slice(0, 120) : '새 댓글'}`;
+        if (type === 'comment-update') return `[댓글 수정] ${data?.content ? String(data.content).slice(0, 120) : '댓글 업데이트'}`;
+        return `[알림] 새 이벤트`;
+    },
+
+    showInAppToast(text) {
+        const el = document.getElementById('inapp-notif-toast');
+        const body = document.getElementById('inapp-notif-toast-body');
+        if (!el || !body) return;
+        body.textContent = `${text}  ·  (이 소리는 Nanodoroshi/Anticode 웹앱에서 울립니다)`;
+        el.style.display = 'block';
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => { try { el.style.display = 'none'; } catch (_) { } }, 3500);
     },
 
     playSound() {
         if (!this.isSoundOn) return;
         const audio = document.getElementById('notif-sound');
         if (audio) {
+            audio.volume = this.volume;
             audio.currentTime = 0;
             const p = audio.play();
             if (p && typeof p.catch === 'function') {
@@ -214,6 +269,63 @@ const NotificationManager = {
                 });
             }
         }
+    },
+
+    applyVolume() {
+        const audio = document.getElementById('notif-sound');
+        if (audio) audio.volume = this.volume;
+    },
+
+    setVolume01(v) {
+        const n = Number(v);
+        this.volume = Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0.8;
+        try { localStorage.setItem('nano_notif_volume', String(this.volume)); } catch (_) { }
+        this.applyVolume();
+    },
+
+    isOsNotifEnabled() {
+        // if sound notifications are disabled, also disable OS notifications for now
+        // (user expectation: master toggle)
+        return this.isSoundOn;
+    },
+
+    updateOsPermissionButton() {
+        const btn = document.getElementById('notif-os-permission');
+        if (!btn) return;
+        const p = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+        if (p === 'granted') { btn.textContent = 'OS 알림: 허용됨'; btn.classList.add('on'); }
+        else if (p === 'denied') { btn.textContent = 'OS 알림: 차단됨'; btn.classList.remove('on'); }
+        else if (p === 'default') { btn.textContent = 'OS 알림 허용'; btn.classList.remove('on'); }
+        else { btn.textContent = 'OS 알림 미지원'; btn.classList.remove('on'); }
+    },
+
+    async requestOsPermission() {
+        if (typeof Notification === 'undefined') return alert('이 브라우저는 OS 알림을 지원하지 않습니다.');
+        try {
+            const res = await Notification.requestPermission();
+            this.updateOsPermissionButton();
+            if (res !== 'granted') alert('OS 알림이 허용되지 않았습니다. 브라우저 설정에서 허용해 주세요.');
+        } catch (e) {
+            console.warn('requestPermission failed:', e);
+            alert('OS 알림 권한 요청에 실패했습니다.');
+        }
+    },
+
+    async showOsNotification(title, options) {
+        if (typeof Notification === 'undefined') return;
+        if (Notification.permission !== 'granted') return;
+        // Prefer service worker notification (more consistent on mobile/PWA)
+        try {
+            const reg = await navigator.serviceWorker?.ready;
+            if (reg?.showNotification) {
+                await reg.showNotification(title, options);
+                return;
+            }
+        } catch (_) { }
+        try {
+            // Fallback
+            new Notification(title, options);
+        } catch (_) { }
     },
 
     updateBadge() {
@@ -235,6 +347,7 @@ const NotificationManager = {
         this.isSoundOn = !this.isSoundOn;
         localStorage.setItem('nano_notif_sound', this.isSoundOn ? 'on' : 'off');
         this.updateButtons();
+        this.updateOsPermissionButton();
     },
 
     updateButtons() {
@@ -2296,6 +2409,18 @@ class AntiCodeApp {
                     if (gainValEl) gainValEl.textContent = `${pct}%`;
                 }
             } catch (_) { }
+
+            // Init notif volume + permission UI
+            try {
+                NotificationManager.updateOsPermissionButton();
+                const nEl = document.getElementById('notif-volume');
+                const nValEl = document.getElementById('notif-volume-value');
+                if (nEl) {
+                    const pct = Math.round((NotificationManager.volume ?? 0.8) * 100);
+                    nEl.value = String(pct);
+                    if (nValEl) nValEl.textContent = `${pct}%`;
+                }
+            } catch (_) { }
         });
         _safeBind('close-settings-modal', 'onclick', () => {
             if (sModal) sModal.style.display = 'none';
@@ -2330,6 +2455,32 @@ class AntiCodeApp {
         _safeBind('voice-mic-test-toggle', 'onclick', async () => {
             await this.toggleMicTest();
         });
+
+        // Notification controls
+        _safeBind('notif-os-permission', 'onclick', async () => {
+            await NotificationManager.requestOsPermission();
+        });
+        _safeBind('notif-test-btn', 'onclick', async () => {
+            NotificationManager.showInAppToast('[테스트] 알림 소리/표시 테스트');
+            NotificationManager.playSound();
+            try {
+                await NotificationManager.showOsNotification('Nanodoroshi / Anticode', {
+                    body: '[테스트] OS 알림이 정상 동작합니다.',
+                    tag: 'nano_test',
+                    silent: false
+                });
+            } catch (_) { }
+        });
+        const nVolEl = document.getElementById('notif-volume');
+        const nVolValEl = document.getElementById('notif-volume-value');
+        if (nVolEl) {
+            const setUi = (pct) => { if (nVolValEl) nVolValEl.textContent = `${pct}%`; };
+            nVolEl.oninput = () => {
+                const pct = Number(nVolEl.value);
+                setUi(pct);
+                NotificationManager.setVolume01(Math.max(0, Math.min(1, pct / 100)));
+            };
+        }
 
         const gainEl = document.getElementById('voice-mic-gain');
         const gainValEl = document.getElementById('voice-mic-gain-value');
