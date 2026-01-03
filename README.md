@@ -86,3 +86,21 @@ This project is a unique creative archive. Its architecture and design language 
 
 ---
 *Curated with 💎 by [Nanodoroshi](https://github.com/srunaic).*
+
+## Local development (Supabase env)
+
+1) Copy `.env.local.example` -> `.env.local` (this file is gitignored) and paste your key.
+
+2) Build to generate `public/`:
+
+```powershell
+cd "D:\CursorAIProject\nanodoroshi_blog"
+npm run build
+```
+
+3) Serve the static output for testing:
+
+```powershell
+cd "D:\CursorAIProject\nanodoroshi_blog\public"
+npx --yes serve .
+```

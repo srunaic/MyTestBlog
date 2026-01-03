@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const files = ['script.js', 'anticode.js'];
+// Never log secret values. Only log which env var names are present.
 console.log("[Env Inject] Available Environment Keys:", Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('VITE')));
 
 const findEnv = (namePart) => {
@@ -39,7 +40,8 @@ files.forEach(file => {
             if (pieces.length > 1) {
                 content = pieces.join(value);
                 replacedCount++;
-                console.log(`[Env Inject] ✅ Replaced ${placeholder} in ${file} (Value: ${value.substring(0, 5)}...)`);
+                // Do not print any portion of the value (keys/URLs may be sensitive depending on user setup).
+                console.log(`[Env Inject] ✅ Replaced ${placeholder} in ${file}`);
             }
         } else {
             console.log(`[Env Inject] ⚠️ No value provided for ${placeholder}`);
