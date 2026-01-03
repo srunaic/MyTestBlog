@@ -4,6 +4,9 @@ const ASSETS = [
     './index.html',
     './style.css',
     './script.js',
+    './anticode.html',
+    './anticode.css',
+    './anticode.js',
     './manifest.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 ];
