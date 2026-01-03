@@ -250,6 +250,57 @@ class AntiCodeApp {
         }
     }
 
+    escapeHtml(str) {
+        return String(str ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    filterProfanity(text) {
+        const input = String(text ?? '');
+        if (!input) return { text: input, flagged: false };
+
+        // NOTE: This is a best-effort filter (client-side). Expand list as needed.
+        const patterns = [
+            // Korean profanity (common variants)
+            /씨\s*발/gi,
+            /시\s*발/gi,
+            /ㅅ\s*ㅂ/gi,
+            /ㅆ\s*ㅂ/gi,
+            /병\s*신/gi,
+            /븅\s*신/gi,
+            /좆/gi,
+            /존\s*나/gi,
+            /개\s*새\s*끼/gi,
+            /새\s*끼/gi,
+            /미\s*친/gi,
+            // English profanity
+            /\bfuck(?:ing|er|ers|ed)?\b/gi,
+            /\bshit(?:ty|ting|ter|ters)?\b/gi,
+            /\bbitch(?:es|y)?\b/gi,
+            /\basshole\b/gi,
+            /\bcunt\b/gi,
+            /\bdick\b/gi,
+            /\bpussy\b/gi,
+            /\bmotherfucker\b/gi,
+            /\bbastard\b/gi,
+            /\bnigg(?:er|a)\b/gi
+        ];
+
+        let out = input;
+        let flagged = false;
+        for (const re of patterns) {
+            if (re.test(out)) {
+                flagged = true;
+                out = out.replace(re, '***');
+            }
+        }
+        return { text: out, flagged };
+    }
+
     async ensureCurrentUserChannelMembership(channelId) {
         // Record that current user has joined/visited this channel so they appear in member list.
         try {
@@ -283,6 +334,16 @@ class AntiCodeApp {
             console.warn('loadChannelMembers failed:', e?.message || e);
             this.channelMembers = this.currentUser?.username ? [this.currentUser.username] : [];
         }
+    }
+
+    _isAllowedInChannel(channelId) {
+        const ch = this.channels.find(c => c.id === channelId);
+        if (!ch) return false;
+        // Non-secret channels are open
+        if (ch.type !== 'secret') return true;
+        // Secret channels: owner or invited member only
+        if (ch.owner_id && ch.owner_id === this.currentUser?.username) return true;
+        return (this.channelMembers || []).includes(this.currentUser?.username);
     }
 
     async updateChannelMemberPanel(state) {
@@ -949,13 +1010,31 @@ class AntiCodeApp {
             delBtn.remove();
         }
 
+        // Load channel members first (needed for secret-channel access checks)
+        await this.loadChannelMembers(channel.id);
+
+        // Secret channel gate: invited-only (or owner)
+        if (channel.type === 'secret' && !this._isAllowedInChannel(channel.id)) {
+            alert('이 비밀 채팅방은 초대된 멤버만 입장할 수 있습니다.');
+            // Attempt to fall back to a non-secret channel
+            const fallback = this.channels.find(c => c.type !== 'secret') || this.channels[0];
+            if (fallback && fallback.id !== channel.id) {
+                await this.switchChannel(fallback.id);
+            }
+            return;
+        }
+
+        // For non-secret channels (or owner), mark myself as a member so I show up.
+        if (channel.type !== 'secret' || channel.owner_id === this.currentUser?.username) {
+            await this.ensureCurrentUserChannelMembership(channel.id);
+            await this.loadChannelMembers(channel.id);
+        }
+
         document.getElementById('chat-input').placeholder = channel.getPlaceholder();
         await this.loadMessages(channel.id);
         this.setupMessageSubscription(channel.id);
 
-        // Per-channel members + online panel
-        await this.ensureCurrentUserChannelMembership(channel.id);
-        await this.loadChannelMembers(channel.id);
+        // Per-channel online panel
         this.setupChannelPresence(channel.id);
         try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
     }
@@ -1162,8 +1241,18 @@ class AntiCodeApp {
 
     async sendMessage() {
         const input = document.getElementById('chat-input');
-        const content = input.value.trim();
+        let content = input.value.trim();
         if (!content || !this.activeChannel) return;
+
+        // Secret channels: invited-only write
+        if (this.activeChannel.type === 'secret' && !this._isAllowedInChannel(this.activeChannel.id)) {
+            alert('초대된 멤버만 이 비밀 채팅방에 글을 쓸 수 있습니다.');
+            return;
+        }
+
+        // Profanity filter
+        const filtered = this.filterProfanity(content);
+        content = filtered.text;
 
         const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
         const newMessage = {
@@ -1295,6 +1384,7 @@ class AntiCodeApp {
             </div>
         `;
 
+            const filtered = this.filterProfanity(msg.content || '');
             msgEl.innerHTML = `
                 ${avatarHtml}
                 <div class="message-content-wrapper">
@@ -1303,7 +1393,7 @@ class AntiCodeApp {
                         <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
                     </div>
                     <div class="message-text">
-                        ${msg.content}
+                        ${this.escapeHtml(filtered.text)}
                         ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
                     </div>
                 </div>
