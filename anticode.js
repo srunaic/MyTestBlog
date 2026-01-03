@@ -259,6 +259,30 @@ class AntiCodeApp {
             .replace(/'/g, '&#39;');
     }
 
+    extractYouTubeId(url) {
+        try {
+            const u = new URL(url);
+            const host = u.hostname.replace(/^www\./, '');
+            // youtu.be/<id>
+            if (host === 'youtu.be') {
+                const id = u.pathname.split('/').filter(Boolean)[0] || '';
+                return /^[\w-]{11}$/.test(id) ? id : null;
+            }
+            if (host.endsWith('youtube.com')) {
+                // watch?v=<id>
+                const v = u.searchParams.get('v');
+                if (v && /^[\w-]{11}$/.test(v)) return v;
+                // /shorts/<id>, /embed/<id>
+                const parts = u.pathname.split('/').filter(Boolean);
+                const idx = parts.findIndex(p => p === 'shorts' || p === 'embed');
+                if (idx !== -1 && parts[idx + 1] && /^[\w-]{11}$/.test(parts[idx + 1])) return parts[idx + 1];
+            }
+            return null;
+        } catch (_) {
+            return null;
+        }
+    }
+
     linkify(escapedText) {
         // escapedText must already be HTML-escaped.
         const text = String(escapedText ?? '');
@@ -267,8 +291,16 @@ class AntiCodeApp {
             const url = rawUrl;
             const lower = url.toLowerCase();
             const isYouTube = lower.includes('youtube.com') || lower.includes('youtu.be');
-            const label = isYouTube ? '🎬 YouTube 링크' : url;
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+            if (isYouTube) {
+                const vid = this.extractYouTubeId(url);
+                const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : null;
+                const link = `<a href="${url}" target="_blank" rel="noopener noreferrer">🎬 YouTube 링크</a>`;
+                const preview = thumb
+                    ? `<div class="yt-preview"><a href="${url}" target="_blank" rel="noopener noreferrer"><img class="yt-thumb" src="${thumb}" alt="YouTube thumbnail" loading="lazy"></a></div>`
+                    : '';
+                return `${link}${preview}`;
+            }
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
         });
     }
 

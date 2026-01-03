@@ -705,6 +705,27 @@
     width: fit-content;
 }
 
+.yt-preview {
+    margin-top: 8px;
+    max-width: 400px;
+    width: fit-content;
+}
+
+.yt-thumb {
+    max-width: 100%;
+    max-height: 225px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: 0.2s;
+    display: block;
+}
+
+.yt-thumb:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+}
+
 .chat-img {
     max-width: 100%;
     max-height: 400px;
