@@ -200,6 +200,7 @@ class AntiCodeApp {
         this.userCache = {}; // Cache for nickname and avatars
         this.activeChannel = null;
         this.presenceChannel = null;
+        this.channelPresenceChannel = null; // per-room presence (who is in this channel)
         this.messageSubscription = null;
         this.unlockedChannels = new Set();
         this.unlockedStorageKey = null; // per-user localStorage key (set after auth)
@@ -209,6 +210,7 @@ class AntiCodeApp {
         this.processedMessageIds = new Set(); // To prevent duplicates (Broadcast vs Postgres)
         this.recentMessageFingerprints = new Map(); // Dedup Broadcast vs Postgres when IDs differ
         this.friendsSchema = null; // Cache detected anticode_friends column names
+        this.channelMembers = []; // usernames invited/joined for current channel
         this.messageQueue = [];
         this.isProcessingQueue = false;
     }
@@ -246,6 +248,115 @@ class AntiCodeApp {
         } catch (_) {
             return file;
         }
+    }
+
+    async ensureCurrentUserChannelMembership(channelId) {
+        // Record that current user has joined/visited this channel so they appear in member list.
+        try {
+            await this.supabase
+                .from('anticode_channel_members')
+                .upsert([{
+                    channel_id: channelId,
+                    username: this.currentUser.username,
+                    invited_by: null
+                }], { onConflict: 'channel_id,username' });
+        } catch (e) {
+            // Table may not exist yet or RLS may block; don't break chat.
+            console.warn('ensureCurrentUserChannelMembership failed:', e?.message || e);
+        }
+    }
+
+    async loadChannelMembers(channelId) {
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_channel_members')
+                .select('username')
+                .eq('channel_id', channelId);
+            if (error) throw error;
+            const names = (data || []).map(r => r.username).filter(Boolean).map(String);
+            // Always include myself and channel owner if present
+            const chan = this.channels.find(c => c.id === channelId);
+            if (this.currentUser?.username) names.push(this.currentUser.username);
+            if (chan?.owner_id) names.push(String(chan.owner_id));
+            this.channelMembers = Array.from(new Set(names));
+        } catch (e) {
+            console.warn('loadChannelMembers failed:', e?.message || e);
+            this.channelMembers = this.currentUser?.username ? [this.currentUser.username] : [];
+        }
+    }
+
+    async updateChannelMemberPanel(state) {
+        const memberList = document.getElementById('member-list');
+        const onlineCountText = document.getElementById('online-count');
+        if (!memberList) return;
+
+        const onlineUsers = [];
+        for (const id in (state || {})) onlineUsers.push(state[id][0]);
+        const onlineUsernames = new Set(onlineUsers.map(u => u.username));
+        if (onlineCountText) onlineCountText.innerText = String(onlineUsers.length);
+
+        const friendUsernames = new Set(this.friends.map(f => f.username));
+        const allUsernames = Array.from(new Set([...(this.channelMembers || []), ...onlineUsernames]));
+
+        // Online first
+        const ordered = [
+            ...allUsernames.filter(u => onlineUsernames.has(u)),
+            ...allUsernames.filter(u => !onlineUsernames.has(u))
+        ];
+
+        const onlineMap = new Map(onlineUsers.map(u => [u.username, u]));
+        const parts = [];
+        for (const uname of ordered) {
+            const presenceUser = onlineMap.get(uname);
+            const isOnline = !!presenceUser;
+            const info = isOnline ? presenceUser : await this.getUserInfo(uname);
+            const nick = info?.nickname || uname;
+            const avatar = info?.avatar_url;
+            const isFriend = friendUsernames.has(uname);
+            parts.push(`
+                <div class="member-card ${isOnline ? 'online' : 'offline'}">
+                    <div class="avatar-wrapper">
+                        ${avatar ? `<img src="${avatar}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                        <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${nick[0]}</div>
+                        ${isOnline ? '<span class="online-dot"></span>' : ''}
+                    </div>
+                    <div class="member-info">
+                        <span class="member-name-text">${nick} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
+                        <span class="member-status-sub">${isOnline ? '온라인' : '오프라인'}</span>
+                    </div>
+                </div>
+            `);
+        }
+
+        memberList.innerHTML = parts.join('');
+    }
+
+    setupChannelPresence(channelId) {
+        try {
+            if (this.channelPresenceChannel) this.supabase.removeChannel(this.channelPresenceChannel);
+        } catch (_) { }
+
+        this.channelPresenceChannel = this.supabase.channel(`presence_${channelId}`, {
+            config: { presence: { key: this.currentUser.username } }
+        });
+
+        this.channelPresenceChannel
+            .on('presence', { event: 'sync' }, async () => {
+                const state = this.channelPresenceChannel.presenceState();
+                await this.updateChannelMemberPanel(state);
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    const trackData = {
+                        username: this.currentUser.username,
+                        nickname: this.currentUser.nickname,
+                        uid: this.currentUser.uid,
+                        avatar_url: this.currentUser.avatar_url,
+                        online_at: new Date().toISOString(),
+                    };
+                    try { await this.channelPresenceChannel.track(trackData); } catch (_) { }
+                }
+            });
     }
 
     _getCleanupSettingsKey() {
@@ -708,11 +819,18 @@ class AntiCodeApp {
                 invited_by: this.currentUser.username,
                 created_at: new Date().toISOString()
             };
-            const { error } = await this.supabase.from('anticode_channel_members').insert([payload]);
+            const { error } = await this.supabase
+                .from('anticode_channel_members')
+                .upsert([payload], { onConflict: 'channel_id,username' });
             if (error) {
                 console.error('Invite error:', error);
                 alert('초대 실패: ' + error.message + '\\n\\n(필요 테이블: anticode_channel_members)');
                 return;
+            }
+            // Refresh panel state if we're in this channel
+            await this.loadChannelMembers(this.activeChannel.id);
+            if (this.channelPresenceChannel) {
+                try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
             }
             alert('초대 완료!');
         } catch (e) {
@@ -834,6 +952,12 @@ class AntiCodeApp {
         document.getElementById('chat-input').placeholder = channel.getPlaceholder();
         await this.loadMessages(channel.id);
         this.setupMessageSubscription(channel.id);
+
+        // Per-channel members + online panel
+        await this.ensureCurrentUserChannelMembership(channel.id);
+        await this.loadChannelMembers(channel.id);
+        this.setupChannelPresence(channel.id);
+        try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
     }
 
     async deleteChannel(channelId) {
@@ -949,7 +1073,6 @@ class AntiCodeApp {
         this.presenceChannel
             .on('presence', { event: 'sync' }, () => {
                 const state = this.presenceChannel.presenceState();
-                this.updateOnlineUsers(state);
                 this.syncFriendStatus(state);
             })
             .subscribe(async (status) => {
