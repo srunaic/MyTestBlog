@@ -413,6 +413,7 @@ class AntiCodeApp {
         this._micAudioCtx = null;
         this._micSource = null;
         this._micAnalyser = null;
+        this._micCompressor = null;
         this._micGainNode = null;
         this._micDest = null; // MediaStreamDestination
         this._micMonitorConnected = false; // whether gain is connected to speakers
@@ -931,7 +932,13 @@ class AntiCodeApp {
             const AC = window.AudioContext || window.webkitAudioContext;
             if (!AC) throw new Error('이 브라우저는 AudioContext를 지원하지 않습니다.');
 
-            const audioConstraint = desiredDeviceId ? { deviceId: { exact: desiredDeviceId } } : true;
+            // Use browser built-in voice processing when available (helps normalize loudness / reduce distance effect)
+            const audioConstraint = {
+                ...(desiredDeviceId ? { deviceId: { exact: desiredDeviceId } } : {}),
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            };
             this._micRawStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
             this._micAudioCtx = new AC();
             await this._micAudioCtx.resume?.().catch(() => { });
@@ -939,13 +946,24 @@ class AntiCodeApp {
             this._micSource = this._micAudioCtx.createMediaStreamSource(this._micRawStream);
             this._micAnalyser = this._micAudioCtx.createAnalyser();
             this._micAnalyser.fftSize = 512;
+            // Compressor to reduce perceived "distance" / keep volume more consistent across talkers
+            this._micCompressor = this._micAudioCtx.createDynamicsCompressor();
+            // Reasonable speech-friendly defaults
+            try {
+                this._micCompressor.threshold.value = -24;
+                this._micCompressor.knee.value = 30;
+                this._micCompressor.ratio.value = 12;
+                this._micCompressor.attack.value = 0.003;
+                this._micCompressor.release.value = 0.25;
+            } catch (_) { }
             this._micGainNode = this._micAudioCtx.createGain();
             this._micGainNode.gain.value = this.micGain;
             this._micDest = this._micAudioCtx.createMediaStreamDestination();
 
-            // source -> analyser -> gain -> destination (processed stream)
+            // source -> analyser -> compressor -> gain -> destination (processed stream)
             this._micSource.connect(this._micAnalyser);
-            this._micAnalyser.connect(this._micGainNode);
+            this._micAnalyser.connect(this._micCompressor);
+            this._micCompressor.connect(this._micGainNode);
             this._micGainNode.connect(this._micDest);
 
             this._micDeviceIdInUse = desiredDeviceId;
@@ -981,8 +999,13 @@ class AntiCodeApp {
         this._setMicMonitor(false);
         try { this._micSource?.disconnect?.(); } catch (_) { }
         try { this._micAnalyser?.disconnect?.(); } catch (_) { }
+        try { this._micCompressor?.disconnect?.(); } catch (_) { }
         try { this._micGainNode?.disconnect?.(); } catch (_) { }
         try { this._micDest?.disconnect?.(); } catch (_) { }
+        // Ensure the processed stream track is stopped too (important on some mobile browsers)
+        try {
+            if (this.localAudioStream) this.localAudioStream.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
+        } catch (_) { }
         try {
             if (this._micRawStream) this._micRawStream.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
         } catch (_) { }
@@ -992,6 +1015,7 @@ class AntiCodeApp {
         this._micAudioCtx = null;
         this._micSource = null;
         this._micAnalyser = null;
+        this._micCompressor = null;
         this._micGainNode = null;
         this._micDest = null;
         this._micMonitorConnected = false;
@@ -1165,6 +1189,18 @@ class AntiCodeApp {
         if (playFx) SoundFX.micOff();
         this._micUsers.voice = false;
 
+        // Proactively tell peers we're leaving so they can cleanup immediately (helps mobile)
+        try {
+            const peers = Array.from(this.peerConnections.keys());
+            for (const uname of peers) {
+                this.voiceChannel?.send({
+                    type: 'broadcast',
+                    event: 'webrtc',
+                    payload: { type: 'leave', from: this.currentUser.username, to: uname }
+                });
+            }
+        } catch (_) { }
+
         // Update presence voice flag off
         try {
             if (this.channelPresenceChannel) {
@@ -1181,11 +1217,19 @@ class AntiCodeApp {
 
         // Close peer connections
         for (const [u, pc] of this.peerConnections.entries()) {
+            // Ensure we stop sending immediately on some browsers
+            try {
+                pc.getSenders?.().forEach(sender => {
+                    try { sender.replaceTrack?.(null); } catch (_) { }
+                    try { sender.track?.stop?.(); } catch (_) { }
+                });
+            } catch (_) { }
             try { pc.close(); } catch (_) { }
             this.peerConnections.delete(u);
         }
         // Remove audio elements
         for (const [u, el] of this.remoteAudioEls.entries()) {
+            try { el.pause?.(); } catch (_) { }
             try { el.srcObject = null; el.remove(); } catch (_) { }
             this.remoteAudioEls.delete(u);
         }
