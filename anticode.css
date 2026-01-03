@@ -516,6 +516,8 @@
 .message-item {
     display: flex;
     gap: 16px;
+    width: 100%;
+    min-width: 0;
 }
 
 /* Modals */
@@ -618,6 +620,8 @@
 .message-content-wrapper {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 .message-meta {
@@ -631,16 +635,46 @@
     font-weight: 700;
     color: var(--accent);
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    /* Prevent long names from pushing everything */
 }
 
 .timestamp {
     font-size: 0.75rem;
     color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .message-text {
     line-height: 1.4;
-    word-break: break-all;
+    word-break: break-word;
+    /* Better than break-all for readability */
+    color: var(--text-primary);
+}
+
+.message-image-content {
+    margin-top: 8px;
+    max-width: 400px;
+    width: fit-content;
+}
+
+.chat-img {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: 0.2s;
+    display: block;
+}
+
+.chat-img:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
 }
 
 /* Right: Members List */

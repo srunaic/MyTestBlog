@@ -723,7 +723,7 @@ class AntiCodeApp {
 
         const info = await this.getUserInfo(msg.user_id);
         const avatarHtml = `
-            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative;">
+            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0;">
                 ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                 <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${msg.author[0]}</div>
             </div>
