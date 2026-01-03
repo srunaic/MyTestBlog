@@ -359,15 +359,21 @@ class AntiCodeApp {
 
     async loadFriends() {
         // Fetch friend list with basic user info to pre-cache
+        // Use a simpler join hint (column name) if the constraint name is uncertain
         const { data, error } = await this.supabase
             .from('anticode_friends')
             .select(`
                 friend_username,
-                friend_info:anticode_users!anticode_friends_friend_username_fkey (username, nickname, uid, avatar_url)
+                friend_info:anticode_users!friend_username (username, nickname, uid, avatar_url)
             `)
             .eq('user_username', this.currentUser.username);
 
-        if (!error && data) {
+        if (error) {
+            console.error('Failed to load friends:', error);
+            return;
+        }
+
+        if (data) {
             this.friends = data.map(f => {
                 const info = f.friend_info;
                 if (info) this.userCache[f.friend_username] = info;
