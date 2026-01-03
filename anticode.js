@@ -6,6 +6,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ==========================================
 const SUPABASE_URL = 'VITE_SUPABASE_URL';
 const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
+const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const SESSION_KEY = 'nano_dorothy_session';
 
 const CATEGORY_NAMES = {
@@ -416,6 +417,175 @@ class AntiCodeApp {
         this._micDest = null; // MediaStreamDestination
         this._micMonitorConnected = false; // whether gain is connected to speakers
         this._micMeterRaf = null;
+        // Push (Web Push)
+        this.pushEnabled = false;
+    }
+
+    _base64UrlToUint8Array(base64Url) {
+        const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
+        const base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const raw = atob(base64);
+        const output = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; ++i) output[i] = raw.charCodeAt(i);
+        return output;
+    }
+
+    _pushSupported() {
+        return !!(window.Notification && navigator.serviceWorker && window.PushManager);
+    }
+
+    async _getSwRegistration() {
+        if (!('serviceWorker' in navigator)) throw new Error('Service Worker 미지원');
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) reg = await navigator.serviceWorker.register('./sw.js');
+        return reg;
+    }
+
+    _setPushStatus(text) {
+        const el = document.getElementById('push-status');
+        if (el) el.textContent = `상태: ${text}`;
+    }
+
+    async refreshPushStatus() {
+        if (!this._pushSupported()) {
+            this._setPushStatus('이 브라우저는 푸시를 지원하지 않음');
+            return;
+        }
+        const perm = Notification.permission;
+        if (perm !== 'granted') {
+            this._setPushStatus(`권한 필요 (${perm})`);
+            return;
+        }
+        try {
+            const reg = await this._getSwRegistration();
+            const sub = await reg.pushManager.getSubscription();
+            this.pushEnabled = !!sub;
+            this._setPushStatus(sub ? '켜짐' : '꺼짐');
+        } catch (e) {
+            this._setPushStatus('오류: ' + (e?.message || e));
+        }
+    }
+
+    _subToRow(subscription) {
+        const keyToB64 = (key) => {
+            const keyBuf = subscription.getKey(key);
+            if (!keyBuf) return '';
+            const arr = new Uint8Array(keyBuf);
+            let s = '';
+            for (const b of arr) s += String.fromCharCode(b);
+            return btoa(s);
+        };
+        return {
+            username: this.currentUser.username,
+            endpoint: subscription.endpoint,
+            p256dh: keyToB64('p256dh'),
+            auth: keyToB64('auth'),
+            enabled: true,
+            user_agent: navigator.userAgent,
+        };
+    }
+
+    async _savePushSubscriptionToDb(subscription) {
+        const row = this._subToRow(subscription);
+        const { error } = await this.supabase
+            .from('anticode_push_subscriptions')
+            .upsert(row, { onConflict: 'endpoint' });
+        if (error) {
+            console.error('push subscription upsert failed:', error);
+            alert("푸시 등록 DB 저장 실패: " + (error.message || error));
+        }
+    }
+
+    async _disablePushSubscriptionInDb(subscription) {
+        try {
+            const { error } = await this.supabase
+                .from('anticode_push_subscriptions')
+                .update({ enabled: false })
+                .eq('endpoint', subscription.endpoint);
+            if (error) console.warn('disable push subscription failed:', error);
+        } catch (_) { }
+    }
+
+    async enablePush() {
+        if (!this._pushSupported()) return alert('이 브라우저는 푸시 알림을 지원하지 않습니다.');
+        if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY.startsWith('VITE_')) {
+            alert('VAPID_PUBLIC_KEY가 설정되지 않았습니다. 배포 환경변수에 VAPID_PUBLIC_KEY를 넣어주세요.');
+            return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+            alert('OS 알림 권한이 필요합니다. 브라우저 설정에서 허용해 주세요.');
+            await this.refreshPushStatus();
+            return;
+        }
+        const reg = await this._getSwRegistration();
+        const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: this._base64UrlToUint8Array(VAPID_PUBLIC_KEY)
+        });
+        await this._savePushSubscriptionToDb(sub);
+        this.pushEnabled = true;
+        await this.refreshPushStatus();
+        alert('푸시 알림이 켜졌습니다. (브라우저를 닫아도 알림 가능)');
+    }
+
+    async disablePush() {
+        if (!this._pushSupported()) return;
+        try {
+            const reg = await this._getSwRegistration();
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+                await sub.unsubscribe();
+                await this._disablePushSubscriptionInDb(sub);
+            }
+        } catch (_) { }
+        this.pushEnabled = false;
+        await this.refreshPushStatus();
+        alert('푸시 알림을 껐습니다.');
+    }
+
+    async sendPushTest() {
+        if (!this._pushSupported()) return alert('이 브라우저는 푸시를 지원하지 않습니다.');
+        if (Notification.permission !== 'granted') return alert('OS 알림 권한을 먼저 허용해 주세요.');
+        try {
+            const reg = await this._getSwRegistration();
+            // local OS notification (online) as a quick check
+            await reg.showNotification('Nanodoroshi / Anticode', {
+                body: '[테스트] 푸시(알림) 표시가 정상입니다.',
+                tag: 'nano_push_test',
+                data: { url: '/anticode.html' }
+            });
+            alert('푸시 테스트 알림을 보냈습니다. (완전 오프라인 푸시는 서버 발송 설정 후 동작)');
+        } catch (e) {
+            alert('푸시 테스트 실패: ' + (e?.message || e));
+        }
+    }
+
+    async _sendPushForChatMessage({ channel_id, author, content }) {
+        try {
+            const channelId = channel_id || this.activeChannel?.id;
+            if (!channelId) return;
+            const room = this.activeChannel?.name || channelId;
+            const authorName = author || this.currentUser.nickname || this.currentUser.username;
+            const bodyText = String(content ?? '').slice(0, 180);
+            await fetch(`${SUPABASE_URL}/functions/v1/push-send`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                },
+                body: JSON.stringify({
+                    kind: 'chat',
+                    channel_id: channelId,
+                    from_username: this.currentUser.username,
+                    title: 'Nanodoroshi / Anticode',
+                    body: `[${room}] ${authorName}: ${bodyText}`,
+                    url: '/anticode.html'
+                })
+            }).catch(() => { });
+        } catch (e) {
+            console.warn('push-send error:', e);
+        }
     }
 
     _resetMessageDedupeState() {
@@ -1346,6 +1516,7 @@ class AntiCodeApp {
             // Restore preferred mic device (USB mic selection)
             this.loadVoiceDevicePreference();
             this.loadMicGainPreference();
+            await this.refreshPushStatus();
 
             // Admin-only: auto-clean old chat messages on a 90-day cadence
             await this.maybeAutoCleanupMessages();
@@ -2056,6 +2227,9 @@ class AntiCodeApp {
             const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
             if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
         } catch (_) { }
+
+        // Offline push notification to other devices/users (requires Edge Function + push subscriptions)
+        this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content });
     }
 
     _fingerprintMessage(msg) {
@@ -2421,6 +2595,9 @@ class AntiCodeApp {
                     if (nValEl) nValEl.textContent = `${pct}%`;
                 }
             } catch (_) { }
+
+            // Init push status (offline push)
+            try { this.refreshPushStatus(); } catch (_) { }
         });
         _safeBind('close-settings-modal', 'onclick', () => {
             if (sModal) sModal.style.display = 'none';
@@ -2470,6 +2647,17 @@ class AntiCodeApp {
                     silent: false
                 });
             } catch (_) { }
+        });
+
+        // Web Push (offline push)
+        _safeBind('push-enable-btn', 'onclick', async () => {
+            await this.enablePush();
+        });
+        _safeBind('push-disable-btn', 'onclick', async () => {
+            await this.disablePush();
+        });
+        _safeBind('push-test-btn', 'onclick', async () => {
+            await this.sendPushTest();
         });
         const nVolEl = document.getElementById('notif-volume');
         const nVolValEl = document.getElementById('notif-volume-value');
@@ -2612,6 +2800,9 @@ class AntiCodeApp {
                         const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
                         if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
                     } catch (_) { }
+
+                    // Offline push notification (file/image message)
+                    this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content: isImage ? '[이미지]' : fileLabel });
                 } catch (err) {
                     alert('이미지 업로드 실패: ' + err.message);
                 } finally {

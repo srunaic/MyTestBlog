@@ -20,7 +20,9 @@ const findEnv = (namePart) => {
 
 const envVars = {
     'VITE_SUPABASE_URL': findEnv('SUPABASE_URL'),
-    'VITE_SUPABASE_KEY': findEnv('SUPABASE_KEY')
+    'VITE_SUPABASE_KEY': findEnv('SUPABASE_KEY'),
+    // Public (safe to ship) VAPID key for Web Push subscriptions
+    'VITE_VAPID_PUBLIC_KEY': findEnv('VAPID_PUBLIC_KEY')
 };
 
 console.log("[Env Inject] Resolved Keys:", Object.keys(envVars).filter(k => envVars[k]));

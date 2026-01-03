@@ -61,10 +61,32 @@ self.addEventListener('fetch', event => {
     );
 });
 
+// Push Notifications (Web Push)
+self.addEventListener('push', (event) => {
+    const fallback = { title: 'Nanodoroshi / Anticode', body: '새 알림이 있습니다.', url: '/anticode.html' };
+    let payload = fallback;
+    try {
+        if (event.data) payload = event.data.json();
+    } catch (_) {
+        try { payload = { ...fallback, body: event.data.text() }; } catch (_) { payload = fallback; }
+    }
+    const title = payload.title || fallback.title;
+    const options = {
+        body: payload.body || fallback.body,
+        icon: payload.icon || undefined,
+        badge: payload.badge || undefined,
+        tag: payload.tag || 'nano_push',
+        renotify: false,
+        data: { url: payload.url || fallback.url }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
 // Notification click: focus/open the app
 self.addEventListener('notificationclick', (event) => {
     try { event.notification.close(); } catch (_) { }
     event.waitUntil((async () => {
+        const url = event.notification?.data?.url || '/anticode.html';
         const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         for (const client of allClients) {
             if ('focus' in client) {
@@ -73,7 +95,7 @@ self.addEventListener('notificationclick', (event) => {
             }
         }
         if (self.clients.openWindow) {
-            await self.clients.openWindow('/anticode.html');
+            await self.clients.openWindow(url);
         }
     })());
 });

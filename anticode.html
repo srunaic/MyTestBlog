@@ -261,6 +261,18 @@
                     <span id="notif-volume-value" style="min-width:48px; text-align:right; color:var(--text-muted); font-size:0.75rem;">80%</span>
                 </div>
             </div>
+            <div class="setting-item-group">
+                <div class="setting-label">
+                    <span class="label-title">📲 푸시 알림 (오프라인)</span>
+                    <span class="label-desc">브라우저를 완전히 닫아도 OS 푸시 알림을 받습니다. (PC/모바일)</span>
+                    <span id="push-status" class="label-desc" style="margin-top:4px;">상태: -</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button type="button" id="push-enable-btn" class="notif-toggle-btn">푸시 켜기</button>
+                    <button type="button" id="push-disable-btn" class="notif-toggle-btn">푸시 끄기</button>
+                    <button type="button" id="push-test-btn" class="notif-toggle-btn">푸시 테스트</button>
+                </div>
+            </div>
             <div id="chat-cleanup-setting" class="setting-item-group" style="display:none;">
                 <div class="setting-label">
                     <span class="label-title">🧹 채팅 기록 정리</span>
