@@ -378,7 +378,8 @@ class AntiCodeApp {
         let html = displayFriends.map(f => `
             <li class="friend-item ${f.online ? 'online' : 'offline'}" data-username="${f.username}">
                 <div class="avatar-sm-container">
-                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${f.nickname[0]}</div>`}
+                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                    <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${f.nickname[0]}</div>
                     <span class="status-indicator"></span>
                 </div>
                 <div class="friend-info">
@@ -614,7 +615,8 @@ class AntiCodeApp {
             return `
                 <div class="member-card online">
                     <div class="avatar-wrapper">
-                        ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${user.nickname[0]}</div>`}
+                        ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                        <div class="avatar-sm" style="${user.avatar_url ? 'display:none;' : ''}">${user.nickname[0]}</div>
                         <span class="online-dot"></span>
                     </div>
                     <div class="member-info">
@@ -628,7 +630,8 @@ class AntiCodeApp {
         html += offlineFriends.map(f => `
             <div class="member-card offline">
                 <div class="avatar-wrapper">
-                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm">` : `<div class="avatar-sm">${f.nickname[0]}</div>`}
+                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                    <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${f.nickname[0]}</div>
                 </div>
                 <div class="member-info">
                     <span class="member-name-text">${f.nickname} <span class="friend-badge">[친구]</span></span>
@@ -665,8 +668,8 @@ class AntiCodeApp {
         // 1. Optimistic Rendering: Display immediately
         input.value = '';
         input.style.height = 'auto';
-        this.sentMessageCache.add(content + newMessage.created_at);
-        await this.appendMessage(newMessage, true);
+        this.sentMessageCache.add(content); // Use content for matching
+        await this.appendMessage({ ...newMessage }, true);
 
         // 2. Real Server Push
         const { data, error } = await this.supabase.from('anticode_messages').insert([{
@@ -684,30 +687,54 @@ class AntiCodeApp {
     }
 
     async appendMessage(msg, isOptimistic = false) {
-        // Prevent duplicates from real-time events if already rendered optimistically
-        const cacheKey = msg.content + msg.created_at;
-        if (!isOptimistic && this.sentMessageCache.has(cacheKey)) {
-            this.sentMessageCache.delete(cacheKey);
-            return;
+        const container = document.getElementById('message-container');
+        if (!container) return;
+
+        // Duplicate prevention and Optimistic UI finalization
+        if (!isOptimistic && msg.user_id === this.currentUser.username && this.sentMessageCache.has(msg.content)) {
+            // Find the MOST RECENT optimistic message with same content
+            const optimisticMsgs = container.querySelectorAll('.message-item[data-optimistic="true"]');
+            let matched = false;
+            for (let i = optimisticMsgs.length - 1; i >= 0; i--) {
+                const opt = optimisticMsgs[i];
+                const text = opt.querySelector('.message-text')?.innerText.trim();
+                // Simple match by content. In real app, IDs are better.
+                if (text === msg.content.trim()) {
+                    opt.style.opacity = '1';
+                    opt.removeAttribute('data-optimistic');
+                    const statusText = opt.querySelector('.sending-status');
+                    if (statusText) statusText.remove();
+                    this.sentMessageCache.delete(msg.content);
+                    matched = true;
+                    break;
+                }
+            }
+            if (matched) return;
         }
 
-        const container = document.getElementById('message-container');
         const msgEl = document.createElement('div');
         msgEl.className = 'message-item';
-        if (isOptimistic) msgEl.style.opacity = '0.7';
+        if (isOptimistic) {
+            msgEl.style.opacity = '0.7';
+            msgEl.setAttribute('data-optimistic', 'true');
+        }
 
         const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         const info = await this.getUserInfo(msg.user_id);
-        const avatarHtml = info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar">` : `<div class="user-avatar">${msg.author[0]}</div>`;
+        const avatarHtml = `
+            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative;">
+                ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${msg.author[0]}</div>
+            </div>
+        `;
 
         msgEl.innerHTML = `
             ${avatarHtml}
             <div class="message-content-wrapper">
                 <div class="message-meta">
                     <span class="member-name">${info.nickname}</span>
-                    <span class="timestamp">${timeStr} ${isOptimistic ? '(전송 중...)' : ''}</span>
-                </div>
+                    <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
                 </div>
                 <div class="message-text">
                     ${msg.content}
@@ -717,9 +744,6 @@ class AntiCodeApp {
         `;
         container.appendChild(msgEl);
         container.scrollTop = container.scrollHeight;
-
-        // If it was optimistic, we might want to "finalize" it when the real event arrives,
-        // but for now, simple duplicate prevention is more efficient.
     }
 
     renderUserInfo() {

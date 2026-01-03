@@ -1,5 +1,5 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v1.4'; // Increment version to force refresh
+const CACHE_NAME = 'nanodoroshi-v1.5'; // Increment version to force refresh
 const ASSETS = [
     '/',
     '/index.html',
@@ -36,40 +36,27 @@ self.addEventListener('activate', event => {
     self.clients.claim();
 });
 
-// Fetch Event: Mixed Strategy
+// Fetch Event: Network-First Strategy
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
-    const isHTML = event.request.mode === 'navigate' || url.pathname.endsWith('.html');
 
-    // 1. Network-First for HTML/Navigation to avoid redirect/404 issues
-    if (isHTML) {
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    // Update cache with fresh version
+    // Skip non-GET requests and Supabase Realtime/Storage if necessary (usually they are POST/WebSocket)
+    if (event.request.method !== 'GET') return;
+
+    // Network-First for everything to ensure updates are caught
+    event.respondWith(
+        fetch(event.request)
+            .then(response => {
+                // Update cache with fresh version if it's a successful response
+                if (response && response.status === 200) {
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-                    return response;
-                })
-                .catch(() => caches.match(event.request))
-        );
-        return;
-    }
-
-    // 2. Cache-First for other static assets
-    event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
-            if (cachedResponse) return cachedResponse;
-
-            return fetch(event.request).then(response => {
-                // If it's a redirect, we can't safely cache and return it to respondWith in some cases
-                // but for non-nav requests it's usually okay.
-                // However, we check for redirected status to be safe.
-                if (response.redirected && event.request.redirect !== 'follow') {
-                    // Return the response as is, browser will handle or error
                 }
                 return response;
-            });
-        })
+            })
+            .catch(() => {
+                // Fallback to cache if network fails
+                return caches.match(event.request);
+            })
     );
 });

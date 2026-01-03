@@ -132,6 +132,8 @@
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;
+    position: relative;
+    z-index: 10;
 }
 
 .settings-cog-btn {
@@ -147,6 +149,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
+    font-family: serif;
+    /* More reliable for emojis in some browsers */
 }
 
 .settings-cog-btn:hover {
