@@ -2,10 +2,14 @@ const fs = require('fs');
 const path = require('path');
 
 const files = ['script.js', 'anticode.js'];
+console.log("[Env Inject] Available Environment Keys:", Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('VITE')));
+
 const envVars = {
-    'VITE_SUPABASE_URL': process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-    'VITE_SUPABASE_KEY': process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_KEY
+    'VITE_SUPABASE_URL': process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
+    'VITE_SUPABASE_KEY': process.env.VITE_SUPABASE_KEY || process.env.SUPABASE_KEY
 };
+
+console.log("[Env Inject] Resolved Keys:", Object.keys(envVars).filter(k => envVars[k]));
 
 files.forEach(file => {
     const filePath = path.join(__dirname, '..', file);
