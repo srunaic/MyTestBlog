@@ -206,6 +206,7 @@ class AntiCodeApp {
         this.isAdminMode = false;
         this.userRequestCache = {}; // Dedup in-flight user info requests
         this.processedMessageIds = new Set(); // To prevent duplicates (Broadcast vs Postgres)
+        this.recentMessageFingerprints = new Map(); // Dedup Broadcast vs Postgres when IDs differ
         this.messageQueue = [];
         this.isProcessingQueue = false;
     }
@@ -793,12 +794,43 @@ class AntiCodeApp {
             author: this.currentUser.nickname,
             content: content,
             image_url: newMessage.image_url || null
-        }]).select();
+        }]).select('id, created_at').single();
 
         if (error) {
             console.error('Failed to send message:', error);
             // Revert optimistic state if needed
+            return;
         }
+
+        // ✅ Finalize immediately on insert success (don't wait for realtime)
+        try {
+            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+            if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
+        } catch (_) { }
+    }
+
+    _fingerprintMessage(msg) {
+        const safe = (v) => (v == null ? '' : String(v).trim());
+        return [
+            safe(msg.channel_id),
+            safe(msg.user_id),
+            safe(msg.author),
+            safe(msg.content),
+            safe(msg.image_url)
+        ].join('|');
+    }
+
+    _isRecentDuplicate(msg, windowMs = 5000) {
+        const key = this._fingerprintMessage(msg);
+        const now = Date.now();
+        const prev = this.recentMessageFingerprints.get(key);
+        // prune old entries opportunistically
+        for (const [k, t] of this.recentMessageFingerprints.entries()) {
+            if (now - t > 30000) this.recentMessageFingerprints.delete(k);
+        }
+        if (prev && (now - prev) < windowMs) return true;
+        this.recentMessageFingerprints.set(key, now);
+        return false;
     }
 
     async appendMessage(msg, isOptimistic = false) {
@@ -834,6 +866,12 @@ class AntiCodeApp {
                 }
 
                 if (msg.id) this.processedMessageIds.add(msg.id);
+            }
+
+            // Dedup Broadcast vs Postgres when IDs differ (other users)
+            if (!isOptimistic && this._isRecentDuplicate(msg)) {
+                if (msg.id) this.processedMessageIds.add(msg.id);
+                return;
             }
 
             const msgEl = document.createElement('div');
