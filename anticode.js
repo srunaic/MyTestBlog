@@ -1131,7 +1131,6 @@ class AntiCodeApp {
         }
     }
 }
-}
 
 const app = new AntiCodeApp();
 window.app = app;

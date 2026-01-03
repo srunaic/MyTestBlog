@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://nanodoroshi.netlify.app/sitemap.xml

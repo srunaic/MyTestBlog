@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>나노 도로시 | Nanodoroshi Official Blog</title>
+    <meta name="description" content="나노 도로시(NanoDoroshi)의 공식 블로그입니다. 디지털 아트, AI 연구, 그리고 창작의 여정을 기록하는 아카이브입니다.">
+    <meta name="keywords" content="나노도로시, Nanodoroshi, Nano Dorothy, 디지털 아티스트, AI 아트, AI 연구소, 블로그, 창작">
+    <meta name="author" content="나노 도로시">
+    <meta name="google-site-verification" content="iUle41lbdKJbZm1snE_-KXGmvliLJErfOwRu63F3oL0" />
+    <link rel="canonical" href="https://mytestblog-d85.pages.dev/">
+
+    <!-- PWA & Mobile Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050510">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nanodoroshi">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/050510/00f2ff?text=N">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Open Graph (Facebook, KakaoTalk, LinkedIn) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mytestblog-d85.pages.dev/">
+    <meta property="og:title" content="나노 도로시 | Nanodoroshi">
+    <meta property="og:description" content="디지털 아티스트 & AI 연구소. 나노 도로시의 기록 보관소에 오신 것을 환영합니다.">
+    <meta property="og:image" content="https://mytestblog-d85.pages.dev/og-image.jpg">
+    <!-- Ensure an image exists or replace later -->
+    <meta property="og:site_name" content="나노 도로시 블로그">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="나노 도로시 | Nanodoroshi">
+    <meta name="twitter:description" content="디지털 아티스트 나노 도로시의 공식 블로그입니다.">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "나노 도로시",
+      "alternateName": ["Nanodoroshi", "Nano Dorothy"],
+      "url": "https://mytestblog-d85.pages.dev/",
+      "sameAs": [
+        "https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA",
+        "https://chzzk.naver.com/c7294ac184f1bc7340375f3c2b2e8fd6"
+      ],
+      "jobTitle": "Digital Artist & AI Researcher",
+      "description": "예술과 AI의 경계를 탐구하는 크리에이터"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "나노 도로시 블로그",
+      "url": "https://mytestblog-d85.pages.dev/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://mytestblog-d85.pages.dev/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Styles & Fonts -->
+    <!-- Favicon bypass to prevent 404 -->
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="style.css?v=1.0.1">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Emergency Futuristic Overrides -->
+    <style>
+        /* 1. Admin Panel & Action Buttons */
+        .action-link,
+        #write-btn,
+        .admin-box .action-link,
+        #admin-only-actions .action-link {
+            background: rgba(20, 20, 40, 0.8) !important;
+            backdrop-filter: blur(15px) !important;
+            border: 1px solid #00f2ff !important;
+            color: #00f2ff !important;
+            padding: 12px 25px !important;
+            font-weight: 950 !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%) !important;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2) !important;
+            margin-bottom: 10px !important;
+            transition: 0.4s !important;
+            display: inline-block !important;
+            cursor: pointer !important;
+        }
+
+        .action-link:hover,
+        #write-btn:hover {
+            background: #00f2ff !important;
+            color: #050510 !important;
+            box-shadow: 0 0 35px rgba(0, 242, 255, 0.5) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* 2. Admin & Social Inputs */
+        .sidebar-section input,
+        .social-links-manage input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #e0e0ff !important;
+            padding: 10px !important;
+            font-size: 0.9rem !important;
+        }
+
+        /* 3. Link Add Button */
+        #add-social-btn,
+        .social-links-manage button {
+            background: #00f2ff !important;
+            color: #050510 !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            font-weight: 950 !important;
+            clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%) !important;
+            cursor: pointer !important;
+        }
+
+        /* 4. Edit/Delete Snippets */
+        .list-admin-btn {
+            background: rgba(40, 40, 80, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #e0e0ff !important;
+            padding: 6px 14px !important;
+            font-weight: 800 !important;
+            font-size: 0.7rem !important;
+            cursor: pointer !important;
+        }
+
+        .list-admin-btn.edit:hover {
+            background: #00f2ff !important;
+            color: #050510 !important;
+        }
+
+        .list-admin-btn.delete {
+            color: #ff007a !important;
+            border-color: rgba(255, 0, 122, 0.4) !important;
+        }
+
+        .list-admin-btn.delete:hover {
+            background: #ff007a !important;
+            color: #fff !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="blog-container">
+        <!-- Modern Header -->
+        <header class="blog-header modern-header">
+            <div class="header-content">
+                <h1 class="header-title">NaNoDoroshi</h1>
+                <p class="header-subtitle">디지털 아티스트 & AI 연구소</p>
+                <div id="subscriber-stats" class="header-stats">
+                    <span class="stats-label">SUBSCRIBERS:</span>
+                    <span id="subscriber-count" class="stats-value">0</span>
+                </div>
+                <nav id="hero-nav" class="hero-nav">
+                    <!-- Navigation links will be dynamically injected here -->
+                </nav>
+                <div class="header-settings" style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+                    <button id="notif-toggle-pc" class="notif-toggle-btn" onclick="toggleNotifSound()"
+                        style="display:none;">🔔 ON</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Sidebar: Categories & Admin -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>CATEGORIES</h3>
+                    <ul id="category-list">
+                        <!-- Categories rendered here -->
+                    </ul>
+                </div>
+
+                <div id="admin-only-actions" class="sidebar-section admin-box" style="display:none;">
+                    <h3>ADMIN PANEL</h3>
+                    <button id="manage-cats-btn" class="sm-btn">카테고리 관리</button>
+                    <div id="cat-mgr-section"
+                        style="display:none; padding:10px; background:#f9f9f9; margin-top:10px; border-radius:10px;">
+                        <input type="text" id="new-cat-name" placeholder="카테고리명">
+                        <button id="add-cat-btn" class="sm-btn-add">추가</button>
+                        <ul id="cat-mgr-list"></ul>
+                    </div>
+                    <button id="user-mgr-btn" class="sm-btn" style="display:none;">사용자 관리</button>
+
+                    <div class="admin-divider" style="margin:20px 0; border-top:1px solid #333;"></div>
+                    <h3 style="font-size:0.6rem; color:#555;">SOCIAL LINKS</h3>
+                    <div class="social-mgr-form" style="margin-top:10px;">
+                        <input type="text" id="new-link-name" placeholder="이름 (예: INSTA)" class="admin-input">
+                        <input type="text" id="new-link-url" placeholder="주소 (https://...)" class="admin-input">
+                        <button onclick="addSocialLink()" class="sm-btn">링크 추가</button>
+                    </div>
+                    <ul id="social-mgr-list" style="list-style:none; margin-top:15px; font-size:0.7rem;"></ul>
+
+                    <div class="admin-divider" style="margin:20px 0; border-top:1px solid #333;"></div>
+                    <h3 style="font-size:0.6rem; color:var(--futuristic-accent);">ORACLE INSIGHTS (AI LOGS)</h3>
+                    <button onclick="toggleOracleInsights()" class="sm-btn"
+                        style="background:rgba(0, 242, 255, 0.1); border:1px solid var(--futuristic-accent);">챗봇 로그
+                        분석</button>
+                    <div id="oracle-insights-view" style="display:none; margin-top:15px; font-size:0.7rem;">
+                        <ul id="insights-list"
+                            style="list-style:none; padding:0; height:200px; overflow-y:auto; border:1px solid var(--futuristic-border); border-radius:5px; padding:5px;">
+                        </ul>
+                    </div>
+                </div>
+
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="content-area">
+                <div id="list-view">
+                    <!-- BEST Posts -->
+                    <div class="best-header">
+                        <h2>BEST POSTS</h2>
+                    </div>
+                    <div id="best-grid" class="best-grid"></div>
+
+                    <!-- All/Category Posts -->
+                    <div class="list-header">
+                        <h2>FEEDS</h2>
+                        <div id="user-actions" style="display:none;">
+                            <button id="new-post-btn" class="write-btn">글쓰기</button>
+                        </div>
+                    </div>
+
+
+                    <div id="blog-grid" class="blog-grid">
+                        <!-- Posts rendered here -->
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="pagination-container" class="pagination-container"></div>
+                </div>
+
+                <!-- Detail View -->
+                <div id="detail-view" style="display:none;">
+                    <button id="back-to-list" class="back-btn">← 목록으로</button>
+                    <div id="post-detail-content" class="detail-container"></div>
+
+                    <!-- Comment Section -->
+                    <div id="comment-section" class="comment-section">
+                        <h3>COMMENTS</h3>
+                        <div id="comment-list" class="comment-list">
+                            <!-- Comments rendered here -->
+                        </div>
+
+                        <div id="comment-form-area" class="comment-form-area" style="display:none;">
+                            <div class="emoticon-picker" id="emoticon-picker">
+                                <!-- Emoticons added here -->
+                            </div>
+                            <div class="comment-input-grid">
+                                <textarea id="comment-input" placeholder="댓글을 입력하세요..." rows="3"></textarea>
+                                <button id="submit-comment-btn" class="sm-btn">등록</button>
+                            </div>
+                        </div>
+                        <div id="comment-login-msg" style="text-align:center; padding:20px; color:#888;">
+                            댓글을 달려면 <a href="javascript:void(0)" onclick="openAuthModal('login')">로그인</a>이 필요합니다.
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Sidebar Right: BGM & Social -->
+            <aside class="sidebar-right">
+                <div class="sidebar-section music-box">
+                    <h3>BGM PLAYER</h3>
+                    <button id="bgm-toggle" class="bgm-btn">
+                        <span id="bgm-status-text">MUSIC OFF</span>
+                    </button>
+                    <audio id="bgm-audio" loop>
+                        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                    </audio>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>CONNECT</h3>
+                    <div class="social-links" id="social-links-list">
+                        <!-- Dynamically Rendered -->
+                    </div>
+                    <div class="special-links"
+                        style="margin-top:20px; border-top:1px solid var(--futuristic-border); padding-top:15px;">
+                        <a href="lotto.html" class="social-link-item"
+                            style="color:var(--futuristic-accent); font-weight:950; text-decoration:none;">✨ LOTTO
+                            ORACLE</a>
+                        <a href="javascript:void(0)" onclick="toggleChat()" class="social-link-item"
+                            style="color:var(--futuristic-accent); font-weight:950; text-decoration:none; margin-top:10px; display:block;">🤖
+                            ORACLE AI HELP</a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- 1. Post Modal -->
+    <div id="post-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">NEW POST</h2>
+            <form id="post-form">
+                <input type="hidden" id="post-id">
+                <div class="form-group">
+                    <label>CATEGORY</label>
+                    <select id="post-category"></select>
+                </div>
+                <div class="form-group">
+                    <label>TITLE</label>
+                    <input type="text" id="post-title" required placeholder="제목을 그려내세요">
+                </div>
+                <div class="form-group">
+                    <label>IMAGE (UPLOAD OR URL)</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="post-img" placeholder="http://..." style="flex: 1;">
+                        <button type="button" id="upload-post-img-btn" class="sm-btn"
+                            style="white-space: nowrap; font-size: 0.7rem;">이미지 업로드</button>
+                    </div>
+                    <input type="file" id="post-file-input" accept="image/*" style="display:none;">
+                </div>
+                <div class="form-group">
+                    <label>CONTENT</label>
+                    <textarea id="post-content" required placeholder="당신의 통찰을 공유하세요" rows="8"></textarea>
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" class="submit-btn">PUBLISH</button>
+                    <button type="button" id="close-modal" class="cancel-btn">CANCEL</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Auth Modal -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="modal-content auth-modal">
+            <h2 id="auth-modal-title">ACCESS</h2>
+            <form id="auth-form">
+                <div class="form-group">
+                    <label>ID</label>
+                    <input type="text" id="auth-username" required placeholder="Username">
+                </div>
+                <div class="form-group">
+                    <label>PASSWORD</label>
+                    <input type="password" id="auth-password" required placeholder="Secret Key">
+                </div>
+                <div id="signup-nickname-group" class="form-group" style="display:none;">
+                    <label>NICKNAME</label>
+                    <input type="text" id="auth-nickname" placeholder="Public Name">
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" id="auth-submit-btn" class="submit-btn full">ENTER</button>
+                    <div class="auth-switch">
+                        <span id="auth-switch-text">계정이 없으신가요?</span>
+                        <a href="javascript:void(0)" id="auth-switch-link" onclick="toggleAuthMode()">회원가입</a>
+                    </div>
+                    <button type="button" class="cancel-btn full" onclick="closeAuthModal()">CLOSE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Account Modal -->
+    <div id="account-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>PROFILE</h2>
+            <form id="account-form">
+                <div class="form-group">
+                    <label>NICKNAME</label>
+                    <input type="text" id="acc-nickname" required>
+                </div>
+                <div class="form-group">
+                    <label>ID</label>
+                    <input type="text" id="acc-username" required>
+                </div>
+                <div class="form-group">
+                    <label>PASSWORD (8+ CHARS)</label>
+                    <input type="password" id="acc-password" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label>PROFILE IMAGE</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="url" id="acc-avatar-url" placeholder="https://..." style="flex: 1;">
+                        <button type="button" id="upload-acc-avatar-btn" class="sm-btn"
+                            style="white-space: nowrap; font-size: 0.7rem;">이미지 업로드</button>
+                    </div>
+                    <input type="file" id="acc-avatar-file-input" accept="image/*" style="display:none;">
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" class="submit-btn">UPDATE</button>
+                    <button type="button" class="cancel-btn" onclick="closeAccountModal()">CLOSE</button>
+                </div>
+            </form>
+
+            <div class="account-activity" style="margin-top:30px;">
+                <div class="activity-tabs">
+                    <button class="tab-btn active" data-tab="my-posts">내가 쓴 글</button>
+                    <button class="tab-btn" data-tab="my-comments">댓글 단 글</button>
+                </div>
+                <div id="activity-content" class="activity-content">
+                    <!-- Activity items rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 3. Chatbot UI -->
+    <div id="chatbot-container">
+        <div id="chatbot-window" class="chatbot-window">
+            <div class="chat-header">
+                <span>ORACLE HELP AI</span>
+                <button id="close-chat">✕</button>
+            </div>
+            <div id="chat-body" class="chat-body">
+                <div class="chat-msg bot-msg">시스템에 접속되었습니다. 무엇을 도와드릴까요?</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="질문을 입력하세요...">
+            </div>
+        </div>
+        <button id="chat-toggle-btn" class="chat-toggle-btn">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor"
+                    d="M12 2C6.47 2 2 6.47 2 12c0 1.91.54 3.68 1.46 5.19L2 22l4.81-1.46C8.32 21.46 10.09 22 12 22c5.53 0 10-4.47 10-10S17.53 2 12 2zm0 18c-1.74 0-3.32-.47-4.66-1.29l-.34-.21-2.94.89.89-2.94-.21-.34C3.87 14.72 3.4 13.14 3.4 11.4c0-4.74 3.86-8.6 8.6-8.6s8.6 3.86 8.6 8.6-3.86 8.6-8.6 8.6z" />
+            </svg>
+        </button>
+
+        <!-- Layout Switcher & More Settings -->
+        <div id="layout-switcher" class="layout-switcher">
+            <button id="force-pc-btn" class="switch-btn">🖥️ PC 버전</button>
+            <button id="force-mobile-btn" class="switch-btn active">📱 모바일 버전</button>
+            <button id="mobile-more-btn" class="switch-btn" onclick="toggleMobileMore()">⚙️ 더보기</button>
+        </div>
+
+        <!-- Mobile More Menu Overlay -->
+        <div id="mobile-more-menu" class="mobile-more-overlay" style="display:none;" onclick="toggleMobileMore()">
+            <div class="mobile-more-content" onclick="event.stopPropagation()">
+                <h3>SETTINGS</h3>
+                <div class="mobile-more-item">
+                    <span>알림 소리</span>
+                    <button onclick="toggleNotifSound()" class="notif-toggle-btn">🔔 ON</button>
+                </div>
+                <button class="mobile-more-close" onclick="toggleMobileMore()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Notification UI -->
+    <div id="notif-badge" class="notif-badge" onclick="clearNotifications()">
+        <span class="notif-icon">🔔</span>
+        <span id="notif-count-display" class="notif-count" style="display:none;">0</span>
+    </div>
+    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
+        preload="auto"></audio>
+
+    <script type="module" src="script.js?v=1.1.0"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Registration Failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
