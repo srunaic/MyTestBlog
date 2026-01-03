@@ -113,6 +113,29 @@
     width: 100%;
 }
 
+.channel-name-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.channel-voice-indicator {
+    font-size: 0.95rem;
+    line-height: 1;
+    opacity: 0.75;
+    transition: 0.2s;
+    user-select: none;
+}
+
+.channel-voice-indicator.on {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(0, 242, 255, 0.35));
+}
+
+.channel-voice-indicator.off {
+    opacity: 0.5;
+}
+
 .channel-name-label {
     font-size: 0.8rem;
     color: var(--text-muted);

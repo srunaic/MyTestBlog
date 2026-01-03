@@ -56,15 +56,21 @@ class Channel {
         `;
     }
 
-    renderSidebarItem(isActive, isAdmin) {
+    renderSidebarItem(isActive, isAdmin, voiceState = { show: false, on: false }) {
         const hash = this.type === 'secret' ? '🔒' : '#';
         const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
         const deleteHtml = isAdmin ? `<button class="delete-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.deleteChannel('${this.id}')" title="채널 삭제">&times;</button>` : '';
+        const voiceHtml = (voiceState && voiceState.show)
+            ? `<span class="channel-voice-indicator ${voiceState.on ? 'on' : 'off'}" title="보이스 톡 ${voiceState.on ? 'ON' : 'OFF'}">${voiceState.on ? '🎙️' : '🎤'}</span>`
+            : '';
         return `
             <div class="channel-group-item ${isActive ? 'active' : ''}">
                 <div class="channel-name-row">
                     <div class="channel-name-label">${hash} ${this.name}</div>
-                    ${deleteHtml}
+                    <div class="channel-name-actions">
+                        ${voiceHtml}
+                        ${deleteHtml}
+                    </div>
                 </div>
                 <div class="channel-sub-link" data-id="${this.id}">
                     <span class="sub-link-icon">${categoryLabel}</span>
@@ -484,6 +490,8 @@ class AntiCodeApp {
         btn.classList.toggle('on', !!on);
         btn.textContent = on ? '🎙️' : '🎤';
         btn.title = on ? '보이스 톡 OFF' : '보이스 톡 ON';
+        // Also reflect state near the active channel button in the sidebar
+        try { this.renderChannels(); } catch (_) { }
     }
 
     _getVoiceDeviceKey() {
@@ -1315,7 +1323,11 @@ class AntiCodeApp {
                     ${(catId === 'chat' && this.isAdminMode) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
                 </div>
                 <div class="sidebar-list">
-                    ${chans.map(c => c.renderSidebarItem(this.activeChannel && c.id === this.activeChannel.id, this.isAdminMode)).join('')}
+                    ${chans.map(c => {
+                        const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
+                        const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
+                        return c.renderSidebarItem(isActive, this.isAdminMode, voiceState);
+                    }).join('')}
                 </div>
             `;
             container.appendChild(group);
