@@ -235,6 +235,17 @@
                 </div>
                 <button onclick="toggleNotifSound()" id="notif-toggle-settings" class="notif-toggle-btn">🔔 ON</button>
             </div>
+            <div id="chat-cleanup-setting" class="setting-item-group" style="display:none;">
+                <div class="setting-label">
+                    <span class="label-title">🧹 채팅 기록 정리</span>
+                    <span class="label-desc">90일(3개월)보다 오래된 메시지를 삭제합니다. (관리자 전용)</span>
+                    <span id="chat-cleanup-last-run" class="label-desc" style="margin-top:4px;">마지막 실행: -</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button type="button" id="chat-cleanup-toggle" class="notif-toggle-btn">🔔 ON</button>
+                    <button type="button" id="chat-cleanup-run-now" class="notif-toggle-btn">지금 실행</button>
+                </div>
+            </div>
             <div class="modal-btns">
                 <button type="button" id="close-settings-modal" class="submit-btn">확인</button>
             </div>

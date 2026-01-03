@@ -213,6 +213,84 @@ class AntiCodeApp {
         this.isProcessingQueue = false;
     }
 
+    _getCleanupSettingsKey() {
+        const u = this.currentUser?.username || 'anonymous';
+        return `anticode_chat_cleanup_settings::${u}`;
+    }
+
+    _getCleanupLastRunKey() {
+        const u = this.currentUser?.username || 'anonymous';
+        return `anticode_chat_cleanup_last_run::${u}`;
+    }
+
+    _loadCleanupSettings() {
+        try {
+            const raw = localStorage.getItem(this._getCleanupSettingsKey());
+            if (!raw) return { enabled: true };
+            const parsed = JSON.parse(raw);
+            return { enabled: parsed?.enabled !== false };
+        } catch (_) {
+            return { enabled: true };
+        }
+    }
+
+    _saveCleanupSettings(enabled) {
+        try {
+            localStorage.setItem(this._getCleanupSettingsKey(), JSON.stringify({ enabled: !!enabled }));
+        } catch (_) { }
+    }
+
+    _getLastCleanupRunMs() {
+        try {
+            const raw = localStorage.getItem(this._getCleanupLastRunKey());
+            const n = Number(raw);
+            return Number.isFinite(n) ? n : 0;
+        } catch (_) {
+            return 0;
+        }
+    }
+
+    _setLastCleanupRunMs(ms) {
+        try {
+            localStorage.setItem(this._getCleanupLastRunKey(), String(ms));
+        } catch (_) { }
+    }
+
+    _formatDateTime(ms) {
+        if (!ms) return '-';
+        try { return new Date(ms).toLocaleString(); } catch (_) { return '-'; }
+    }
+
+    async cleanupOldMessages(days = 90) {
+        if (!this.isAdminMode) return { ok: false, error: 'not_admin' };
+        const cutoffMs = Date.now() - (days * 24 * 60 * 60 * 1000);
+        const cutoffIso = new Date(cutoffMs).toISOString();
+        const { error } = await this.supabase
+            .from('anticode_messages')
+            .delete()
+            .lt('created_at', cutoffIso);
+        if (error) return { ok: false, error };
+        this._setLastCleanupRunMs(Date.now());
+        return { ok: true };
+    }
+
+    async maybeAutoCleanupMessages() {
+        if (!this.isAdminMode) return;
+        const settings = this._loadCleanupSettings();
+        if (!settings.enabled) return;
+
+        const last = this._getLastCleanupRunMs();
+        const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+        if (last && (Date.now() - last) < ninetyDaysMs) return;
+
+        try {
+            const res = await this.cleanupOldMessages(90);
+            if (!res.ok) console.warn('Auto cleanup failed:', res.error);
+        } catch (e) {
+            console.warn('Auto cleanup error:', e);
+        }
+    }
+
     _getUnlockedStorageKey() {
         const u = this.currentUser?.username || 'anonymous';
         return `anticode_unlocked_channels::${u}`;
@@ -310,6 +388,9 @@ class AntiCodeApp {
 
             // Restore secret-channel unlocks for this user (password once per device/account)
             this._loadUnlockedChannels();
+
+            // Admin-only: auto-clean old chat messages on a 90-day cadence
+            await this.maybeAutoCleanupMessages();
 
             // 1. Sync User Metadata
             await this.syncUserMetadata();
@@ -582,6 +663,14 @@ class AntiCodeApp {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
 
+        // If user clicks the already-active channel, do nothing (prevents reloading/clearing messages)
+        if (this.activeChannel && this.activeChannel.id === channelId) {
+            // Close sidebar on mobile
+            document.querySelector('.anticode-sidebar')?.classList.remove('open');
+            document.querySelector('.anticode-members')?.classList.remove('open');
+            return;
+        }
+
         // Password persistence check (even for owners)
         if (channel.type === 'secret' && channel.password && !this.unlockedChannels.has(channelId)) {
             this.pendingChannelId = channelId;
@@ -680,11 +769,23 @@ class AntiCodeApp {
     }
 
     async loadMessages(channelId) {
-        const { data, error } = await this.supabase.from('anticode_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true }).limit(50);
-        if (!error) {
-            document.getElementById('message-container').innerHTML = '';
-            for (const msg of data) await this.appendMessage(msg);
+        const { data, error } = await this.supabase
+            .from('anticode_messages')
+            .select('*')
+            .eq('channel_id', channelId)
+            .order('created_at', { ascending: true })
+            .limit(50);
+
+        if (error) {
+            // Don't wipe existing messages on transient errors
+            console.error('Failed to load messages:', error);
+            return;
         }
+
+        const container = document.getElementById('message-container');
+        if (!container) return;
+        container.innerHTML = '';
+        for (const msg of (data || [])) await this.appendMessage(msg);
     }
 
     setupMessageSubscription(channelId) {
@@ -1183,9 +1284,52 @@ class AntiCodeApp {
                 sModal.style.display = 'flex';
                 this.updateButtons();
             }
+            // Admin-only chat cleanup controls
+            const cleanupGroup = document.getElementById('chat-cleanup-setting');
+            if (cleanupGroup) cleanupGroup.style.display = this.isAdminMode ? 'flex' : 'none';
+            if (this.isAdminMode) {
+                const settings = this._loadCleanupSettings();
+                const toggleBtn = document.getElementById('chat-cleanup-toggle');
+                const lastRun = document.getElementById('chat-cleanup-last-run');
+                if (toggleBtn) {
+                    toggleBtn.classList.toggle('on', settings.enabled);
+                    toggleBtn.textContent = settings.enabled ? '🔔 ON' : '🔕 OFF';
+                }
+                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
+            }
         });
         _safeBind('close-settings-modal', 'onclick', () => {
             if (sModal) sModal.style.display = 'none';
+        });
+
+        _safeBind('chat-cleanup-toggle', 'onclick', () => {
+            if (!this.isAdminMode) return;
+            const current = this._loadCleanupSettings().enabled;
+            const next = !current;
+            this._saveCleanupSettings(next);
+            const btn = document.getElementById('chat-cleanup-toggle');
+            if (btn) {
+                btn.classList.toggle('on', next);
+                btn.textContent = next ? '🔔 ON' : '🔕 OFF';
+            }
+        });
+
+        _safeBind('chat-cleanup-run-now', 'onclick', async () => {
+            if (!this.isAdminMode) return;
+            if (!confirm('90일(3개월)보다 오래된 모든 채팅 메시지를 지금 삭제할까요?')) return;
+            const btn = document.getElementById('chat-cleanup-run-now');
+            const lastRun = document.getElementById('chat-cleanup-last-run');
+            if (btn) { btn.disabled = true; btn.textContent = '실행 중...'; }
+            try {
+                const res = await this.cleanupOldMessages(90);
+                if (!res.ok) alert('정리 실패: ' + (res.error?.message || res.error));
+                else alert('정리 완료!');
+            } catch (e) {
+                alert('정리 실패: ' + (e?.message || e));
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '지금 실행'; }
+                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
+            }
         });
 
         // Password Entry
