@@ -196,11 +196,30 @@
     display: inline-block;
     background: var(--accent);
     color: #000;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 800;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-top: 4px;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.uid-copy-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.7rem;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: 0.2s;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.uid-copy-btn:hover {
+    background: var(--accent);
+    color: #000;
 }
 
 .sidebar-list {
@@ -583,9 +602,12 @@
 .member-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
-    border-radius: 8px;
+    gap: 8px;
+    /* Reduced gap */
+    padding: 4px 8px;
+    /* Reduced padding */
+    border-radius: 4px;
+    /* Slightly sharper corners */
     cursor: pointer;
     transition: 0.2s;
 }
@@ -599,26 +621,35 @@
     flex-shrink: 0;
 }
 
+.avatar-wrapper .avatar-sm {
+    width: 24px !important;
+    /* Force smaller size */
+    height: 24px !important;
+    font-size: 0.6rem !important;
+}
+
 .online-dot {
     position: absolute;
     bottom: -1px;
     right: -1px;
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     background: #23a559;
     border-radius: 50%;
-    border: 2px solid var(--member-bg);
+    border: 1.5px solid var(--member-bg);
 }
 
 .member-info {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    line-height: 1.2;
 }
 
 .member-name-text {
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    /* Smaller font */
+    font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;

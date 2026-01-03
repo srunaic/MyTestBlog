@@ -589,10 +589,26 @@ class AntiCodeApp {
                 ${avatarHtml}
                 <div class="user-info-text">
                     <div class="member-name" style="font-size:0.8rem;">${this.currentUser.nickname}</div>
-                    <div class="uid-badge">UID: ${this.currentUser.uid}</div>
+                    <div class="uid-row" style="display:flex; align-items:center; gap:4px;">
+                        <div class="uid-badge">UID: ${this.currentUser.uid}</div>
+                        <button class="uid-copy-btn" title="UID 복사" data-uid="${this.currentUser.uid}">📋</button>
+                    </div>
                 </div>
             </div>
         `;
+
+        const copyBtn = info.querySelector('.uid-copy-btn');
+        if (copyBtn) {
+            copyBtn.onclick = (e) => {
+                e.stopPropagation();
+                const uid = copyBtn.dataset.uid;
+                navigator.clipboard.writeText(uid).then(() => {
+                    const originalText = copyBtn.innerText;
+                    copyBtn.innerText = '✅';
+                    setTimeout(() => copyBtn.innerText = originalText, 1500);
+                });
+            };
+        }
     }
 
     setupEventListeners() {
