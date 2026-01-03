@@ -9,10 +9,12 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const SESSION_KEY = 'nano_dorothy_session';
 
 const CATEGORY_NAMES = {
+    notice: '📢 공지사항',
     chat: '💬 채팅방',
     karaoke: '🎤 노래방',
     voice: '📞 보이스 톡',
     game: '🎮 게임 방'
+
 };
 
 const formatDistanceToNow = (date) => {
