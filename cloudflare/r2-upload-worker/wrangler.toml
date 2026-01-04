@@ -1,0 +1,14 @@
+name = "nanodoroshi-r2-upload"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# Bind your R2 bucket here (private bucket is OK)
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "YOUR_BUCKET_NAME"
+
+# Optional env vars (set via `wrangler secret put` or `wrangler.toml` vars):
+# - ALLOWED_ORIGINS: comma-separated list. Example: "https://your.pages.dev,https://yourdomain.com"
+# - MAX_UPLOAD_BYTES: default 10485760 (10MB)
+
+

@@ -22,7 +22,9 @@ const envVars = {
     'VITE_SUPABASE_URL': findEnv('SUPABASE_URL'),
     'VITE_SUPABASE_KEY': findEnv('SUPABASE_KEY'),
     // Public (safe to ship) VAPID key for Web Push subscriptions
-    'VITE_VAPID_PUBLIC_KEY': findEnv('VAPID_PUBLIC_KEY')
+    'VITE_VAPID_PUBLIC_KEY': findEnv('VAPID_PUBLIC_KEY'),
+    // Public Worker URL for R2 uploads (safe to ship)
+    'VITE_R2_UPLOAD_BASE_URL': findEnv('R2_UPLOAD_BASE_URL')
 };
 
 console.log("[Env Inject] Resolved Keys:", Object.keys(envVars).filter(k => envVars[k]));

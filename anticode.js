@@ -7,6 +7,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = 'VITE_SUPABASE_URL';
 const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
+const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
 
 const CATEGORY_NAMES = {
@@ -1862,6 +1863,26 @@ class AntiCodeApp {
     }
 
     async uploadFile(file, bucket = 'uploads') {
+        // Prefer Cloudflare R2 (via Worker) to avoid Supabase Storage limits/cost
+        if (R2_UPLOAD_BASE_URL && !String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
+            const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
+            const url = `${base}/upload?folder=${encodeURIComponent('chat')}`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': file.type || 'application/octet-stream',
+                    'X-Filename': encodeURIComponent(file.name || 'upload.bin')
+                },
+                body: file
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data?.ok) {
+                throw new Error(data?.error || `upload_failed (${res.status})`);
+            }
+            return data.url;
+        }
+
+        // Fallback: Supabase Storage (legacy)
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;

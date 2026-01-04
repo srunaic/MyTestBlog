@@ -198,29 +198,30 @@ window.clearNotifications = () => NotificationManager.clearNotifications();
 // ==========================================
 var SUPABASE_URL = 'VITE_SUPABASE_URL';
 var SUPABASE_KEY = 'VITE_SUPABASE_KEY';
+var R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 
-// --- NEW: Storage Upload Utility ---
-async function uploadToSupabase(file, bucket = 'uploads') {
-    if (!supabase) throw new Error('Supabase not initialized');
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file);
-
-    if (error) {
-        console.error('Upload error:', error);
-        throw error;
+// --- R2 Upload Utility (via Cloudflare Worker) ---
+async function uploadToR2(file, folder = 'blog') {
+    if (!R2_UPLOAD_BASE_URL || String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
+        throw new Error('R2_UPLOAD_BASE_URL가 설정되지 않았습니다. Cloudflare Pages 환경변수에 R2_UPLOAD_BASE_URL을 추가하세요.');
     }
+    const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
+    const url = `${base}/upload?folder=${encodeURIComponent(folder)}`;
 
-    const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath);
-
-    return publicUrl;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+            'X-Filename': encodeURIComponent(file.name || 'upload.bin')
+        },
+        body: file
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) {
+        const errMsg = data?.error || `upload_failed (${res.status})`;
+        throw new Error(errMsg);
+    }
+    return data.url;
 }
 
 // Initialize Client Immediate (Modules are awaited)
@@ -1249,7 +1250,7 @@ function setupEventListeners() {
             console.log('File selected:', file.name);
             uploadPostImgBtn.textContent = '업로드 중...';
             try {
-                const url = await uploadToSupabase(file);
+                const url = await uploadToR2(file, 'blog');
                 console.log('Upload successful:', url);
                 const postImgInput = document.getElementById('post-img');
                 if (postImgInput) postImgInput.value = url;
@@ -1272,7 +1273,7 @@ function setupEventListeners() {
             if (!file) return;
             uploadAccAvatarBtn.textContent = '...';
             try {
-                const url = await uploadToSupabase(file);
+                const url = await uploadToR2(file, 'blog');
                 document.getElementById('acc-avatar-url').value = url;
                 alert('프로필 이미지가 업로드되었습니다.');
             } catch (err) { alert('업로드 실패: ' + err.message); }
