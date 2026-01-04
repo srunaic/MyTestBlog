@@ -378,6 +378,11 @@ const NotificationManager = {
 
 window.toggleNotifSound = () => NotificationManager.toggleSound();
 window.clearNotifications = () => NotificationManager.clearNotifications();
+
+// Free-tier friendly limits (server + client)
+const MESSAGE_RETENTION_PER_CHANNEL = 300; // keep latest N messages per channel (DB trigger enforces this)
+const FREE_VOICE_DAILY_SECONDS = 10 * 60;  // free tier voice time per day (seconds)
+
 class AntiCodeApp {
     constructor() {
         this.supabase = null;
@@ -399,6 +404,7 @@ class AntiCodeApp {
         this.friendsSchema = null; // Cache detected anticode_friends column names
         this.channelMembers = []; // usernames invited/joined for current channel
         this.channelMemberMeta = new Map(); // username -> { invited_by }
+        this.channelBlockedUsernames = new Set(); // usernames blocked by me in active channel (invite/kick control)
         this.messageQueue = [];
         this.isProcessingQueue = false;
         // Voice chat
@@ -423,6 +429,118 @@ class AntiCodeApp {
         this._micMeterRaf = null;
         // Push (Web Push)
         this.pushEnabled = false;
+
+        // Plan / gating (free vs pro)
+        this.planTier = 'free'; // resolved after syncUserMetadata()
+
+        // Free tier voice usage (local enforcement)
+        this._voiceLimitTimer = null;
+        this._voiceSessionStartedAtMs = 0;
+        this._voiceSessionDayKey = '';
+    }
+
+    _localDayKey() {
+        // Local date key (YYYY-MM-DD) so "daily limit" matches user expectation.
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    _voiceUsageStorageKey() {
+        const u = this.currentUser?.username || 'anonymous';
+        const day = this._localDayKey();
+        return `anticode_voice_used_seconds::${u}::${day}`;
+    }
+
+    _getFreeVoiceUsedSeconds() {
+        try {
+            const raw = localStorage.getItem(this._voiceUsageStorageKey());
+            const n = Number(raw);
+            return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+        } catch (_) {
+            return 0;
+        }
+    }
+
+    _setFreeVoiceUsedSeconds(n) {
+        try {
+            localStorage.setItem(this._voiceUsageStorageKey(), String(Math.max(0, Math.floor(n))));
+        } catch (_) { }
+    }
+
+    _getFreeVoiceRemainingSeconds() {
+        const used = this._getFreeVoiceUsedSeconds();
+        return Math.max(0, FREE_VOICE_DAILY_SECONDS - used);
+    }
+
+    _refreshPlanTier() {
+        // Temporary, payment-less plan switch:
+        // - localStorage override for testing: anticode_plan_override = "free" | "pro"
+        // - admins treated as pro by default
+        try {
+            const o = (localStorage.getItem('anticode_plan_override') || '').toLowerCase();
+            if (o === 'free' || o === 'pro') {
+                this.planTier = o;
+                return;
+            }
+        } catch (_) { }
+
+        const plan = (this.currentUser?.plan || '').toLowerCase();
+        if (plan === 'pro') this.planTier = 'pro';
+        else if (this.currentUser?.role === 'admin') this.planTier = 'pro';
+        else this.planTier = 'free';
+    }
+
+    _isProUser() {
+        return this.planTier === 'pro';
+    }
+
+    _clearVoiceLimitTimer() {
+        if (this._voiceLimitTimer) {
+            try { clearTimeout(this._voiceLimitTimer); } catch (_) { }
+            this._voiceLimitTimer = null;
+        }
+        this._voiceSessionStartedAtMs = 0;
+        this._voiceSessionDayKey = '';
+    }
+
+    _startFreeVoiceLimitTimer() {
+        if (this._isProUser()) return true;
+
+        const remaining = this._getFreeVoiceRemainingSeconds();
+        if (remaining <= 0) return false;
+
+        this._clearVoiceLimitTimer();
+        this._voiceSessionStartedAtMs = Date.now();
+        this._voiceSessionDayKey = this._localDayKey();
+
+        this._voiceLimitTimer = setTimeout(async () => {
+            try { await this.stopVoice({ playFx: true }); } catch (_) { }
+            alert('무료 보이스 사용 시간(하루 10분)을 모두 사용했습니다.\\n계속 사용하려면 유료 플랜 가입이 필요합니다.');
+        }, remaining * 1000);
+
+        return true;
+    }
+
+    _finalizeFreeVoiceUsage() {
+        if (this._isProUser()) return;
+        if (!this._voiceSessionStartedAtMs) return;
+
+        // If day changed mid-call, we conservatively count usage against the start day.
+        const elapsedSec = Math.max(0, Math.floor((Date.now() - this._voiceSessionStartedAtMs) / 1000));
+        if (elapsedSec <= 0) return;
+
+        try {
+            // Ensure key is stable for the session day
+            const u = this.currentUser?.username || 'anonymous';
+            const day = this._voiceSessionDayKey || this._localDayKey();
+            const key = `anticode_voice_used_seconds::${u}::${day}`;
+            const prev = Number(localStorage.getItem(key) || '0');
+            const next = (Number.isFinite(prev) ? prev : 0) + elapsedSec;
+            localStorage.setItem(key, String(next));
+        } catch (_) { }
     }
 
     _base64UrlToUint8Array(base64Url) {
@@ -804,6 +922,87 @@ class AntiCodeApp {
         }
     }
 
+    async loadChannelBlocks(channelId) {
+        // Load block list for this channel, scoped to current user (blocked_by = me)
+        this.channelBlockedUsernames = new Set();
+        try {
+            const me = this.currentUser?.username;
+            if (!me) return;
+            const { data, error } = await this.supabase
+                .from('anticode_channel_blocks')
+                .select('blocked_username')
+                .eq('channel_id', channelId)
+                .eq('blocked_by', me);
+            if (error) throw error;
+            (data || []).forEach(r => {
+                const u = r?.blocked_username ? String(r.blocked_username) : '';
+                if (u) this.channelBlockedUsernames.add(u);
+            });
+        } catch (_) {
+            // Table may not exist yet or RLS may block; ignore gracefully
+            this.channelBlockedUsernames = new Set();
+        }
+    }
+
+    _isBlockedInActiveChannel(username) {
+        try {
+            const u = String(username || '');
+            return !!(u && this.channelBlockedUsernames?.has?.(u));
+        } catch (_) {
+            return false;
+        }
+    }
+
+    async blockUserInActiveChannel(username) {
+        if (!this.activeChannel) return false;
+        const target = String(username || '');
+        if (!target) return false;
+        if (target === this.currentUser?.username) return false;
+        if (!confirm(`${target} 님을 차단할까요?\\n(차단된 유저는 다시 초대할 수 없습니다. 차단해제로 해제 가능)`)) return false;
+        try {
+            const { error } = await this.supabase
+                .from('anticode_channel_blocks')
+                .upsert([{
+                    channel_id: this.activeChannel.id,
+                    blocked_username: target,
+                    blocked_by: this.currentUser.username
+                }], { onConflict: 'channel_id,blocked_username,blocked_by' });
+            if (error) throw error;
+            this.channelBlockedUsernames.add(target);
+            try { this.renderFriendModalList(); } catch (_) { }
+            alert('차단 완료!');
+            return true;
+        } catch (e) {
+            console.error('blockUser failed:', e);
+            alert('차단 실패: ' + (e?.message || e));
+            return false;
+        }
+    }
+
+    async unblockUserInActiveChannel(username) {
+        if (!this.activeChannel) return false;
+        const target = String(username || '');
+        if (!target) return false;
+        if (!confirm(`${target} 님 차단을 해제할까요?\\n(해제 후 다시 초대할 수 있습니다)`)) return false;
+        try {
+            const { error } = await this.supabase
+                .from('anticode_channel_blocks')
+                .delete()
+                .eq('channel_id', this.activeChannel.id)
+                .eq('blocked_username', target)
+                .eq('blocked_by', this.currentUser.username);
+            if (error) throw error;
+            this.channelBlockedUsernames.delete(target);
+            try { this.renderFriendModalList(); } catch (_) { }
+            alert('차단 해제 완료!');
+            return true;
+        } catch (e) {
+            console.error('unblockUser failed:', e);
+            alert('차단 해제 실패: ' + (e?.message || e));
+            return false;
+        }
+    }
+
     _isAllowedInChannel(channelId) {
         const ch = this.channels.find(c => c.id === channelId);
         if (!ch) return false;
@@ -845,6 +1044,17 @@ class AntiCodeApp {
                 .eq('channel_id', this.activeChannel.id)
                 .eq('username', target);
             if (error) throw error;
+            // Auto-block kicked user so they cannot be re-invited until unblocked
+            try {
+                await this.supabase
+                    .from('anticode_channel_blocks')
+                    .upsert([{
+                        channel_id: this.activeChannel.id,
+                        blocked_username: target,
+                        blocked_by: this.currentUser.username
+                    }], { onConflict: 'channel_id,blocked_username,blocked_by' });
+                this.channelBlockedUsernames.add(target);
+            } catch (_) { }
             await this.loadChannelMembers(this.activeChannel.id);
             try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
             alert('강퇴 완료!');
@@ -903,6 +1113,7 @@ class AntiCodeApp {
             const avatar = info?.avatar_url;
             const isFriend = friendUsernames.has(uname);
             const showKick = this._canKickInActiveChannel(uname);
+            const isBlocked = this._isBlockedInActiveChannel(uname);
             parts.push(`
                 <div class="member-card ${isOnline ? 'online' : 'offline'}">
                     <div class="avatar-wrapper">
@@ -915,6 +1126,8 @@ class AntiCodeApp {
                         <span class="member-status-sub">${isOnline ? '온라인' : '오프라인'}</span>
                     </div>
                     ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
+                    ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
+                    ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
                 </div>
             `);
         }
@@ -1235,6 +1448,15 @@ class AntiCodeApp {
             alert('초대된 멤버만 이 비밀 채팅방의 보이스 톡을 사용할 수 있습니다.');
             return;
         }
+
+        // Free tier: enforce daily voice time limit (local enforcement)
+        if (!this._isProUser()) {
+            const remaining = this._getFreeVoiceRemainingSeconds();
+            if (remaining <= 0) {
+                alert('무료 보이스 사용 시간(하루 10분)을 모두 사용했습니다.\\n계속 사용하려면 유료 플랜 가입이 필요합니다.');
+                return;
+            }
+        }
         try {
             // Must be called from user gesture (button click) on mobile
             this._micUsers.voice = true;
@@ -1242,6 +1464,16 @@ class AntiCodeApp {
             this.voiceEnabled = true;
             this._setVoiceButtonState(true);
             if (playFx) SoundFX.micOn();
+
+            // Start free-tier usage timer AFTER successfully enabling voice
+            if (!this._isProUser()) {
+                const ok = this._startFreeVoiceLimitTimer();
+                if (!ok) {
+                    await this.stopVoice({ playFx: false });
+                    alert('무료 보이스 사용 시간(하루 10분)을 모두 사용했습니다.\\n계속 사용하려면 유료 플랜 가입이 필요합니다.');
+                    return;
+                }
+            }
 
             // Join signaling channel for this room
             this._setupVoiceSignaling(this.activeChannel.id);
@@ -1274,6 +1506,10 @@ class AntiCodeApp {
     }
 
     async stopVoice({ playFx = false } = {}) {
+        // Update free-tier usage before clearing timers/state
+        try { this._finalizeFreeVoiceUsage(); } catch (_) { }
+        this._clearVoiceLimitTimer();
+
         this.voiceEnabled = false;
         this._setVoiceButtonState(false);
         if (playFx) SoundFX.micOff();
@@ -1727,6 +1963,9 @@ class AntiCodeApp {
             this.currentUser = { ...this.currentUser, ...data };
         }
 
+        // Resolve plan tier after we have merged server-side user metadata
+        this._refreshPlanTier();
+
         // Cache current user
         this.userCache[this.currentUser.username] = {
             nickname: this.currentUser.nickname,
@@ -1960,7 +2199,17 @@ class AntiCodeApp {
             return;
         }
 
-        container.innerHTML = this.friends.map(f => `
+        container.innerHTML = this.friends.map(f => {
+            const isBlocked = canInvite && this._isBlockedInActiveChannel(f.username);
+            const inviteBtn = isBlocked
+                ? `<button class="notif-toggle-btn on" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}" ${canInvite ? '' : 'disabled'}
+                        onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${f.username}')">차단해제</button>`
+                : `<button class="notif-toggle-btn" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}" ${canInvite ? '' : 'disabled'}
+                        onclick="window.app && window.app.inviteFriendToActiveChannel && window.app.inviteFriendToActiveChannel('${f.username}')">${canInvite ? `초대 (${activeChannelName})` : '채널 선택 필요'}</button>`;
+            const blockBtn = canInvite
+                ? (isBlocked ? '' : `<button class="notif-toggle-btn" style="white-space:nowrap; margin-right:8px;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${f.username}')">차단</button>`)
+                : '';
+            return `
             <div class="member-card ${f.online ? 'online' : 'offline'}" style="margin-bottom:8px;">
                 <div class="avatar-wrapper">
                     ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
@@ -1972,13 +2221,11 @@ class AntiCodeApp {
                     <span class="member-status-sub">${f.online ? '온라인' : '오프라인'}</span>
                 </div>
                 <button class="notif-toggle-btn" style="white-space:nowrap; margin-right:8px;" onclick="window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')">친구삭제</button>
-                <button class="notif-toggle-btn" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}"
-                    ${canInvite ? '' : 'disabled'}
-                    onclick="window.app && window.app.inviteFriendToActiveChannel && window.app.inviteFriendToActiveChannel('${f.username}')">
-                    ${canInvite ? `초대 (${activeChannelName})` : '채널 선택 필요'}
-                </button>
+                ${blockBtn}
+                ${inviteBtn}
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     async inviteFriendToActiveChannel(friendUsername) {
@@ -1990,6 +2237,11 @@ class AntiCodeApp {
         if (!isFriend) return alert('친구만 초대할 수 있습니다.');
 
         try {
+            // If blocked by me in this channel, require unblock first
+            if (this._isBlockedInActiveChannel(friendUsername)) {
+                alert('이 유저는 현재 이 채널에서 차단되어 있습니다.\n먼저 차단해제를 해주세요.');
+                return;
+            }
             const payload = {
                 channel_id: this.activeChannel.id,
                 username: friendUsername,
@@ -2172,6 +2424,7 @@ class AntiCodeApp {
 
         // Load channel members first (needed for secret-channel access checks)
         await this.loadChannelMembers(channel.id);
+        await this.loadChannelBlocks(channel.id);
 
         // Secret channel gate: invited-only (or owner)
         if (channel.type === 'secret' && !this._isAllowedInChannel(channel.id)) {
@@ -2187,6 +2440,7 @@ class AntiCodeApp {
         // After access is granted (secret or not), mark myself as a member so I show up (and invitations persist).
         await this.ensureCurrentUserChannelMembership(channel.id);
         await this.loadChannelMembers(channel.id);
+        await this.loadChannelBlocks(channel.id);
 
         document.getElementById('chat-input').placeholder = channel.getPlaceholder();
         await this.loadMessages(channel.id);
@@ -2285,8 +2539,10 @@ class AntiCodeApp {
             .from('anticode_messages')
             .select('*')
             .eq('channel_id', channelId)
-            .order('created_at', { ascending: true })
-            .limit(50);
+            // Fetch newest N, then reverse to render chronologically (oldest -> newest)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(MESSAGE_RETENTION_PER_CHANNEL);
 
         if (error) {
             // Don't wipe existing messages on transient errors
@@ -2297,7 +2553,8 @@ class AntiCodeApp {
         const container = document.getElementById('message-container');
         if (!container) return;
         container.innerHTML = '';
-        for (const msg of (data || [])) await this.appendMessage(msg);
+        const rows = (data || []).slice().reverse();
+        for (const msg of rows) await this.appendMessage(msg);
     }
 
     setupMessageSubscription(channelId) {
@@ -2602,6 +2859,12 @@ class AntiCodeApp {
                 </div>
             `;
             container.appendChild(msgEl);
+            // Prevent unbounded DOM growth (even if retention is enforced server-side)
+            try {
+                while (container.children.length > (MESSAGE_RETENTION_PER_CHANNEL + 20)) {
+                    container.removeChild(container.firstElementChild);
+                }
+            } catch (_) { }
             container.scrollTop = container.scrollHeight;
         } catch (e) {
             console.error('Failed to append message:', e, msg);
