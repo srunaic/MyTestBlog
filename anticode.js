@@ -701,6 +701,7 @@ class AntiCodeApp {
         const m = document.getElementById('channel-pages-modal');
         if (!m) return;
         m.style.display = 'flex';
+        this._ensureChannelPagesModalBindings();
         this.renderChannelPagesModal();
     }
 
@@ -763,121 +764,166 @@ class AntiCodeApp {
         const search = document.getElementById('pages-modal-search');
         if (!sel || !itemsBox || !resultsBox || !search) return;
 
+        // Render selector options without re-binding events (bindings happen once)
         const current = String(this.activeChannelPageId || 'all');
-        sel.innerHTML = '';
-        const optAll = document.createElement('option');
-        optAll.value = 'all';
-        optAll.textContent = '전체 채널(편집 불가)';
-        sel.appendChild(optAll);
-        (this.channelPages || []).forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.name;
-            sel.appendChild(opt);
-        });
+        const existingKey = sel.getAttribute('data-options-key') || '';
+        const newKey = JSON.stringify((this.channelPages || []).map(p => [p.id, p.name]));
+        if (existingKey !== newKey) {
+            sel.setAttribute('data-options-key', newKey);
+            sel.innerHTML = '';
+            const optAll = document.createElement('option');
+            optAll.value = 'all';
+            optAll.textContent = '전체 채널(편집 불가)';
+            sel.appendChild(optAll);
+            (this.channelPages || []).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            });
+        }
         sel.value = current;
         if (!sel.value) sel.value = 'all';
 
-        const renderItems = async () => {
-            const pid = String(sel.value || 'all');
-            if (pid === 'all') {
-                itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">'전체 채널'은 편집할 수 없습니다. 새 페이지를 만든 뒤 채널을 추가하세요.</div>`;
-                return;
-            }
-            const its = (this.channelPageItems.get(pid) || []).slice();
-            const idSet = new Set(its.map(it => String(it.channel_id)));
-            const chans = this.channels.filter(c => idSet.has(String(c.id)));
-            const order = new Map(its.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
-            chans.sort((a, b) => (order.get(String(a.id)) ?? 0) - (order.get(String(b.id)) ?? 0));
+        // Partial refresh only
+        this._refreshPersonalPageItems();
+        this._refreshPersonalSearchResults(true);
+    }
 
-            if (chans.length === 0) {
-                itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">이 페이지에 채널이 없습니다.</div>`;
-                return;
-            }
+    _ensureChannelPagesModalBindings() {
+        if (this._channelPagesModalBound) return;
+        this._channelPagesModalBound = true;
 
-            itemsBox.innerHTML = chans.map((ch, idx) => {
-                const label = this._channelLabel(ch);
-                return `
-                  <div class="member-card draggable-item" draggable="true" data-pid="${pid}" data-cid="${ch.id}" style="margin-bottom:8px;">
-                    <div class="member-info">
-                      <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span class="drag-handle">⋮⋮</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
-                      <span class="member-status-sub">${this.escapeHtml(label)}</span>
-                    </div>
-                    <div class="member-actions">
-                      <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
-                      <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">제거</button>
-                      <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
-                    </div>
-                  </div>
-                `;
-            }).join('');
+        const sel = document.getElementById('pages-modal-select');
+        const search = document.getElementById('pages-modal-search');
+        const itemsBox = document.getElementById('pages-modal-items');
 
-            // Drag reorder
-            try {
-                const els = itemsBox.querySelectorAll('.draggable-item');
-                els.forEach(el => {
-                    el.addEventListener('dragstart', (e) => {
-                        el.classList.add('dragging');
-                        e.dataTransfer.effectAllowed = 'move';
-                        e.dataTransfer.setData('text/plain', el.getAttribute('data-cid') || '');
+        if (sel) {
+            sel.addEventListener('change', () => {
+                this.activeChannelPageId = String(sel.value || 'all');
+                this._refreshPersonalPageItems();
+                this._refreshPersonalSearchResults(true);
+            });
+        }
+
+        if (search) {
+            search.addEventListener('input', () => {
+                if (this._pagesSearchT) clearTimeout(this._pagesSearchT);
+                this._pagesSearchT = setTimeout(() => this._refreshPersonalSearchResults(false), 120);
+            });
+        }
+
+        // Drag & drop delegation (single set of listeners)
+        if (itemsBox) {
+            itemsBox.addEventListener('dragstart', (e) => {
+                const el = e.target?.closest?.('.draggable-item');
+                if (!el) return;
+                el.classList.add('dragging');
+                try {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', el.getAttribute('data-cid') || '');
+                } catch (_) { }
+            });
+            itemsBox.addEventListener('dragend', async (e) => {
+                const el = e.target?.closest?.('.draggable-item');
+                if (!el) return;
+                el.classList.remove('dragging');
+                const pid = String(document.getElementById('pages-modal-select')?.value || 'all');
+                await this._persistPersonalPageOrderFromDom(pid, itemsBox);
+            });
+            itemsBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const dragging = itemsBox.querySelector('.draggable-item.dragging');
+                if (!dragging) return;
+                const after = Array.from(itemsBox.querySelectorAll('.draggable-item:not(.dragging)'))
+                    .find(node => {
+                        const box = node.getBoundingClientRect();
+                        return e.clientY < box.top + box.height / 2;
                     });
-                    el.addEventListener('dragend', async () => {
-                        el.classList.remove('dragging');
-                        await this._persistPersonalPageOrderFromDom(pid, itemsBox);
-                    });
-                });
-                itemsBox.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    const dragging = itemsBox.querySelector('.draggable-item.dragging');
-                    if (!dragging) return;
-                    const after = Array.from(itemsBox.querySelectorAll('.draggable-item:not(.dragging)'))
-                        .find(node => {
-                            const box = node.getBoundingClientRect();
-                            return e.clientY < box.top + box.height / 2;
-                        });
-                    if (after) itemsBox.insertBefore(dragging, after);
-                    else itemsBox.appendChild(dragging);
-                }, { once: true });
-            } catch (_) { }
-        };
+                if (after) itemsBox.insertBefore(dragging, after);
+                else itemsBox.appendChild(dragging);
+            });
+        }
+    }
 
-        const renderResults = async () => {
-            const q = String(search.value || '').trim().toLowerCase();
-            const pid = String(sel.value || 'all');
-            const base = this.channels.slice();
-            const filtered = q
-                ? base.filter(ch => (ch.name || '').toLowerCase().includes(q) || (ch.category || '').toLowerCase().includes(q) || (ch.type || '').toLowerCase().includes(q))
-                : base;
+    _refreshPersonalPageItems() {
+        const sel = document.getElementById('pages-modal-select');
+        const itemsBox = document.getElementById('pages-modal-items');
+        if (!sel || !itemsBox) return;
+        const pid = String(sel.value || 'all');
 
-            const limited = filtered.slice(0, 50);
-            if (limited.length === 0) {
-                resultsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">검색 결과 없음</div>`;
-                return;
-            }
-            resultsBox.innerHTML = limited.map(ch => {
-                const label = this._channelLabel(ch);
-                const canAdd = pid !== 'all';
-                return `
-                  <div class="member-card" style="margin-bottom:8px;">
-                    <div class="member-info">
-                      <span class="member-name-text" title="${this.escapeHtml(ch.name)}">${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
-                      <span class="member-status-sub">${this.escapeHtml(label)}</span>
-                    </div>
-                    <div class="member-actions">
-                      <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
-                      ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">페이지에 추가</button>` : ''}
-                      <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
-                    </div>
-                  </div>
-                `;
-            }).join('');
-        };
+        if (pid === 'all') {
+            itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">'전체 채널'은 편집할 수 없습니다. 새 페이지를 만든 뒤 채널을 추가하세요.</div>`;
+            return;
+        }
 
-        sel.onchange = async () => { await renderItems(); await renderResults(); };
-        search.oninput = async () => { await renderResults(); };
+        const its = (this.channelPageItems.get(pid) || []).slice();
+        const idSet = new Set(its.map(it => String(it.channel_id)));
+        const chans = this.channels.filter(c => idSet.has(String(c.id)));
+        const order = new Map(its.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
+        chans.sort((a, b) => (order.get(String(a.id)) ?? 0) - (order.get(String(b.id)) ?? 0));
 
-        renderItems();
-        renderResults();
+        if (chans.length === 0) {
+            itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">이 페이지에 채널이 없습니다.</div>`;
+            return;
+        }
+
+        itemsBox.innerHTML = chans.map((ch) => {
+            const label = this._channelLabel(ch);
+            return `
+              <div class="member-card draggable-item" draggable="true" data-pid="${pid}" data-cid="${ch.id}" style="margin-bottom:8px;">
+                <div class="member-info">
+                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span class="drag-handle">⋮⋮</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                  <span class="member-status-sub">${this.escapeHtml(label)}</span>
+                </div>
+                <div class="member-actions">
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">제거</button>
+                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
+                </div>
+              </div>
+            `;
+        }).join('');
+    }
+
+    _refreshPersonalSearchResults(force = false) {
+        const sel = document.getElementById('pages-modal-select');
+        const resultsBox = document.getElementById('pages-modal-results');
+        const search = document.getElementById('pages-modal-search');
+        if (!sel || !resultsBox || !search) return;
+        const pid = String(sel.value || 'all');
+        const q = String(search.value || '').trim().toLowerCase();
+
+        // If not forced and query is empty, keep existing results to avoid needless churn
+        if (!force && !q) return;
+
+        const base = this.channels.slice();
+        const filtered = q
+            ? base.filter(ch => (ch.name || '').toLowerCase().includes(q) || (ch.category || '').toLowerCase().includes(q) || (ch.type || '').toLowerCase().includes(q))
+            : base;
+
+        const limited = filtered.slice(0, 30);
+        if (limited.length === 0) {
+            resultsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">검색 결과 없음</div>`;
+            return;
+        }
+        resultsBox.innerHTML = limited.map(ch => {
+            const label = this._channelLabel(ch);
+            const canAdd = pid !== 'all';
+            return `
+              <div class="member-card" style="margin-bottom:8px;">
+                <div class="member-info">
+                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}">${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                  <span class="member-status-sub">${this.escapeHtml(label)}</span>
+                </div>
+                <div class="member-actions">
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
+                  ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">페이지에 추가</button>` : ''}
+                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
+                </div>
+              </div>
+            `;
+        }).join('');
     }
 
     openFriendModalForChannel(channelId) {
