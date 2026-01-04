@@ -10,6 +10,23 @@ if (-not $SupabaseDbUrl) {
   exit 1
 }
 
+function Resolve-PgDumpPath {
+  $cmd = Get-Command pg_dump -ErrorAction SilentlyContinue
+  if ($cmd -and $cmd.Source) { return $cmd.Source }
+
+  # Common Windows install location(s): C:\Program Files\PostgreSQL\<version>\bin\pg_dump.exe
+  $candidates = Get-ChildItem "C:\\Program Files\\PostgreSQL" -Directory -ErrorAction SilentlyContinue |
+    ForEach-Object { Join-Path $_.FullName "bin\\pg_dump.exe" } |
+    Where-Object { Test-Path $_ }
+
+  if ($candidates -and $candidates.Count -gt 0) {
+    # Prefer newest version folder name
+    return ($candidates | Sort-Object { $_ } -Descending | Select-Object -First 1)
+  }
+
+  return $null
+}
+
 New-Item -ItemType Directory -Force -Path $BackupRoot | Out-Null
 
 $ts = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
@@ -22,7 +39,24 @@ New-Item -ItemType Directory -Force -Path $dbDir | Out-Null
 $dumpPath = Join-Path $dbDir "dump.sql"
 
 Write-Host "[Backup] Creating DB dump..."
-pg_dump "$SupabaseDbUrl" --no-owner --no-privileges --format=p --file="$dumpPath"
+$pgDumpPath = Resolve-PgDumpPath
+if (-not $pgDumpPath) {
+  Write-Error @"
+pg_dump was not found.
+
+To enable local backups, install PostgreSQL client tools (includes pg_dump) and ensure it's on PATH.
+
+Recommended (winget):
+  winget install --id PostgreSQL.PostgreSQL -e
+
+After install, restart PowerShell (or add Postgres bin to PATH) and rerun this script.
+Typical path:
+  C:\Program Files\PostgreSQL\<version>\bin
+"@
+  exit 1
+}
+
+& "$pgDumpPath" "$SupabaseDbUrl" --no-owner --no-privileges --format=p --file="$dumpPath"
 if ($LASTEXITCODE -ne 0) { throw "pg_dump failed" }
 
 if ($NoZip) {
