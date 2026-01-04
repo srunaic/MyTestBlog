@@ -111,6 +111,14 @@ serve(async (req) => {
 
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 
+    // Delivery hints:
+    // - urgency: asks push service to deliver ASAP (best-effort; OS may still throttle)
+    // - TTL: keep message alive briefly; short TTL avoids stale notifications arriving late
+    const pushOptions = {
+      TTL: 60, // seconds
+      urgency: "high" as const,
+    };
+
     const targets = (subsRes.data ?? []).map((s: any) => ({
       username: String(s.username),
       endpoint: String(s.endpoint),
@@ -131,6 +139,7 @@ serve(async (req) => {
             url,
             tag: payload.kind === "chat" ? `anticode_chat_${channelId ?? ""}` : "nano_push",
           }),
+          pushOptions,
         )
       ),
     );
