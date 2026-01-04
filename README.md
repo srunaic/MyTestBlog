@@ -1,5 +1,4 @@
 # 🌌 Nanodoroshi | Futuristic Cyber-Minimalist Blog
-## 나노 도로시 | 미려한 감각의 사이버 미니멀리즘 아카이브
 
 [![Live Demo](https://img.shields.io/badge/demo-live-00f2ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://srunaic.github.io/MyTestBlog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
@@ -78,14 +77,6 @@ Built for speed and elegance using a modern, lightweight architecture.
 
 This project is a unique creative archive. Its architecture and design language are protected intellectual property.
 본 프로젝트는 고유한 창작 아카이브입니다. 시스템 설계와 디자인 언어는 독창적인 지적 재산권으로 보호됩니다.
-
----
-### 📫 Connect with the Creator
-- **YouTube**: [Nanodoroshi Official](https://www.youtube.com/channel/UCAWWGP96WKyyLFT8nZni0hA)
-- **Blog Site**: [Live Blog Experience](https://srunaic.github.io/MyTestBlog/)
-
----
-*Curated with 💎 by [Nanodoroshi](https://github.com/srunaic).*
 
 ## Local development (Supabase env)
 
