@@ -43,3 +43,4 @@ alter table public.anticode_channel_pages disable row level security;
 alter table public.anticode_channel_page_items disable row level security;
 
 
+

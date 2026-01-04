@@ -65,8 +65,8 @@ INPUT_FILES.forEach(file => {
 
             // Fallback: unquoted replacement (legacy)
             if (!did) {
-                const pieces = content.split(placeholder);
-                if (pieces.length > 1) {
+            const pieces = content.split(placeholder);
+            if (pieces.length > 1) {
                     content = pieces.join(String(value).trim());
                     did = true;
                 }

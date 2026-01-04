@@ -49,3 +49,4 @@ RevenueCat의 `app_user_id`가 **너의 로그인 유저ID**와 같아야 합니
 `anticode.js`는 init에서 `refreshEntitlements()`를 호출해 Pro 여부를 동기화합니다.
 
 
+

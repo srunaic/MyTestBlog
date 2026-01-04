@@ -73,7 +73,7 @@ class Channel {
                     <div class="channel-name-actions">
                         ${voiceHtml}
                         ${editHtml}
-                        ${deleteHtml}
+                    ${deleteHtml}
                     </div>
                 </div>
                 <div class="channel-sub-link" data-id="${this.id}">

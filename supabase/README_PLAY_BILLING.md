@@ -71,3 +71,4 @@ Edge Function URL:
 - (선택) 하루 1회 sync
 
 
+

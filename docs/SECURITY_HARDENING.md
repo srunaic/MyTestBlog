@@ -45,3 +45,4 @@ Supabase Auth를 쓰면 `auth.uid()`로 “로그인한 사용자”를 DB에서
 - `service_role` 키는 Edge Function/서버에서만 사용해야 합니다.
 
 
+

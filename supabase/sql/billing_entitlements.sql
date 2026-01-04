@@ -29,3 +29,4 @@ alter table public.app_entitlements disable row level security;
 alter table public.revenuecat_events disable row level security;
 
 
+
