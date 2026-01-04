@@ -209,12 +209,6 @@
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
                 유저별로 채널 목록을 커스텀(눈속임)하고, 채널 위치를 검색/초대할 수 있습니다.
             </p>
-            <div class="channel-pages-tabs">
-                <button type="button" id="pages-tab-personal" class="notif-toggle-btn on">개인</button>
-                <button type="button" id="pages-tab-guild" class="notif-toggle-btn">길드/서버</button>
-            </div>
-
-            <!-- PERSONAL -->
             <div id="pages-personal-pane">
             <div class="form-group">
                 <label>페이지 선택</label>
@@ -248,54 +242,6 @@
                 <div id="pages-modal-items" style="max-height: 220px; overflow-y:auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px;"></div>
                 <small style="color: var(--text-muted); font-size: 0.7rem;">드래그로 순서를 변경할 수 있습니다.</small>
             </div>
-            </div>
-
-            <!-- GUILD -->
-            <div id="pages-guild-pane" style="display:none;">
-                <div class="form-group">
-                    <label>길드 선택</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <select id="guild-select" style="flex:1;"></select>
-                        <button type="button" id="guild-create-btn" class="submit-btn" style="white-space:nowrap;">길드 생성</button>
-                        <button type="button" id="guild-join-btn" class="notif-toggle-btn" style="white-space:nowrap;">코드로 가입</button>
-                    </div>
-                    <small style="color: var(--text-muted); font-size: 0.7rem;">무료 플랜은 길드 기능이 제한될 수 있습니다.</small>
-                </div>
-                <div class="form-group">
-                    <label>길드 페이지 선택</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <select id="guild-page-select" style="flex:1;"></select>
-                        <button type="button" id="guild-page-delete" class="notif-toggle-btn" style="white-space:nowrap;">삭제</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>길드 페이지 이름 변경</label>
-                    <div style="display:flex; gap:10px;">
-                        <input id="guild-page-rename" type="text" placeholder="선택한 길드 페이지 새 이름" style="flex:1;">
-                        <button type="button" id="guild-page-rename-btn" class="notif-toggle-btn" style="white-space:nowrap;">변경</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>새 길드 페이지 만들기</label>
-                    <div style="display:flex; gap:10px;">
-                        <input id="guild-page-new" type="text" placeholder="예: 공지/모임/게임" style="flex:1;">
-                        <button type="button" id="guild-page-create" class="submit-btn">생성</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>길드 채널 검색/추가</label>
-                    <input id="guild-search" type="text" placeholder="채널 이름/카테고리로 검색">
-                    <div id="guild-results" style="max-height: 220px; overflow-y:auto; margin-top:10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px;"></div>
-                </div>
-                <div class="form-group">
-                    <label>길드 페이지에 포함된 채널</label>
-                    <div id="guild-items" style="max-height: 220px; overflow-y:auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px;"></div>
-                </div>
-                <div class="form-group">
-                    <label>초대 코드</label>
-                    <div id="guild-invite" style="font-size:0.85rem; color:var(--text-primary); word-break:break-all;">-</div>
-                    <small style="color: var(--text-muted); font-size: 0.7rem;">이 코드로 다른 유저가 길드에 가입할 수 있습니다.</small>
-                </div>
             </div>
             <div class="modal-btns">
                 <button type="button" id="close-channel-pages-modal" class="submit-btn">확인</button>

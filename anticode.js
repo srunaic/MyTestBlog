@@ -385,7 +385,6 @@ const MESSAGE_RETENTION_PER_CHANNEL = 300; // keep latest N messages per channel
 const FREE_VOICE_DAILY_SECONDS = 10 * 60;  // free tier voice time per day (seconds)
 const FREE_MAX_PERSONAL_PAGES = 1;
 const FREE_MAX_CHANNELS_PER_PAGE = 20;
-const FREE_ALLOW_GUILDS = false;
 
 class AntiCodeApp {
     constructor() {
@@ -448,12 +447,6 @@ class AntiCodeApp {
         this.activeChannelPageId = 'all';
         this._friendModalTargetChannelId = null; // optional invite target from directory/pages
 
-        // Guild/server shared pages
-        this.guilds = []; // [{id,name,invite_code,owner_username}]
-        this.guildMembers = new Map(); // guildId -> { role }
-        this.guildPages = new Map(); // guildId -> [{id,guild_id,name}]
-        this.guildPageItems = new Map(); // pageId -> [{channel_id,position}]
-        this.activeGuildId = '';
     }
 
     _localDayKey() {
@@ -516,12 +509,6 @@ class AntiCodeApp {
 
     _isAdmin() {
         return String(this.currentUser?.role || '') === 'admin';
-    }
-
-    _canUseGuilds() {
-        if (this._isAdmin()) return true;
-        if (this._isProUser()) return true;
-        return !!FREE_ALLOW_GUILDS;
     }
 
     _canCreateMorePersonalPages() {
@@ -3623,26 +3610,7 @@ class AntiCodeApp {
         const pagesSel = document.getElementById('pages-modal-select');
         if (pagesSel) pagesSel.onchange = () => this.renderChannelPagesModal();
 
-        // Tabs (personal vs guild)
-        const tabPersonal = document.getElementById('pages-tab-personal');
-        const tabGuild = document.getElementById('pages-tab-guild');
-        const panePersonal = document.getElementById('pages-personal-pane');
-        const paneGuild = document.getElementById('pages-guild-pane');
-        const setTab = (which) => {
-            if (panePersonal) panePersonal.style.display = which === 'personal' ? '' : 'none';
-            if (paneGuild) paneGuild.style.display = which === 'guild' ? '' : 'none';
-            if (tabPersonal) tabPersonal.classList.toggle('on', which === 'personal');
-            if (tabGuild) tabGuild.classList.toggle('on', which === 'guild');
-        };
-        if (tabPersonal) tabPersonal.onclick = () => setTab('personal');
-        if (tabGuild) tabGuild.onclick = () => {
-            if (!this._canUseGuilds()) {
-                alert('무료 플랜에서는 길드/서버 기능이 제한됩니다. (관리자/유료는 사용 가능)');
-                return;
-            }
-            setTab('guild');
-            this._renderGuildPane?.();
-        };
+        // (Guild/server pages removed for performance)
 
         // Settings Modal
         const sModal = document.getElementById('app-settings-modal');
