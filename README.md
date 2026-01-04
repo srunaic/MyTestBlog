@@ -104,3 +104,20 @@ npm run build
 cd "D:\CursorAIProject\nanodoroshi_blog\public"
 npx --yes serve .
 ```
+
+---
+
+## Google Play 앱화 & 정책 문서(필독)
+
+- **Google Play 출시 체크리스트**: `docs/GOOGLE_PLAY_RELEASE.md`
+- **개인정보처리방침(초안)**: `docs/PRIVACY_POLICY.md` (실제 배포 URL로 게시 필요)
+- **Data Safety(초안)**: `docs/DATA_SAFETY.md`
+
+---
+
+## Supabase 백업(2~3중) 운영
+
+- **운영 문서**: `docs/BACKUP.md`
+- **로컬 덤프 스크립트 템플릿**: `scripts/backup/pg_dump_backup.ps1`
+
+> 중요: DB URL/서비스키/백업키는 절대 프론트 코드에 넣지 말고, 서버/CI Secrets로만 관리하세요.
