@@ -1101,12 +1101,17 @@ class AntiCodeApp {
         if (onlineCountText) onlineCountText.innerText = String(onlineUsers.length);
 
         const friendUsernames = new Set(this.friends.map(f => f.username));
-        const allUsernames = Array.from(new Set([...(this.channelMembers || []), ...onlineUsernames]));
+        // ✅ Requirement:
+        // - Show ONLY users who are currently inside this room (presence = online)
+        // - If user closes app/browser -> they disappear (presence handles this)
+        // - Exception: friends can be shown even if offline, but only if they are a member/invite of this room
+        const offlineFriendUsernamesInRoom = (this.channelMembers || [])
+            .filter((u) => !!u && friendUsernames.has(u) && !onlineUsernames.has(u));
 
-        // Online first
+        // Order: online first, then offline friends (exception)
         const ordered = [
-            ...allUsernames.filter(u => onlineUsernames.has(u)),
-            ...allUsernames.filter(u => !onlineUsernames.has(u))
+            ...Array.from(onlineUsernames),
+            ...offlineFriendUsernamesInRoom
         ];
 
         const onlineMap = new Map(onlineUsers.map(u => [u.username, u]));
@@ -1114,6 +1119,8 @@ class AntiCodeApp {
         for (const uname of ordered) {
             const presenceUser = onlineMap.get(uname);
             const isOnline = !!presenceUser;
+            // Safety: never show offline non-friends
+            if (!isOnline && !friendUsernames.has(uname)) continue;
             const info = isOnline ? presenceUser : await this.getUserInfo(uname);
             const nick = info?.nickname || uname;
             const avatar = info?.avatar_url;
@@ -1928,6 +1935,17 @@ class AntiCodeApp {
 
         try {
             this.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            // Best-effort: on tab/app close, immediately unsubscribe presence channels so others don't see stale "online"
+            try {
+                const cleanup = () => {
+                    try { if (this.messageSubscription) this.supabase.removeChannel(this.messageSubscription); } catch (_) { }
+                    try { if (this.channelPresenceChannel) this.supabase.removeChannel(this.channelPresenceChannel); } catch (_) { }
+                    try { if (this.presenceChannel) this.supabase.removeChannel(this.presenceChannel); } catch (_) { }
+                };
+                window.addEventListener('pagehide', cleanup, { capture: true });
+                window.addEventListener('beforeunload', cleanup, { capture: true });
+            } catch (_) { }
 
             // Restore secret-channel unlocks for this user (password once per device/account)
             this._loadUnlockedChannels();
