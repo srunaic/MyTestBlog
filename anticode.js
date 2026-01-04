@@ -766,9 +766,8 @@ class AntiCodeApp {
                 .eq('channel_id', channelId);
             if (error) throw error;
             const names = (data || []).map(r => r.username).filter(Boolean).map(String);
-            // Always include myself and channel owner if present
+            // Always include channel owner if present
             const chan = this.channels.find(c => c.id === channelId);
-            if (this.currentUser?.username) names.push(this.currentUser.username);
             if (chan?.owner_id) names.push(String(chan.owner_id));
             this.channelMembers = Array.from(new Set(names));
         } catch (e) {
@@ -777,13 +776,31 @@ class AntiCodeApp {
         }
     }
 
+    async _hasChannelMembership(channelId, username) {
+        const u = username || this.currentUser?.username;
+        if (!u || !this.supabase) return false;
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_channel_members')
+                .select('username')
+                .eq('channel_id', channelId)
+                .eq('username', u)
+                .limit(1);
+            if (error) throw error;
+            return !!(data && data.length > 0);
+        } catch (_) {
+            return false;
+        }
+    }
+
     _isAllowedInChannel(channelId) {
         const ch = this.channels.find(c => c.id === channelId);
         if (!ch) return false;
         // Non-secret channels are open
         if (ch.type !== 'secret') return true;
-        // Secret channels: owner or invited member only
+        // Secret channels: owner OR password-unlocked OR invited/joined member
         if (ch.owner_id && ch.owner_id === this.currentUser?.username) return true;
+        if (this.unlockedChannels?.has?.(String(channelId))) return true;
         return (this.channelMembers || []).includes(this.currentUser?.username);
     }
 
@@ -1950,8 +1967,12 @@ class AntiCodeApp {
             return;
         }
 
-        // Password persistence check (even for owners)
-        if (channel.type === 'secret' && channel.password && !this.unlockedChannels.has(channelId)) {
+        // Password modal gate:
+        // - If invited/member (or owner), allow entry without password.
+        // - Otherwise, require password for password-protected channels.
+        const isOwner = channel.owner_id && channel.owner_id === this.currentUser?.username;
+        const isMember = isOwner ? true : await this._hasChannelMembership(channelId, this.currentUser?.username);
+        if (channel.password && !this.unlockedChannels.has(channelId) && !isMember) {
             this.pendingChannelId = channelId;
             document.getElementById('password-entry-modal').style.display = 'flex';
             document.getElementById('entry-password-input').focus();
@@ -2018,11 +2039,9 @@ class AntiCodeApp {
             return;
         }
 
-        // For non-secret channels (or owner), mark myself as a member so I show up.
-        if (channel.type !== 'secret' || channel.owner_id === this.currentUser?.username) {
-            await this.ensureCurrentUserChannelMembership(channel.id);
-            await this.loadChannelMembers(channel.id);
-        }
+        // After access is granted (secret or not), mark myself as a member so I show up (and invitations persist).
+        await this.ensureCurrentUserChannelMembership(channel.id);
+        await this.loadChannelMembers(channel.id);
 
         document.getElementById('chat-input').placeholder = channel.getPlaceholder();
         await this.loadMessages(channel.id);
