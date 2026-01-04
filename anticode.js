@@ -1138,9 +1138,11 @@ class AntiCodeApp {
                         <span class="member-name-text">${nick} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
                         <span class="member-status-sub">${isOnline ? '온라인' : '오프라인'}</span>
                     </div>
-                    ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
-                    ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
-                    ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
+                    <div class="member-actions">
+                        ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
+                        ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
+                        ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
+                    </div>
                 </div>
             `);
         }
@@ -2260,13 +2262,15 @@ class AntiCodeApp {
                     <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${(f.nickname || f.username)[0]}</div>
                     ${f.online ? '<span class="online-dot"></span>' : ''}
                 </div>
-                <div class="member-info" style="flex:1;">
+                <div class="member-info">
                     <span class="member-name-text">${f.nickname} <small>#${f.uid}</small></span>
                     <span class="member-status-sub">${f.online ? '온라인' : '오프라인'}</span>
                 </div>
-                <button class="notif-toggle-btn" style="white-space:nowrap; margin-right:8px;" onclick="window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')">친구삭제</button>
-                ${blockBtn}
-                ${inviteBtn}
+                <div class="member-actions">
+                    <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')">친구삭제</button>
+                    ${blockBtn}
+                    ${inviteBtn}
+                </div>
             </div>
         `;
         }).join('');

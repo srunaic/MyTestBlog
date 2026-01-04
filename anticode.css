@@ -900,6 +900,8 @@
     /* Slightly sharper corners */
     cursor: pointer;
     transition: 0.2s;
+    width: 100%;
+    min-width: 0;
 }
 
 .member-card:hover {
@@ -934,6 +936,8 @@
     flex-direction: column;
     min-width: 0;
     line-height: 1.2;
+    flex: 1;
+    overflow: hidden;
 }
 
 .member-name-text {
@@ -956,6 +960,29 @@
 .member-status-sub {
     font-size: 0.7rem;
     color: var(--text-muted);
+    display: block;
+}
+
+/* Actions area for member cards (prevents layout break with many buttons) */
+.member-actions {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Friend modal often has multiple actions; make buttons slightly denser */
+#friend-modal .member-actions .notif-toggle-btn {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+}
+
+/* Friend modal can be wider so names/status don't get crushed */
+#friend-modal .modal-content {
+    width: min(720px, 96vw);
 }
 
 .member-card.offline {
