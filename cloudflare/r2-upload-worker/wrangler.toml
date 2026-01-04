@@ -7,8 +7,13 @@ compatibility_date = "2026-01-01"
 binding = "R2"
 bucket_name = "YOUR_BUCKET_NAME"
 
-# Optional env vars (set via `wrangler secret put` or `wrangler.toml` vars):
+# Optional vars:
 # - ALLOWED_ORIGINS: comma-separated list. Example: "https://your.pages.dev,https://yourdomain.com"
 # - MAX_UPLOAD_BYTES: default 10485760 (10MB)
+
+[vars]
+# Set this in Cloudflare dashboard or here (safe; not a secret)
+ALLOWED_ORIGINS = ""
+MAX_UPLOAD_BYTES = "10485760"
 
 

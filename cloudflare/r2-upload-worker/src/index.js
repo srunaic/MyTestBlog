@@ -40,6 +40,18 @@ function corsHeadersFor(request, env) {
   };
 }
 
+function isOriginAllowed(request, env) {
+  const allowed = String(env.ALLOWED_ORIGINS || "").trim();
+  if (!allowed) return true; // dev/easy start
+  const origin = request.headers.get("Origin") || "";
+  if (!origin) return false;
+  const allowList = allowed
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return allowList.includes(origin);
+}
+
 function json(data, status, extraHeaders) {
   return new Response(JSON.stringify(data), {
     status,
@@ -94,6 +106,11 @@ export default {
 
     // Upload file bytes to R2
     if (request.method === "POST" && path === "/upload") {
+      // IMPORTANT: CORS is not authentication, but we still hard-block browser origins not on the allowlist.
+      if (!isOriginAllowed(request, env)) {
+        return json({ ok: 0, error: "origin_not_allowed" }, 403, cors);
+      }
+
       const folder = (url.searchParams.get("folder") || "uploads").replace(/[^A-Za-z0-9._-]/g, "_");
       const maxBytes = Number(env.MAX_UPLOAD_BYTES || 10485760); // 10MB default
 

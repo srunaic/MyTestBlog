@@ -28,7 +28,15 @@ npx wrangler@latest deploy
 
 배포가 끝나면 Worker URL을 얻습니다(예: `https://nanodoroshi-r2-upload.<계정>.workers.dev`).
 
-> 보안 강화(권장): `wrangler.toml`에 `ALLOWED_ORIGINS`를 설정해서 업로드를 특정 도메인에서만 허용하세요.
+> 보안 강화(권장): `ALLOWED_ORIGINS`를 설정해서 업로드를 **특정 도메인에서만** 허용하세요.
+
+#### ALLOWED_ORIGINS 설정(필수 권장)
+`cloudflare/r2-upload-worker/wrangler.toml`의 `[vars]`에서 설정하거나, Cloudflare Dashboard에서 Worker 환경변수로 설정하세요.
+
+예:
+- `ALLOWED_ORIGINS="https://<your-project>.pages.dev,https://<your-domain.com>"`
+
+> 참고: 이 설정은 **브라우저 기반 악용을 줄이는 목적**입니다(CORS). 완전한 “인증(로그인/권한)”은 아닙니다.
 
 ---
 

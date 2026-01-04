@@ -498,6 +498,11 @@ class AntiCodeApp {
         return this.planTier === 'pro';
     }
 
+    canUploadImages() {
+        // Admin is treated as pro in _refreshPlanTier(), so this covers super account too.
+        return this._isProUser();
+    }
+
     _clearVoiceLimitTimer() {
         if (this._voiceLimitTimer) {
             try { clearTimeout(this._voiceLimitTimer); } catch (_) { }
@@ -3301,6 +3306,10 @@ class AntiCodeApp {
         const chatFileInput = document.getElementById('chat-file-input');
         const attachBtn = document.getElementById('attach-btn');
         if (attachBtn && chatFileInput) {
+            // Free users: hide image/file upload completely
+            if (!this.canUploadImages()) {
+                attachBtn.style.display = 'none';
+            } else {
             attachBtn.onclick = () => chatFileInput.click();
             chatFileInput.onchange = async (e) => {
                 const file = e.target.files[0];
@@ -3371,11 +3380,16 @@ class AntiCodeApp {
                     chatFileInput.value = '';
                 }
             };
+            }
         }
 
         const avatarFileInput = document.getElementById('avatar-file-input');
         const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
         if (uploadAvatarBtn && avatarFileInput) {
+            // Free users: hide avatar file upload button (URL input remains)
+            if (!this.canUploadImages()) {
+                uploadAvatarBtn.style.display = 'none';
+            } else {
             uploadAvatarBtn.onclick = () => avatarFileInput.click();
             avatarFileInput.onchange = async (e) => {
                 const file = e.target.files[0];
@@ -3394,6 +3408,7 @@ class AntiCodeApp {
                     avatarFileInput.value = '';
                 }
             };
+            }
         }
     }
 }

@@ -200,6 +200,32 @@ var SUPABASE_URL = 'VITE_SUPABASE_URL';
 var SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 var R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 
+// ==========================================
+// 2.5. PLAN / GATING (Free vs Pro, Admin override)
+// ==========================================
+function isProUser() {
+    try {
+        // Local override for testing:
+        // localStorage.blog_plan_override = "free" | "pro"
+        const o = String(localStorage.getItem('blog_plan_override') || '').toLowerCase();
+        if (o === 'free') return false;
+        if (o === 'pro') return true;
+    } catch (_) { }
+
+    // Super admin always has full access
+    if (currentUser && currentUser.role === 'admin') return true;
+
+    // Optional future column: users.plan = "pro"
+    const plan = String(currentUser?.plan || '').toLowerCase();
+    if (plan === 'pro') return true;
+
+    return false;
+}
+
+function canUploadImages() {
+    return isProUser();
+}
+
 // --- R2 Upload Utility (via Cloudflare Worker) ---
 async function uploadToR2(file, folder = 'blog') {
     if (!R2_UPLOAD_BASE_URL || String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
@@ -1240,6 +1266,10 @@ function setupEventListeners() {
     const postFileInput = document.getElementById('post-file-input');
     const uploadPostImgBtn = document.getElementById('upload-post-img-btn');
     if (uploadPostImgBtn && postFileInput) {
+        // Free users: hide upload button completely (URL input remains)
+        if (!canUploadImages()) {
+            uploadPostImgBtn.style.display = 'none';
+        } else {
         uploadPostImgBtn.onclick = () => {
             console.log('Post image upload button clicked');
             postFileInput.click();
@@ -1261,12 +1291,17 @@ function setupEventListeners() {
             }
             finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
         };
+        }
     }
 
     // --- NEW: Account Avatar Upload ---
     const accAvatarFileInput = document.getElementById('acc-avatar-file-input');
     const uploadAccAvatarBtn = document.getElementById('upload-acc-avatar-btn');
     if (uploadAccAvatarBtn && accAvatarFileInput) {
+        // Free users: hide upload button completely (URL input remains)
+        if (!canUploadImages()) {
+            uploadAccAvatarBtn.style.display = 'none';
+        } else {
         uploadAccAvatarBtn.onclick = () => accAvatarFileInput.click();
         accAvatarFileInput.onchange = async (e) => {
             const file = e.target.files[0];
@@ -1279,6 +1314,7 @@ function setupEventListeners() {
             } catch (err) { alert('업로드 실패: ' + err.message); }
             finally { uploadAccAvatarBtn.textContent = '이미지 업로드'; accAvatarFileInput.value = ''; }
         };
+        }
     }
 }
 
