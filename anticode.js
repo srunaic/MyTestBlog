@@ -503,6 +503,13 @@ class AntiCodeApp {
         return this._isProUser();
     }
 
+    _truncateName(name, maxChars = 8) {
+        const full = String(name || '').trim();
+        if (!full) return { full: '', short: '' };
+        const short = (full.length > maxChars) ? (full.slice(0, maxChars) + '…') : full;
+        return { full, short };
+    }
+
     _clearVoiceLimitTimer() {
         if (this._voiceLimitTimer) {
             try { clearTimeout(this._voiceLimitTimer); } catch (_) { }
@@ -1123,6 +1130,7 @@ class AntiCodeApp {
             if (!isOnline && !friendUsernames.has(uname)) continue;
             const info = isOnline ? presenceUser : await this.getUserInfo(uname);
             const nick = info?.nickname || uname;
+            const tn = this._truncateName(nick, 8);
             const avatar = info?.avatar_url;
             const isFriend = friendUsernames.has(uname);
             const showKick = this._canKickInActiveChannel(uname);
@@ -1135,7 +1143,7 @@ class AntiCodeApp {
                         ${isOnline ? '<span class="online-dot"></span>' : ''}
                     </div>
                     <div class="member-info">
-                        <span class="member-name-text">${nick} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
+                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
                         <span class="member-status-sub">${isOnline ? '온라인' : '오프라인'}</span>
                     </div>
                     <div class="member-actions">
@@ -2247,6 +2255,7 @@ class AntiCodeApp {
 
         container.innerHTML = this.friends.map(f => {
             const isBlocked = canInvite && this._isBlockedInActiveChannel(f.username);
+            const tn = this._truncateName(f.nickname || f.username, 8);
             const inviteBtn = isBlocked
                 ? `<button class="notif-toggle-btn on" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}" ${canInvite ? '' : 'disabled'}
                         onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${f.username}')">차단해제</button>`
@@ -2263,7 +2272,7 @@ class AntiCodeApp {
                     ${f.online ? '<span class="online-dot"></span>' : ''}
                 </div>
                 <div class="member-info">
-                    <span class="member-name-text">${f.nickname} <small>#${f.uid}</small></span>
+                    <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} <small>#${f.uid}</small></span>
                     <span class="member-status-sub">${f.online ? '온라인' : '오프라인'}</span>
                 </div>
                 <div class="member-actions">
