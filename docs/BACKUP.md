@@ -1,46 +1,51 @@
-﻿## Supabase ?곗씠??2~3以?諛깆뾽 ?댁쁺 媛?대뱶
+﻿## Supabase 데이터 3중 백업 운영 (로컬 ZIP + Supabase + Cloudflare)
 
-紐⑺몴: Supabase ?μ븷/?ㅼ닔 ??젣/?쒖꽟?⑥뼱/怨꾩젙 ?댁뒋媛 ?덉뼱??**?곗씠?곕? 蹂듦뎄**?????덇쾶 ?쒕떎以?諛깆뾽?앹쓣 ?댁쁺?⑸땲??
+목표: Supabase 장애/실수 삭제/랜섬웨어/계정 이슈가 있어도 **데이터를 복구**할 수 있게 3중 백업을 운영합니다.
 
-### 諛깆뾽 ?덉씠??沅뚯옣 3以?
+### 1) 로컬 ZIP 백업 (D:\\Backup)
+- DB를 `pg_dump`로 덤프 → ZIP으로 묶어서 `D:\\Backup`에 저장합니다.
+- 실행 스크립트: `scripts/backup/run_backup_local_zip.ps1`
 
-#### A) Supabase ?먯껜 諛깆뾽(1李?
-- Supabase ?뚮옖/?듭뀡???곕씪 **?먮룞 諛깆뾽/PITR** ?쒓났 ?щ?媛 ?ㅻ쫭?덈떎.
-- **諛깆뾽 ?꾩튂**: Supabase ?꾨줈?앺듃 ?대?(??쒕낫?쒖뿉???뺤씤)
+### 2) Supabase 자체 백업(자동 백업/PITR)
+- Supabase 플랜/옵션에 따라 **자동 백업/PITR** 제공 여부가 다릅니다.
+- 설정 위치(대시보드): Project → **Settings → Database** → Backups/PITR 관련 옵션 확인
+- 제공되지 않는 플랜이면 1)과 3)을 반드시 운영하세요.
 
-#### B) ?몃? DB ?ㅽ봽(2李? ?꾩닔)
-- ?뺢린?곸쑝濡?`pg_dump`濡?DB ?ㅽ봽瑜??좎꽌 **Supabase ?몃? ?ㅽ넗由ъ?**??蹂닿??⑸땲??
-- **沅뚯옣 ??μ냼(?덉떆)**:
-  - Cloudflare R2 (S3 ?명솚)
-  - AWS S3
-  - Google Cloud Storage
-- **諛깆뾽 ?꾩튂(?댁쁺?먭? ?뺥븿)**:
-  - ?? `s3://<bucket>/nanodoroshi/supabase/db/<YYYY-MM-DD>/dump.sql.gz`
-
-#### C) ?ㅽ넗由ъ? 踰꾪궥 諛깆뾽(3李? 沅뚯옣)
-- Supabase Storage(uploads ??瑜??ъ슜?쒕떎硫? 二쇨린?곸쑝濡??꾩껜 媛앹껜瑜??몃? ?ㅽ넗由ъ?濡?蹂듭젣?⑸땲??
-- **諛깆뾽 ?꾩튂(?댁쁺?먭? ?뺥븿)**:
-  - ?? `s3://<bucket>/nanodoroshi/supabase/storage/<YYYY-MM-DD>/...`
+### 3) Cloudflare 백업 (R2 권장)
+- 1)에서 만든 ZIP을 Cloudflare **R2**에 업로드하여 오프사이트 보관합니다.
+- 권장 경로 예시:
+  - `s3://<R2_BUCKET>/nanodoroshi/backups/<YYYY-MM-DD>/nanodoroshi_backup_<timestamp>.zip`
 
 ---
 
-## ?ㅽ뻾 諛⑹떇(沅뚯옣)
+## 실행 방법(로컬 ZIP)
 
-### 1) DB ?ㅽ봽 ?먮룞??`scripts/backup/pg_dump_backup.ps1` ?쒗뵆由우쓣 ?ъ슜?⑸땲??
+### 준비물
+- Windows에 Postgres 클라이언트(`pg_dump`) 설치 필요
+- 환경변수 설정(Secrets로 관리)
+  - `SUPABASE_DB_URL` (Postgres connection string, **절대 프론트에 넣지 말 것**)
 
-#### ?꾩슂??媛?Secrets濡?愿由?
-- `SUPABASE_DB_URL` (Postgres connection string, **?덈? ?꾨줎?몄뿉 ?ｌ? 留?寃?*)
-- `BACKUP_BUCKET` / `BACKUP_PREFIX`
-- (R2/S3 ?ъ슜 ?? `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`(?먮뒗 R2 endpoint)
+### 실행
 
-### 2) 蹂닿? ?뺤콉(?덉떆)
-- ?쇨컙 14媛?蹂닿?
-- 二쇨컙 8媛?蹂닿?
-- ?붽컙 12媛?蹂닿?
+```powershell
+cd "D:\CursorAIProject\nanodoroshi_blog"
+$env:SUPABASE_DB_URL="여기에_연결문자열"
+.\scripts\backup\run_backup_local_zip.ps1
+```
 
 ---
 
-## 蹂듦뎄 由ы뿀??以묒슂)
-諛깆뾽? ?쒕뼚?볥뒗 寃꺿앸쭔?쇰줈 ?앹씠 ?꾨떃?덈떎. ??1?뚮뒗:
-- ?ㅽ봽 ?뚯씪 ?ㅼ슫濡쒕뱶
-- 蹂꾨룄 Postgres??restore ?뚯뒪??- 二쇱슂 ?뚯씠釉?row ??臾닿껐???뺤씤
+## Cloudflare R2 업로드(선택)
+R2 업로드까지 자동화하려면, `aws` CLI(S3 호환) 또는 rclone 등을 사용합니다.
+필요한 값(Secrets):
+- `R2_BUCKET`
+- `R2_ENDPOINT` (예: `https://<accountid>.r2.cloudflarestorage.com`)
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+
+---
+
+## 복구 리허설(중요)
+백업은 “떠놓는 것”만으로 끝이 아닙니다. 월 1회:
+- ZIP 다운로드/해제
+- 별도 Postgres에 restore 테스트
+- 주요 테이블 row 수/무결성 확인
