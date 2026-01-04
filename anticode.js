@@ -383,6 +383,9 @@ window.clearNotifications = () => NotificationManager.clearNotifications();
 // Free-tier friendly limits (server + client)
 const MESSAGE_RETENTION_PER_CHANNEL = 300; // keep latest N messages per channel (DB trigger enforces this)
 const FREE_VOICE_DAILY_SECONDS = 10 * 60;  // free tier voice time per day (seconds)
+const FREE_MAX_PERSONAL_PAGES = 1;
+const FREE_MAX_CHANNELS_PER_PAGE = 20;
+const FREE_ALLOW_GUILDS = false;
 
 class AntiCodeApp {
     constructor() {
@@ -444,6 +447,13 @@ class AntiCodeApp {
         this.channelPageItems = new Map(); // pageId -> [{channel_id, position}]
         this.activeChannelPageId = 'all';
         this._friendModalTargetChannelId = null; // optional invite target from directory/pages
+
+        // Guild/server shared pages
+        this.guilds = []; // [{id,name,invite_code,owner_username}]
+        this.guildMembers = new Map(); // guildId -> { role }
+        this.guildPages = new Map(); // guildId -> [{id,guild_id,name}]
+        this.guildPageItems = new Map(); // pageId -> [{channel_id,position}]
+        this.activeGuildId = '';
     }
 
     _localDayKey() {
@@ -502,6 +512,28 @@ class AntiCodeApp {
 
     _isProUser() {
         return this.planTier === 'pro';
+    }
+
+    _isAdmin() {
+        return String(this.currentUser?.role || '') === 'admin';
+    }
+
+    _canUseGuilds() {
+        if (this._isAdmin()) return true;
+        if (this._isProUser()) return true;
+        return !!FREE_ALLOW_GUILDS;
+    }
+
+    _canCreateMorePersonalPages() {
+        if (this._isAdmin() || this._isProUser()) return true;
+        return (this.channelPages?.length || 0) < FREE_MAX_PERSONAL_PAGES;
+    }
+
+    _canAddMoreChannelsToPage(pageId) {
+        if (this._isAdmin() || this._isProUser()) return true;
+        const pid = String(pageId || '');
+        const items = this.channelPageItems.get(pid) || [];
+        return items.length < FREE_MAX_CHANNELS_PER_PAGE;
     }
 
     canUploadImages() {
@@ -608,6 +640,10 @@ class AntiCodeApp {
     async createChannelPage(name) {
         const n = String(name || '').trim();
         if (!n) return false;
+        if (!this._canCreateMorePersonalPages()) {
+            alert(`무료 플랜은 개인 페이지를 최대 ${FREE_MAX_PERSONAL_PAGES}개까지 만들 수 있습니다.`);
+            return false;
+        }
         const { error } = await this.supabase.from('anticode_channel_pages').insert([{
             username: this.currentUser.username,
             name: n
@@ -633,6 +669,10 @@ class AntiCodeApp {
         const pid = String(pageId || '');
         const cid = String(channelId || '');
         if (!pid || pid === 'all' || !cid) return false;
+        if (!this._canAddMoreChannelsToPage(pid)) {
+            alert(`무료 플랜은 페이지당 채널을 최대 ${FREE_MAX_CHANNELS_PER_PAGE}개까지 추가할 수 있습니다.`);
+            return false;
+        }
         const items = this.channelPageItems.get(pid) || [];
         const maxPos = items.reduce((m, it) => Math.max(m, Number(it.position || 0)), 0);
         const { error } = await this.supabase.from('anticode_channel_page_items').upsert([{
@@ -677,6 +717,45 @@ class AntiCodeApp {
         return `${cat} · ${type}`;
     }
 
+    async renameChannelPage(pageId, newName) {
+        const pid = String(pageId || '');
+        const n = String(newName || '').trim();
+        if (!pid || pid === 'all') return false;
+        if (!n) return false;
+        const { error } = await this.supabase
+            .from('anticode_channel_pages')
+            .update({ name: n })
+            .eq('id', pid)
+            .eq('username', this.currentUser.username);
+        if (error) { alert('이름 변경 실패: ' + error.message); return false; }
+        await this.loadChannelPages();
+        this.renderChannelPageSelector();
+        return true;
+    }
+
+    async _persistPersonalPageOrderFromDom(pageId, itemsBoxEl) {
+        const pid = String(pageId || '');
+        if (!pid || pid === 'all') return;
+        if (!itemsBoxEl) return;
+        const ids = Array.from(itemsBoxEl.querySelectorAll('.draggable-item'))
+            .map(el => String(el.getAttribute('data-cid') || ''))
+            .filter(Boolean);
+        if (ids.length === 0) return;
+
+        // Batch update positions (best-effort)
+        try {
+            const updates = ids.map((cid, idx) => ({ page_id: pid, channel_id: cid, position: idx }));
+            const { error } = await this.supabase
+                .from('anticode_channel_page_items')
+                .upsert(updates, { onConflict: 'page_id,channel_id' });
+            if (error) console.warn('persist order failed:', error);
+            await this.loadChannelPages();
+            this.renderChannels();
+        } catch (e) {
+            console.warn('persist order exception:', e);
+        }
+    }
+
     renderChannelPagesModal() {
         const sel = document.getElementById('pages-modal-select');
         const itemsBox = document.getElementById('pages-modal-items');
@@ -716,12 +795,12 @@ class AntiCodeApp {
                 return;
             }
 
-            itemsBox.innerHTML = chans.map(ch => {
+            itemsBox.innerHTML = chans.map((ch, idx) => {
                 const label = this._channelLabel(ch);
                 return `
-                  <div class="member-card" style="margin-bottom:8px;">
+                  <div class="member-card draggable-item" draggable="true" data-pid="${pid}" data-cid="${ch.id}" style="margin-bottom:8px;">
                     <div class="member-info">
-                      <span class="member-name-text" title="${this.escapeHtml(ch.name)}">${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                      <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span class="drag-handle">⋮⋮</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
                       <span class="member-status-sub">${this.escapeHtml(label)}</span>
                     </div>
                     <div class="member-actions">
@@ -732,6 +811,34 @@ class AntiCodeApp {
                   </div>
                 `;
             }).join('');
+
+            // Drag reorder
+            try {
+                const els = itemsBox.querySelectorAll('.draggable-item');
+                els.forEach(el => {
+                    el.addEventListener('dragstart', (e) => {
+                        el.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', el.getAttribute('data-cid') || '');
+                    });
+                    el.addEventListener('dragend', async () => {
+                        el.classList.remove('dragging');
+                        await this._persistPersonalPageOrderFromDom(pid, itemsBox);
+                    });
+                });
+                itemsBox.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const dragging = itemsBox.querySelector('.draggable-item.dragging');
+                    if (!dragging) return;
+                    const after = Array.from(itemsBox.querySelectorAll('.draggable-item:not(.dragging)'))
+                        .find(node => {
+                            const box = node.getBoundingClientRect();
+                            return e.clientY < box.top + box.height / 2;
+                        });
+                    if (after) itemsBox.insertBefore(dragging, after);
+                    else itemsBox.appendChild(dragging);
+                }, { once: true });
+            } catch (_) { }
         };
 
         const renderResults = async () => {
@@ -3447,6 +3554,18 @@ class AntiCodeApp {
                 this.renderChannelPagesModal();
             }
         });
+        _safeBind('pages-modal-rename-btn', 'onclick', async () => {
+            const sel = document.getElementById('pages-modal-select');
+            const pid = sel ? String(sel.value || '') : '';
+            if (!pid || pid === 'all') return alert('이름을 바꿀 페이지를 선택하세요.');
+            const name = document.getElementById('pages-modal-rename')?.value || '';
+            const ok = await this.renameChannelPage(pid, name);
+            if (ok) {
+                const inp = document.getElementById('pages-modal-rename');
+                if (inp) inp.value = '';
+                this.renderChannelPagesModal();
+            }
+        });
         _safeBind('pages-modal-delete', 'onclick', async () => {
             const sel = document.getElementById('pages-modal-select');
             const pid = sel ? String(sel.value || '') : '';
@@ -3457,6 +3576,27 @@ class AntiCodeApp {
         });
         const pagesSel = document.getElementById('pages-modal-select');
         if (pagesSel) pagesSel.onchange = () => this.renderChannelPagesModal();
+
+        // Tabs (personal vs guild)
+        const tabPersonal = document.getElementById('pages-tab-personal');
+        const tabGuild = document.getElementById('pages-tab-guild');
+        const panePersonal = document.getElementById('pages-personal-pane');
+        const paneGuild = document.getElementById('pages-guild-pane');
+        const setTab = (which) => {
+            if (panePersonal) panePersonal.style.display = which === 'personal' ? '' : 'none';
+            if (paneGuild) paneGuild.style.display = which === 'guild' ? '' : 'none';
+            if (tabPersonal) tabPersonal.classList.toggle('on', which === 'personal');
+            if (tabGuild) tabGuild.classList.toggle('on', which === 'guild');
+        };
+        if (tabPersonal) tabPersonal.onclick = () => setTab('personal');
+        if (tabGuild) tabGuild.onclick = () => {
+            if (!this._canUseGuilds()) {
+                alert('무료 플랜에서는 길드/서버 기능이 제한됩니다. (관리자/유료는 사용 가능)');
+                return;
+            }
+            setTab('guild');
+            this._renderGuildPane?.();
+        };
 
         // Settings Modal
         const sModal = document.getElementById('app-settings-modal');

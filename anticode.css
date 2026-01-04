@@ -78,6 +78,25 @@
     font-size: 0.78rem;
 }
 
+.channel-pages-tabs{
+    display:flex;
+    gap:10px;
+    margin: 6px 0 14px 0;
+}
+
+.draggable-item{
+    cursor: grab;
+}
+.draggable-item.dragging{
+    opacity: 0.5;
+}
+
+.drag-handle{
+    color: var(--text-muted);
+    margin-right: 8px;
+    user-select: none;
+}
+
 .channel-group {
     margin-bottom: 20px;
 }
