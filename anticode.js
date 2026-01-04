@@ -386,7 +386,7 @@ const FREE_VOICE_DAILY_SECONDS = 10 * 60;  // free tier voice time per day (seco
 const FREE_MAX_PERSONAL_PAGES = 1;
 const FREE_MAX_CHANNELS_PER_PAGE = 20;
 const DEFAULT_CHANNEL_LIMIT_FREE = 3;
-const DEFAULT_CHANNEL_LIMIT_PRO = 23; // free(3) + 20
+const DEFAULT_CHANNEL_LIMIT_PRO = 23; // free(3) + 20 (hard cap for stability)
 
 class AntiCodeApp {
     constructor() {
@@ -448,30 +448,26 @@ class AntiCodeApp {
         this.channelPageItems = new Map(); // pageId -> [{channel_id, position}]
         this.activeChannelPageId = 'all';
         this._friendModalTargetChannelId = null; // optional invite target from directory/pages
-        // App-level limits: loaded from DB setting `anticode_app_settings.channel_limit`
-        this.channelLimitTotal = DEFAULT_CHANNEL_LIMIT_FREE;
     }
 
-    async loadAppSettings() {
-        if (!this.supabase) return;
+    async refreshEntitlements() {
+        // Server-truth plan source: public.app_entitlements (updated by RevenueCat webhook)
+        if (!this.supabase || !this.currentUser?.username) return;
         try {
             const { data, error } = await this.supabase
-                .from('anticode_app_settings')
-                .select('key,value')
-                .eq('key', 'channel_limit')
+                .from('app_entitlements')
+                .select('is_active, period_ends_at')
+                .eq('user_id', this.currentUser.username)
+                .eq('entitlement', 'pro')
                 .limit(1);
             if (error) throw error;
-            const raw = data && data[0] ? data[0].value : null;
-            const n = Number(raw);
-            if (Number.isFinite(n) && n > 0) {
-                this.channelLimitTotal = Math.floor(n);
-                return;
-            }
+            const row = (data && data[0]) ? data[0] : null;
+            const active = !!row?.is_active && (!row?.period_ends_at || new Date(row.period_ends_at).getTime() > Date.now());
+            this.currentUser.plan = active ? 'pro' : 'free';
+            this._refreshPlanTier();
         } catch (_) {
-            // ignore, fallback below
+            // keep existing planTier (local override/admin fallback)
         }
-        // Fallback defaults if settings table isn't present yet
-        this.channelLimitTotal = (this.planTier === 'pro') ? DEFAULT_CHANNEL_LIMIT_PRO : DEFAULT_CHANNEL_LIMIT_FREE;
     }
 
     _localDayKey() {
@@ -2447,7 +2443,7 @@ class AntiCodeApp {
 
             // 1. Sync User Metadata
             await this.syncUserMetadata();
-            await this.loadAppSettings();
+            await this.refreshEntitlements();
 
             // 2. Load Data
             await this.loadChannels();
@@ -3031,9 +3027,10 @@ class AntiCodeApp {
             alert('방장만 채널을 생성할 수 있습니다.');
             return false;
         }
-        const limit = Number(this.channelLimitTotal) || DEFAULT_CHANNEL_LIMIT_FREE;
-        if (this.channels.length >= limit) {
-            alert(`채널 생성 제한에 도달했습니다. (최대 ${limit}개)\n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
+        const limit = this._isProUser() ? DEFAULT_CHANNEL_LIMIT_PRO : DEFAULT_CHANNEL_LIMIT_FREE;
+        const owned = (this.channels || []).filter(c => String(c.owner_id || '') === String(this.currentUser.username || '')).length;
+        if (owned >= limit) {
+            alert(`채널 생성 제한에 도달했습니다. (내 채널 최대 ${limit}개)\n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
             return false;
         }
         const { data, error } = await this.supabase.from('anticode_channels').insert([{
