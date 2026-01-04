@@ -61,6 +61,7 @@ class Channel {
         const hash = this.type === 'secret' ? '🔒' : '#';
         const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
         const deleteHtml = isAdmin ? `<button class="delete-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.deleteChannel('${this.id}')" title="채널 삭제">&times;</button>` : '';
+        const editHtml = isAdmin ? `<button class="edit-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.editChannelPrompt('${this.id}')" title="채널 수정">✎</button>` : '';
         const voiceHtml = (voiceState && voiceState.show)
             ? `<span class="channel-voice-indicator ${voiceState.on ? 'on' : 'off'}" title="보이스 톡 ${voiceState.on ? 'ON' : 'OFF'}">${voiceState.on ? '🎙️' : '🎤'}</span>`
             : '';
@@ -70,6 +71,7 @@ class Channel {
                     <div class="channel-name-label">${hash} ${this.name}</div>
                     <div class="channel-name-actions">
                         ${voiceHtml}
+                        ${editHtml}
                         ${deleteHtml}
                     </div>
                 </div>
@@ -396,6 +398,7 @@ class AntiCodeApp {
         this.recentMessageFingerprints = new Map(); // Dedup Broadcast vs Postgres when IDs differ
         this.friendsSchema = null; // Cache detected anticode_friends column names
         this.channelMembers = []; // usernames invited/joined for current channel
+        this.channelMemberMeta = new Map(); // username -> { invited_by }
         this.messageQueue = [];
         this.isProcessingQueue = false;
         // Voice chat
@@ -762,17 +765,25 @@ class AntiCodeApp {
         try {
             const { data, error } = await this.supabase
                 .from('anticode_channel_members')
-                .select('username')
+                .select('username, invited_by')
                 .eq('channel_id', channelId);
             if (error) throw error;
-            const names = (data || []).map(r => r.username).filter(Boolean).map(String);
+            const rows = (data || []).filter(Boolean);
+            const names = rows.map(r => r.username).filter(Boolean).map(String);
             // Always include channel owner if present
             const chan = this.channels.find(c => c.id === channelId);
             if (chan?.owner_id) names.push(String(chan.owner_id));
             this.channelMembers = Array.from(new Set(names));
+            this.channelMemberMeta = new Map();
+            for (const r of rows) {
+                const u = r?.username ? String(r.username) : '';
+                if (!u) continue;
+                this.channelMemberMeta.set(u, { invited_by: r?.invited_by ? String(r.invited_by) : null });
+            }
         } catch (e) {
             console.warn('loadChannelMembers failed:', e?.message || e);
             this.channelMembers = this.currentUser?.username ? [this.currentUser.username] : [];
+            this.channelMemberMeta = new Map();
         }
     }
 
@@ -798,10 +809,69 @@ class AntiCodeApp {
         if (!ch) return false;
         // Non-secret channels are open
         if (ch.type !== 'secret') return true;
-        // Secret channels: owner OR password-unlocked OR invited/joined member
+        // Secret channels: owner OR invited/joined member
         if (ch.owner_id && ch.owner_id === this.currentUser?.username) return true;
-        if (this.unlockedChannels?.has?.(String(channelId))) return true;
         return (this.channelMembers || []).includes(this.currentUser?.username);
+    }
+
+    _canKickInActiveChannel(targetUsername) {
+        try {
+            if (!this.activeChannel || !targetUsername) return false;
+            const target = String(targetUsername);
+            const me = this.currentUser?.username ? String(this.currentUser.username) : null;
+            if (!me) return false;
+            if (target === me) return false;
+            const owner = this.activeChannel.owner_id ? String(this.activeChannel.owner_id) : null;
+            if (owner && target === owner) return false;
+            if (owner && me === owner) return true; // owner can kick anyone except owner
+            const meta = this.channelMemberMeta?.get?.(target);
+            if (meta?.invited_by && String(meta.invited_by) === me) return true; // inviter can kick their invites
+            return false;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    async kickMemberFromActiveChannel(targetUsername) {
+        if (!this.activeChannel) return;
+        const target = String(targetUsername || '');
+        if (!target) return;
+        if (!this._canKickInActiveChannel(target)) return alert('강퇴 권한이 없습니다.');
+        if (!confirm(`${target} 님을 이 방에서 강퇴할까요?\\n(강퇴된 유저는 다시 들어오려면 비밀번호를 다시 입력해야 합니다)`)) return;
+        try {
+            const { error } = await this.supabase
+                .from('anticode_channel_members')
+                .delete()
+                .eq('channel_id', this.activeChannel.id)
+                .eq('username', target);
+            if (error) throw error;
+            await this.loadChannelMembers(this.activeChannel.id);
+            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+            alert('강퇴 완료!');
+        } catch (e) {
+            console.error('kick member failed:', e);
+            alert('강퇴 실패: ' + (e?.message || e));
+        }
+    }
+
+    async _enforceActiveChannelAccess() {
+        // If I'm removed while inside (kick), force me out.
+        try {
+            const channel = this.activeChannel;
+            if (!channel) return;
+            const me = this.currentUser?.username;
+            if (!me) return;
+            const isOwner = channel.owner_id && String(channel.owner_id) === String(me);
+            if (isOwner) return;
+            if (channel.type === 'secret') {
+                const isMember = await this._hasChannelMembership(channel.id, me);
+                if (!isMember) {
+                    alert('이 채널에서 강퇴되었거나 권한이 없습니다.');
+                    const fallback = this.channels.find(c => c.type !== 'secret') || this.channels[0];
+                    if (fallback && fallback.id !== channel.id) await this.switchChannel(fallback.id);
+                }
+            }
+        } catch (_) { }
     }
 
     async updateChannelMemberPanel(state) {
@@ -832,6 +902,7 @@ class AntiCodeApp {
             const nick = info?.nickname || uname;
             const avatar = info?.avatar_url;
             const isFriend = friendUsernames.has(uname);
+            const showKick = this._canKickInActiveChannel(uname);
             parts.push(`
                 <div class="member-card ${isOnline ? 'online' : 'offline'}">
                     <div class="avatar-wrapper">
@@ -843,6 +914,7 @@ class AntiCodeApp {
                         <span class="member-name-text">${nick} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
                         <span class="member-status-sub">${isOnline ? '온라인' : '오프라인'}</span>
                     </div>
+                    ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
                 </div>
             `);
         }
@@ -863,6 +935,7 @@ class AntiCodeApp {
             .on('presence', { event: 'sync' }, async () => {
                 const state = this.channelPresenceChannel.presenceState();
                 await this.updateChannelMemberPanel(state);
+                await this._enforceActiveChannelAccess();
                 // If voice is enabled, opportunistically connect to peers in this channel
                 if (this.voiceEnabled) {
                     await this._reconcileVoicePeersFromPresence(state);
@@ -1794,6 +1867,42 @@ class AntiCodeApp {
         return true;
     }
 
+    async removeFriend(username) {
+        const target = String(username || '');
+        if (!target) return false;
+        if (!confirm(`${target} 님을 친구에서 삭제할까요?`)) return false;
+        try {
+            if (!this.friendsSchema) {
+                try { await this._fetchFriendUsernames(); } catch (_) { /* ignore */ }
+            }
+            const userCol = this.friendsSchema?.userCol || 'user_username';
+            const friendCol = this.friendsSchema?.friendCol || 'friend_username';
+
+            await this.supabase
+                .from('anticode_friends')
+                .delete()
+                .eq(userCol, this.currentUser.username)
+                .eq(friendCol, target);
+
+            // Best-effort reverse delete (if the table stores symmetric rows)
+            try {
+                await this.supabase
+                    .from('anticode_friends')
+                    .delete()
+                    .eq(userCol, target)
+                    .eq(friendCol, this.currentUser.username);
+            } catch (_) { }
+
+            await this.loadFriends();
+            try { this.renderFriendModalList(); } catch (_) { }
+            return true;
+        } catch (e) {
+            console.error('removeFriend failed:', e);
+            alert('친구 삭제 실패: ' + (e?.message || e));
+            return false;
+        }
+    }
+
     renderFriends() {
         const list = document.getElementById('friend-list');
         if (!list) return;
@@ -1812,6 +1921,7 @@ class AntiCodeApp {
                     <span class="friend-nickname">${f.nickname} <small>#${f.uid}</small></span>
                     <span class="friend-status-text">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
                 </div>
+                <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제">&times;</button>
             </li>
         `).join('');
 
@@ -1861,6 +1971,7 @@ class AntiCodeApp {
                     <span class="member-name-text">${f.nickname} <small>#${f.uid}</small></span>
                     <span class="member-status-sub">${f.online ? '온라인' : '오프라인'}</span>
                 </div>
+                <button class="notif-toggle-btn" style="white-space:nowrap; margin-right:8px;" onclick="window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')">친구삭제</button>
                 <button class="notif-toggle-btn" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}"
                     ${canInvite ? '' : 'disabled'}
                     onclick="window.app && window.app.inviteFriendToActiveChannel && window.app.inviteFriendToActiveChannel('${f.username}')">
@@ -1927,17 +2038,31 @@ class AntiCodeApp {
             categories[ch.category].push(ch);
         });
 
-        Object.keys(CATEGORY_NAMES).forEach(catId => {
+        // Render known categories first, then any custom categories present in DB
+        const known = Object.keys(CATEGORY_NAMES);
+        const extras = Object.keys(categories).filter(k => !known.includes(k));
+        const orderedCats = [...known, ...extras];
+
+        const collapseKey = (() => {
+            const u = this.currentUser?.username || 'anonymous';
+            return `anticode_channel_groups_collapsed::${u}`;
+        })();
+        const collapsed = (() => {
+            try { return JSON.parse(localStorage.getItem(collapseKey) || '{}') || {}; } catch (_) { return {}; }
+        })();
+
+        orderedCats.forEach(catId => {
             const chans = categories[catId] || [];
             if (chans.length === 0 && catId !== 'chat') return;
+            const isCollapsed = !!collapsed?.[catId];
             const group = document.createElement('div');
-            group.className = 'channel-group';
+            group.className = 'channel-group' + (isCollapsed ? ' collapsed' : '');
             group.innerHTML = `
-                <div class="group-header">
-                    <span class="group-label">${CATEGORY_NAMES[catId]}</span>
+                <div class="group-header" data-cat="${catId}" style="cursor:pointer;">
+                    <span class="group-label">${isCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}</span>
                     ${(catId === 'chat' && this.isAdminMode) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
                 </div>
-                <div class="sidebar-list">
+                <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">
                     ${chans.map(c => {
                         const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
                         const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
@@ -1950,6 +2075,27 @@ class AntiCodeApp {
 
         container.querySelectorAll('.channel-sub-link').forEach(item => {
             item.onclick = () => this.handleChannelSwitch(item.dataset.id);
+        });
+        // Collapsible groups
+        container.querySelectorAll('.group-header[data-cat]').forEach(h => {
+            h.onclick = (e) => {
+                // allow "+" without toggling
+                if (e?.target?.id === 'open-create-channel-cat') return;
+                const catId = h.getAttribute('data-cat');
+                const g = h.closest('.channel-group');
+                const list = g?.querySelector('.sidebar-list');
+                if (!catId || !g || !list) return;
+                const nowCollapsed = !g.classList.contains('collapsed');
+                if (nowCollapsed) { g.classList.add('collapsed'); list.style.display = 'none'; }
+                else { g.classList.remove('collapsed'); list.style.display = ''; }
+                try {
+                    const prev = (() => { try { return JSON.parse(localStorage.getItem(collapseKey) || '{}') || {}; } catch (_) { return {}; } })();
+                    prev[catId] = nowCollapsed;
+                    localStorage.setItem(collapseKey, JSON.stringify(prev));
+                } catch (_) { }
+                const label = h.querySelector('.group-label');
+                if (label) label.textContent = `${nowCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}`;
+            };
         });
         const createBtn = document.getElementById('open-create-channel-cat');
         if (createBtn) createBtn.onclick = () => document.getElementById('create-channel-modal').style.display = 'flex';
@@ -1972,7 +2118,8 @@ class AntiCodeApp {
         // - Otherwise, require password for password-protected channels.
         const isOwner = channel.owner_id && channel.owner_id === this.currentUser?.username;
         const isMember = isOwner ? true : await this._hasChannelMembership(channelId, this.currentUser?.username);
-        if (channel.password && !this.unlockedChannels.has(channelId) && !isMember) {
+        // Important: if you're not a member (e.g. after kick), you MUST re-enter password (even if previously unlocked on this device).
+        if (channel.password && !isMember) {
             this.pendingChannelId = channelId;
             document.getElementById('password-entry-modal').style.display = 'flex';
             document.getElementById('entry-password-input').focus();
@@ -1993,8 +2140,6 @@ class AntiCodeApp {
         if (this.voiceEnabled) await this.stopVoice({ playFx: false });
         this.activeChannel = channel;
         this._resetMessageDedupeState();
-        this.unlockedChannels.add(channelId);
-        this._saveUnlockedChannels();
         this.renderChannels();
 
         // Update header info safely
@@ -2050,6 +2195,48 @@ class AntiCodeApp {
         // Per-channel online panel
         this.setupChannelPresence(channel.id);
         try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
+    }
+
+    async editChannelPrompt(channelId) {
+        if (!this.isAdminMode) return alert('관리자만 수정할 수 있습니다.');
+        const ch = this.channels.find(c => c.id === channelId);
+        if (!ch) return;
+
+        const newName = prompt('채널 이름', ch.name);
+        if (newName == null) return;
+        const newCategory = prompt('카테고리 ID (예: chat / notice / voice / karaoke / game 또는 임의 문자열)', ch.category || 'chat');
+        if (newCategory == null) return;
+        const newType = prompt('채널 타입 (general / secret / notice)', ch.type || 'general');
+        if (newType == null) return;
+        let newPassword = ch.password || '';
+        if (String(newType).trim() === 'secret') {
+            const p = prompt('비밀번호 (비우면 비밀번호 없음)', newPassword);
+            if (p == null) return;
+            newPassword = p;
+        } else {
+            newPassword = '';
+        }
+
+        try {
+            const payload = {
+                name: String(newName).trim(),
+                category: String(newCategory).trim(),
+                type: String(newType).trim(),
+                password: (String(newType).trim() === 'secret') ? (String(newPassword || '').trim() || null) : null
+            };
+            const { error } = await this.supabase.from('anticode_channels').update(payload).eq('id', channelId);
+            if (error) throw error;
+            await this.loadChannels();
+            // Refresh active channel object if needed
+            if (this.activeChannel?.id === channelId) {
+                this.activeChannel = this.channels.find(c => c.id === channelId) || this.activeChannel;
+                this.renderChannels();
+            }
+            alert('채널 수정 완료!');
+        } catch (e) {
+            console.error('editChannel failed:', e);
+            alert('채널 수정 실패: ' + (e?.message || e));
+        }
     }
 
     async deleteChannel(channelId) {
@@ -2816,6 +3003,11 @@ class AntiCodeApp {
                 const channel = this.channels.find(c => c.id === this.pendingChannelId);
                 if (channel && channel.password === document.getElementById('entry-password-input').value) {
                     pModal.style.display = 'none'; pForm.reset();
+                    // Remember password-unlock for this device/account (UX only)
+                    try {
+                        this.unlockedChannels.add(String(this.pendingChannelId));
+                        this._saveUnlockedChannels();
+                    } catch (_) { }
                     await this.switchChannel(this.pendingChannelId);
                 } else alert('비밀번호가 틀렸습니다.');
             };

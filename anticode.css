@@ -156,6 +156,29 @@
     /* Hidden by default */
 }
 
+.edit-channel-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 1.0rem;
+    line-height: 1;
+    transition: 0.2s;
+    opacity: 0;
+    /* Hidden by default */
+}
+
+.channel-group-item:hover .edit-channel-btn {
+    opacity: 0.6;
+}
+
+.edit-channel-btn:hover {
+    color: var(--accent) !important;
+    transform: scale(1.15);
+    opacity: 1 !important;
+}
+
 .channel-group-item:hover .delete-channel-btn {
     opacity: 0.6;
 }
@@ -433,6 +456,23 @@
     cursor: pointer;
     transition: 0.2s;
     margin: 4px 8px;
+}
+
+.delete-friend-btn {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid #da373c;
+    color: #da373c;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.delete-friend-btn:hover {
+    background: #da373c;
+    color: #fff;
 }
 
 .friend-item:hover {
