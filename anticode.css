@@ -60,6 +60,24 @@
     padding: 12px 8px;
 }
 
+.channel-page-bar{
+    display:flex;
+    gap:8px;
+    padding: 6px 8px 10px 8px;
+    align-items:center;
+}
+
+.channel-page-select{
+    flex:1;
+    min-width:0;
+    background:#1e1f22;
+    color: var(--text-primary);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:6px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+}
+
 .channel-group {
     margin-bottom: 20px;
 }

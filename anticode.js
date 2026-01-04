@@ -438,6 +438,12 @@ class AntiCodeApp {
         this._voiceLimitTimer = null;
         this._voiceSessionStartedAtMs = 0;
         this._voiceSessionDayKey = '';
+
+        // Per-user channel pages (custom channel list / directory)
+        this.channelPages = []; // [{id, username, name}]
+        this.channelPageItems = new Map(); // pageId -> [{channel_id, position}]
+        this.activeChannelPageId = 'all';
+        this._friendModalTargetChannelId = null; // optional invite target from directory/pages
     }
 
     _localDayKey() {
@@ -508,6 +514,313 @@ class AntiCodeApp {
         if (!full) return { full: '', short: '' };
         const short = (full.length > maxChars) ? (full.slice(0, maxChars) + '…') : full;
         return { full, short };
+    }
+
+    _getActiveChannelPageKey() {
+        const u = this.currentUser?.username || 'anonymous';
+        return `anticode_active_channel_page::${u}`;
+    }
+
+    _loadActiveChannelPageId() {
+        try {
+            const raw = localStorage.getItem(this._getActiveChannelPageKey());
+            this.activeChannelPageId = raw ? String(raw) : 'all';
+        } catch (_) {
+            this.activeChannelPageId = 'all';
+        }
+    }
+
+    _setActiveChannelPageId(pageId) {
+        const v = pageId ? String(pageId) : 'all';
+        this.activeChannelPageId = v;
+        try { localStorage.setItem(this._getActiveChannelPageKey(), v); } catch (_) { }
+        this.renderChannels();
+    }
+
+    async loadChannelPages() {
+        if (!this.supabase || !this.currentUser?.username) return;
+        const { data, error } = await this.supabase
+            .from('anticode_channel_pages')
+            .select('*')
+            .eq('username', this.currentUser.username)
+            .order('created_at', { ascending: true });
+        if (error) {
+            console.warn('loadChannelPages failed:', error);
+            this.channelPages = [];
+            this.channelPageItems = new Map();
+            return;
+        }
+        this.channelPages = data || [];
+        const ids = this.channelPages.map(p => p.id);
+        this.channelPageItems = new Map();
+        if (ids.length === 0) return;
+        const { data: items, error: e2 } = await this.supabase
+            .from('anticode_channel_page_items')
+            .select('page_id, channel_id, position')
+            .in('page_id', ids)
+            .order('position', { ascending: true });
+        if (e2) {
+            console.warn('loadChannelPageItems failed:', e2);
+            return;
+        }
+        for (const it of (items || [])) {
+            if (!this.channelPageItems.has(it.page_id)) this.channelPageItems.set(it.page_id, []);
+            this.channelPageItems.get(it.page_id).push(it);
+        }
+    }
+
+    _pageNameById(pageId) {
+        if (!pageId || pageId === 'all') return '전체 채널';
+        return this.channelPages.find(p => p.id === pageId)?.name || '내 페이지';
+    }
+
+    _getVisibleChannelsByActivePage() {
+        // Filter channels for sidebar based on selected page
+        if (this.activeChannelPageId === 'all') return this.channels.slice();
+        const items = this.channelPageItems.get(this.activeChannelPageId) || [];
+        const order = new Map(items.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
+        const filtered = this.channels
+            .filter(ch => order.has(String(ch.id)))
+            .sort((a, b) => (order.get(String(a.id)) ?? 0) - (order.get(String(b.id)) ?? 0));
+        return filtered;
+    }
+
+    renderChannelPageSelector() {
+        const sel = document.getElementById('channel-page-select');
+        if (!sel) return;
+        const current = String(this.activeChannelPageId || 'all');
+        sel.innerHTML = '';
+        const optAll = document.createElement('option');
+        optAll.value = 'all';
+        optAll.textContent = '전체 채널';
+        sel.appendChild(optAll);
+        (this.channelPages || []).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            sel.appendChild(opt);
+        });
+        sel.value = current;
+        if (!sel.value) sel.value = 'all';
+        sel.onchange = () => this._setActiveChannelPageId(sel.value);
+    }
+
+    async createChannelPage(name) {
+        const n = String(name || '').trim();
+        if (!n) return false;
+        const { error } = await this.supabase.from('anticode_channel_pages').insert([{
+            username: this.currentUser.username,
+            name: n
+        }]);
+        if (error) { alert('페이지 생성 실패: ' + error.message); return false; }
+        await this.loadChannelPages();
+        this.renderChannelPageSelector();
+        return true;
+    }
+
+    async deleteChannelPage(pageId) {
+        const id = String(pageId || '');
+        if (!id || id === 'all') return false;
+        const { error } = await this.supabase.from('anticode_channel_pages').delete().eq('id', id).eq('username', this.currentUser.username);
+        if (error) { alert('페이지 삭제 실패: ' + error.message); return false; }
+        if (this.activeChannelPageId === id) this._setActiveChannelPageId('all');
+        await this.loadChannelPages();
+        this.renderChannelPageSelector();
+        return true;
+    }
+
+    async addChannelToPage(pageId, channelId) {
+        const pid = String(pageId || '');
+        const cid = String(channelId || '');
+        if (!pid || pid === 'all' || !cid) return false;
+        const items = this.channelPageItems.get(pid) || [];
+        const maxPos = items.reduce((m, it) => Math.max(m, Number(it.position || 0)), 0);
+        const { error } = await this.supabase.from('anticode_channel_page_items').upsert([{
+            page_id: pid,
+            channel_id: cid,
+            position: maxPos + 1
+        }], { onConflict: 'page_id,channel_id' });
+        if (error) { alert('채널 추가 실패: ' + error.message); return false; }
+        await this.loadChannelPages();
+        this.renderChannels();
+        return true;
+    }
+
+    async removeChannelFromPage(pageId, channelId) {
+        const pid = String(pageId || '');
+        const cid = String(channelId || '');
+        if (!pid || pid === 'all' || !cid) return false;
+        const { error } = await this.supabase.from('anticode_channel_page_items').delete().eq('page_id', pid).eq('channel_id', cid);
+        if (error) { alert('채널 제거 실패: ' + error.message); return false; }
+        await this.loadChannelPages();
+        this.renderChannels();
+        return true;
+    }
+
+    openChannelPagesModal() {
+        const m = document.getElementById('channel-pages-modal');
+        if (!m) return;
+        m.style.display = 'flex';
+        this.renderChannelPagesModal();
+    }
+
+    closeChannelPagesModal() {
+        const m = document.getElementById('channel-pages-modal');
+        if (!m) return;
+        m.style.display = 'none';
+    }
+
+    _channelLabel(ch) {
+        if (!ch) return '';
+        const cat = CATEGORY_NAMES[ch.category] || ('#' + (ch.category || 'chat'));
+        const type = ch.type || 'general';
+        return `${cat} · ${type}`;
+    }
+
+    renderChannelPagesModal() {
+        const sel = document.getElementById('pages-modal-select');
+        const itemsBox = document.getElementById('pages-modal-items');
+        const resultsBox = document.getElementById('pages-modal-results');
+        const search = document.getElementById('pages-modal-search');
+        if (!sel || !itemsBox || !resultsBox || !search) return;
+
+        const current = String(this.activeChannelPageId || 'all');
+        sel.innerHTML = '';
+        const optAll = document.createElement('option');
+        optAll.value = 'all';
+        optAll.textContent = '전체 채널(편집 불가)';
+        sel.appendChild(optAll);
+        (this.channelPages || []).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            sel.appendChild(opt);
+        });
+        sel.value = current;
+        if (!sel.value) sel.value = 'all';
+
+        const renderItems = async () => {
+            const pid = String(sel.value || 'all');
+            if (pid === 'all') {
+                itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">'전체 채널'은 편집할 수 없습니다. 새 페이지를 만든 뒤 채널을 추가하세요.</div>`;
+                return;
+            }
+            const its = (this.channelPageItems.get(pid) || []).slice();
+            const idSet = new Set(its.map(it => String(it.channel_id)));
+            const chans = this.channels.filter(c => idSet.has(String(c.id)));
+            const order = new Map(its.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
+            chans.sort((a, b) => (order.get(String(a.id)) ?? 0) - (order.get(String(b.id)) ?? 0));
+
+            if (chans.length === 0) {
+                itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">이 페이지에 채널이 없습니다.</div>`;
+                return;
+            }
+
+            itemsBox.innerHTML = chans.map(ch => {
+                const label = this._channelLabel(ch);
+                return `
+                  <div class="member-card" style="margin-bottom:8px;">
+                    <div class="member-info">
+                      <span class="member-name-text" title="${this.escapeHtml(ch.name)}">${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                      <span class="member-status-sub">${this.escapeHtml(label)}</span>
+                    </div>
+                    <div class="member-actions">
+                      <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
+                      <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">제거</button>
+                      <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
+                    </div>
+                  </div>
+                `;
+            }).join('');
+        };
+
+        const renderResults = async () => {
+            const q = String(search.value || '').trim().toLowerCase();
+            const pid = String(sel.value || 'all');
+            const base = this.channels.slice();
+            const filtered = q
+                ? base.filter(ch => (ch.name || '').toLowerCase().includes(q) || (ch.category || '').toLowerCase().includes(q) || (ch.type || '').toLowerCase().includes(q))
+                : base;
+
+            const limited = filtered.slice(0, 50);
+            if (limited.length === 0) {
+                resultsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">검색 결과 없음</div>`;
+                return;
+            }
+            resultsBox.innerHTML = limited.map(ch => {
+                const label = this._channelLabel(ch);
+                const canAdd = pid !== 'all';
+                return `
+                  <div class="member-card" style="margin-bottom:8px;">
+                    <div class="member-info">
+                      <span class="member-name-text" title="${this.escapeHtml(ch.name)}">${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                      <span class="member-status-sub">${this.escapeHtml(label)}</span>
+                    </div>
+                    <div class="member-actions">
+                      <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
+                      ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">페이지에 추가</button>` : ''}
+                      <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
+                    </div>
+                  </div>
+                `;
+            }).join('');
+        };
+
+        sel.onchange = async () => { await renderItems(); await renderResults(); };
+        search.oninput = async () => { await renderResults(); };
+
+        renderItems();
+        renderResults();
+    }
+
+    openFriendModalForChannel(channelId) {
+        this._friendModalTargetChannelId = channelId ? String(channelId) : null;
+        this.openFriendModal();
+    }
+
+    async inviteFriendToChannel(channelId, friendUsername) {
+        const chId = String(channelId || '');
+        if (!chId) return alert('채널을 선택하세요.');
+        if (!friendUsername) return;
+
+        const isFriend = this.friends?.some(f => f.username === friendUsername);
+        if (!isFriend) return alert('친구만 초대할 수 있습니다.');
+
+        // Block check (per-channel)
+        try {
+            const { data } = await this.supabase
+                .from('anticode_channel_blocks')
+                .select('id')
+                .eq('channel_id', chId)
+                .eq('blocked_username', friendUsername)
+                .eq('blocked_by', this.currentUser.username)
+                .limit(1);
+            if (data && data.length > 0) {
+                alert('이 유저는 해당 채널에서 차단되어 있습니다.\n차단해제 후 초대할 수 있습니다.');
+                return;
+            }
+        } catch (_) { }
+
+        const payload = {
+            channel_id: chId,
+            username: friendUsername,
+            invited_by: this.currentUser.username,
+            created_at: new Date().toISOString()
+        };
+        const { error } = await this.supabase
+            .from('anticode_channel_members')
+            .upsert([payload], { onConflict: 'channel_id,username' });
+        if (error) {
+            console.error('Invite error:', error);
+            alert('초대 실패: ' + error.message + '\n\n(필요 테이블: anticode_channel_members)');
+            return;
+        }
+        // If inviting to current channel, refresh UI
+        if (this.activeChannel?.id && String(this.activeChannel.id) === chId) {
+            await this.loadChannelMembers(this.activeChannel.id);
+            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+        }
+        alert('초대 완료!');
     }
 
     _clearVoiceLimitTimer() {
@@ -1973,6 +2286,9 @@ class AntiCodeApp {
             // 2. Load Data
             await this.loadChannels();
             await this.loadFriends();
+            await this.loadChannelPages();
+            this._loadActiveChannelPageId();
+            this.renderChannelPageSelector();
 
             // 3. Setup UI
             this.setupEventListeners();
@@ -2239,14 +2555,18 @@ class AntiCodeApp {
         const modal = document.getElementById('friend-modal');
         if (!modal) return;
         modal.style.display = 'none';
+        // reset "invite target" when closing
+        this._friendModalTargetChannelId = null;
     }
 
     renderFriendModalList() {
         const container = document.getElementById('friend-modal-list');
         if (!container) return;
 
-        const activeChannelName = this.activeChannel?.name || '';
-        const canInvite = !!this.activeChannel;
+        const targetChannelId = this._friendModalTargetChannelId || this.activeChannel?.id || '';
+        const targetChannel = targetChannelId ? this.channels.find(c => String(c.id) === String(targetChannelId)) : null;
+        const activeChannelName = targetChannel?.name || this.activeChannel?.name || '';
+        const canInvite = !!targetChannelId;
 
         if (!this.friends || this.friends.length === 0) {
             container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">친구가 없습니다.</div>`;
@@ -2254,15 +2574,15 @@ class AntiCodeApp {
         }
 
         container.innerHTML = this.friends.map(f => {
-            const isBlocked = canInvite && this._isBlockedInActiveChannel(f.username);
+            const isBlocked = false; // block is enforced in inviteFriendToChannel() for any channel
             const tn = this._truncateName(f.nickname || f.username, 8);
             const inviteBtn = isBlocked
                 ? `<button class="notif-toggle-btn on" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}" ${canInvite ? '' : 'disabled'}
                         onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${f.username}')">차단해제</button>`
                 : `<button class="notif-toggle-btn" style="white-space:nowrap; ${canInvite ? '' : 'opacity:0.5;'}" ${canInvite ? '' : 'disabled'}
-                        onclick="window.app && window.app.inviteFriendToActiveChannel && window.app.inviteFriendToActiveChannel('${f.username}')">${canInvite ? `초대 (${activeChannelName})` : '채널 선택 필요'}</button>`;
+                        onclick="window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel('${targetChannelId}','${f.username}')">${canInvite ? `초대 (${activeChannelName})` : '채널 선택 필요'}</button>`;
             const blockBtn = canInvite
-                ? (isBlocked ? '' : `<button class="notif-toggle-btn" style="white-space:nowrap; margin-right:8px;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${f.username}')">차단</button>`)
+                ? (`<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${f.username}')">차단</button>`)
                 : '';
             return `
             <div class="member-card ${f.online ? 'online' : 'offline'}" style="margin-bottom:8px;">
@@ -2289,40 +2609,7 @@ class AntiCodeApp {
         if (!this.activeChannel) return alert('먼저 채널을 선택하세요.');
         if (!friendUsername) return;
 
-        // 친구만 초대 가능
-        const isFriend = this.friends?.some(f => f.username === friendUsername);
-        if (!isFriend) return alert('친구만 초대할 수 있습니다.');
-
-        try {
-            // If blocked by me in this channel, require unblock first
-            if (this._isBlockedInActiveChannel(friendUsername)) {
-                alert('이 유저는 현재 이 채널에서 차단되어 있습니다.\n먼저 차단해제를 해주세요.');
-                return;
-            }
-            const payload = {
-                channel_id: this.activeChannel.id,
-                username: friendUsername,
-                invited_by: this.currentUser.username,
-                created_at: new Date().toISOString()
-            };
-            const { error } = await this.supabase
-                .from('anticode_channel_members')
-                .upsert([payload], { onConflict: 'channel_id,username' });
-            if (error) {
-                console.error('Invite error:', error);
-                alert('초대 실패: ' + error.message + '\\n\\n(필요 테이블: anticode_channel_members)');
-                return;
-            }
-            // Refresh panel state if we're in this channel
-            await this.loadChannelMembers(this.activeChannel.id);
-            if (this.channelPresenceChannel) {
-                try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
-            }
-            alert('초대 완료!');
-        } catch (e) {
-            console.error('Invite exception:', e);
-            alert('초대 실패: ' + (e?.message || e));
-        }
+        return await this.inviteFriendToChannel(this.activeChannel.id, friendUsername);
     }
 
     async loadChannels() {
@@ -2342,7 +2629,8 @@ class AntiCodeApp {
         const container = document.getElementById('categorized-channels');
         container.innerHTML = '';
         const categories = {};
-        this.channels.forEach(ch => {
+        const visible = this._getVisibleChannelsByActivePage();
+        visible.forEach(ch => {
             if (!categories[ch.category]) categories[ch.category] = [];
             categories[ch.category].push(ch);
         });
@@ -3136,6 +3424,39 @@ class AntiCodeApp {
         // Friend List Modal (view all + invite)
         const friendModal = document.getElementById('friend-modal');
         _safeBind('close-friend-list-modal', 'onclick', () => friendModal && (friendModal.style.display = 'none'));
+
+        // Channel Pages / Directory Modal
+        const pagesModal = document.getElementById('channel-pages-modal');
+        _safeBind('open-channel-pages', 'onclick', () => this.openChannelPagesModal());
+        _safeBind('close-channel-pages-modal', 'onclick', () => this.closeChannelPagesModal());
+        _safeBind('menu-pages', 'onclick', (e) => {
+            e.stopPropagation();
+            if (dropdown) dropdown.style.display = 'none';
+            this.openChannelPagesModal();
+        });
+        _safeBind('pages-modal-create', 'onclick', async () => {
+            const name = document.getElementById('pages-modal-new-name')?.value || '';
+            const ok = await this.createChannelPage(name);
+            if (ok) {
+                const inp = document.getElementById('pages-modal-new-name');
+                if (inp) inp.value = '';
+                // switch to newly created page by name
+                const created = this.channelPages.find(p => p.name === String(name || '').trim());
+                if (created) this._setActiveChannelPageId(created.id);
+                this.renderChannelPageSelector();
+                this.renderChannelPagesModal();
+            }
+        });
+        _safeBind('pages-modal-delete', 'onclick', async () => {
+            const sel = document.getElementById('pages-modal-select');
+            const pid = sel ? String(sel.value || '') : '';
+            if (!pid || pid === 'all') return alert('삭제할 페이지를 선택하세요.');
+            if (!confirm('이 페이지를 삭제할까요? (포함된 채널 매핑도 함께 삭제됩니다)')) return;
+            const ok = await this.deleteChannelPage(pid);
+            if (ok) this.renderChannelPagesModal();
+        });
+        const pagesSel = document.getElementById('pages-modal-select');
+        if (pagesSel) pagesSel.onchange = () => this.renderChannelPagesModal();
 
         // Settings Modal
         const sModal = document.getElementById('app-settings-modal');
