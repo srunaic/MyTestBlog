@@ -30,3 +30,5 @@ alter table public.revenuecat_events disable row level security;
 
 
 
+
+
