@@ -2403,32 +2403,62 @@ class AntiCodeApp {
     async init() {
         console.log('AntiCode Feature App initializing...');
 
-        // 0. Beta Access Check
-        const BETA_KEY = 'ANTICODE_BETA_2026'; // [BETA KEY] 
+        // 0. Beta Access Check (Restrict browser access, allow only APK/App context)
+        const BETA_KEY = 'ANTICODE_BETA_2026';
         const granted = localStorage.getItem('anticode_beta_granted');
-        if (granted !== 'true') {
-            const guard = document.getElementById('beta-guard');
-            const input = document.getElementById('beta-key-input');
-            const btn = document.getElementById('verify-beta-btn');
+        
+        // Admin Exception: if already logged in as admin, bypass all checks
+        const tempAuth = this.getAuth();
+        const isAdmin = tempAuth && tempAuth.role === 'admin';
+
+        if (!isAdmin) {
+            // Check if running inside a standalone app (APK/PWA)
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || document.referrer.includes('android-app://');
             
-            if (guard && input && btn) {
-                guard.style.display = 'flex';
-                btn.onclick = () => {
-                    if (input.value === BETA_KEY) {
-                        localStorage.setItem('anticode_beta_granted', 'true');
-                        guard.style.display = 'none';
-                        this.init(); // Restart init after granting access
-                    } else {
-                        alert('잘못된 베타키입니다.');
-                        input.value = '';
-                    }
-                };
-                // Also support Enter key
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter') btn.click();
-                };
+            if (!isStandalone) {
+                // Block general browser access
+                document.body.innerHTML = `
+                    <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050510; color:white; font-family:sans-serif; text-align:center; padding:20px;">
+                        <h1 style="color:#00f2ff; margin-bottom:20px;">🔒 Beta Test Access Only</h1>
+                        <p style="font-size:1.1rem; line-height:1.6; margin-bottom:30px;">
+                            Anticode는 현재 베타 테스트 기간이며,<br>
+                            전용 <b>안드로이드 앱</b>을 통해서만 접속 가능합니다.
+                        </p>
+                        <a href="https://github.com/srunaic/MyTestBlog/raw/main/AntiCode-Beta-Signed.apk" 
+                           style="padding:15px 30px; background:#ffb92f; color:black; text-decoration:none; border-radius:8px; font-weight:bold; margin-bottom:20px;">
+                           안드로이드 앱 다운로드
+                        </a>
+                        <p style="font-size:0.8rem; color:#888;">
+                            웹 브라우저를 통한 직접 접속은 차단되었습니다.<br>
+                            문의: 관리자
+                        </p>
+                    </div>
+                `;
+                return;
             }
-            return; // Halt initialization until beta key is verified
+
+            // If in app, check for beta key
+            if (granted !== 'true') {
+                const guard = document.getElementById('beta-guard');
+                const input = document.getElementById('beta-key-input');
+                const btn = document.getElementById('verify-beta-btn');
+                
+                if (guard && input && btn) {
+                    guard.style.display = 'flex';
+                    btn.onclick = () => {
+                        if (input.value === BETA_KEY) {
+                            localStorage.setItem('anticode_beta_granted', 'true');
+                            guard.style.display = 'none';
+                            this.init(); 
+                        } else {
+                            alert('잘못된 베타키입니다.');
+                            input.value = '';
+                        }
+                    };
+                    input.onkeydown = (e) => { if (e.key === 'Enter') btn.click(); };
+                }
+                return;
+            }
         }
 
         // Initialize Notifications Early
