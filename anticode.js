@@ -881,12 +881,13 @@ class AntiCodeApp {
             const label = this._channelLabel(ch);
             return `
               <div class="member-card draggable-item" draggable="true" data-pid="${pid}" data-cid="${ch.id}" style="margin-bottom:8px;">
-                <div class="member-info" style="cursor:pointer;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">
+                <div class="member-info" style="cursor:pointer;" 
+                     onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
                   <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span class="drag-handle">⋮⋮</span><span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
                   <span class="member-status-sub">${this.escapeHtml(label)}</span>
                 </div>
                 <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">이동</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
                   <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">제거</button>
                   <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
                 </div>
@@ -921,14 +922,15 @@ class AntiCodeApp {
             const canAdd = pid !== 'all';
             return `
               <div class="member-card" style="margin-bottom:8px;">
-                <div class="member-info" style="cursor:pointer;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">
+                <div class="member-info" style="cursor:pointer;" 
+                     onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
                   <span class="member-name-text" title="${this.escapeHtml(ch.name)}">
                     <span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}
                   </span>
                   <span class="member-status-sub">${this.escapeHtml(label)}</span>
                 </div>
                 <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">이동</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
                   ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">추가</button>` : ''}
                   <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
                 </div>
@@ -3230,18 +3232,65 @@ class AntiCodeApp {
         const usernames = rows.map(m => m.user_id);
         await this.preloadUsers(usernames);
 
-        // 2. Clear container and render all messages using DocumentFragment
+        // 2. Render all messages synchronously using DocumentFragment (Now super fast)
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
         
-        // Process messages. Since users are preloaded, createMessageElement will be fast.
         for (const msg of rows) {
-            const msgEl = await this.createMessageElement(msg);
+            // Get user info synchronously from cache (since we preloaded)
+            const info = this.userCache[msg.user_id] || { nickname: msg.author || '?', avatar_url: null };
+            const msgEl = this.createMessageElementSync(msg, info, false);
             if (msgEl) fragment.appendChild(msgEl);
         }
 
         container.appendChild(fragment);
         container.scrollTop = container.scrollHeight;
+    }
+
+    // New synchronous version for fast batch rendering
+    createMessageElementSync(msg, info, isOptimistic = false) {
+        try {
+            const msgEl = document.createElement('div');
+            msgEl.className = 'message-item';
+            if (msg.id) msgEl.id = `msg-${msg.id}`;
+            if (isOptimistic) {
+                msgEl.style.opacity = '0.7';
+                msgEl.setAttribute('data-optimistic', 'true');
+                if (msg.id) msgEl.dataset.tempId = msg.id;
+            }
+
+            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const initial = (info.nickname || msg.author || '?')[0];
+            const avatarHtml = `
+            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0;">
+                ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
+            </div>
+        `;
+
+            const filtered = this.filterProfanity(msg.content || '');
+            const isMyMessage = msg.user_id === this.currentUser.username;
+            const canDelete = isMyMessage || this.isAdminMode;
+
+            msgEl.innerHTML = `
+                ${avatarHtml}
+                <div class="message-content-wrapper">
+                    <div class="message-meta">
+                        <span class="member-name">${info.nickname}</span>
+                        <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
+                        ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
+                    </div>
+                    <div class="message-text">
+                        ${this.linkify(this.escapeHtml(filtered.text))}
+                        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
+                    </div>
+                </div>
+            `;
+            return msgEl;
+        } catch (e) {
+            console.error('Failed to create message element:', e);
+            return null;
+        }
     }
 
     setupMessageSubscription(channelId) {
@@ -3488,49 +3537,8 @@ class AntiCodeApp {
     }
 
     async createMessageElement(msg, isOptimistic = false) {
-        try {
-            const msgEl = document.createElement('div');
-            msgEl.className = 'message-item';
-            if (msg.id) msgEl.id = `msg-${msg.id}`;
-            if (isOptimistic) {
-                msgEl.style.opacity = '0.7';
-                msgEl.setAttribute('data-optimistic', 'true');
-                if (msg.id) msgEl.dataset.tempId = msg.id;
-            }
-
-            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const info = await this.getUserInfo(msg.user_id);
-            const initial = (info.nickname || msg.author || '?')[0];
-            const avatarHtml = `
-            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0;">
-                ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-                <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
-            </div>
-        `;
-
-            const filtered = this.filterProfanity(msg.content || '');
-            const isMyMessage = msg.user_id === this.currentUser.username;
-            const canDelete = isMyMessage || this.isAdminMode;
-
-            msgEl.innerHTML = `
-                ${avatarHtml}
-                <div class="message-content-wrapper">
-                    <div class="message-meta">
-                        <span class="member-name">${info.nickname}</span>
-                        <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
-                        ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="window.app && window.app.deleteMessage && window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
-                    </div>
-                    <div class="message-text">
-                        ${this.linkify(this.escapeHtml(filtered.text))}
-                        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
-                    </div>
-                </div>
-            `;
-            return msgEl;
-        } catch (e) {
-            console.error('Failed to create message element:', e);
-            return null;
-        }
+        const info = await this.getUserInfo(msg.user_id);
+        return this.createMessageElementSync(msg, info, isOptimistic);
     }
 
     async appendMessage(msg, isOptimistic = false) {
@@ -3574,12 +3582,11 @@ class AntiCodeApp {
         if (!messageId) return;
         if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
 
-        // Optimistic UI: Remove from DOM immediately
+        // Instant UI: Remove from DOM immediately (No half-measures)
         const el = document.getElementById(`msg-${messageId}`);
-        if (el) {
-            el.style.opacity = '0.5';
-            el.style.pointerEvents = 'none'; // Prevent double delete
-        }
+        const parent = el?.parentElement;
+        const nextSibling = el?.nextSibling;
+        if (el) el.remove();
 
         try {
             const { error } = await this.supabase
@@ -3590,22 +3597,14 @@ class AntiCodeApp {
             if (error) {
                 console.error('Delete error:', error);
                 alert('삭제 실패: ' + error.message);
-                if (el) {
-                    el.style.opacity = '1';
-                    el.style.pointerEvents = 'auto';
-                }
+                // Revert UI if server failed
+                if (el && parent) parent.insertBefore(el, nextSibling);
                 return;
             }
-            // If success, the real-time DELETE event will handle the final removal
-            // but we can also just remove it now to be faster
-            if (el) el.remove();
         } catch (e) {
             console.error('Delete exception:', e);
             alert('삭제 중 오류가 발생했습니다.');
-            if (el) {
-                el.style.opacity = '1';
-                el.style.pointerEvents = 'auto';
-            }
+            if (el && parent) parent.insertBefore(el, nextSibling);
         }
     }
 
