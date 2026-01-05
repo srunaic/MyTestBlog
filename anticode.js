@@ -54,6 +54,7 @@ class Channel {
                     <h1 id="current-channel-name">${this.name}</h1>
                     <span class="header-category-label">${categoryLabel}</span>
                 </div>
+                <button id="copy-invite-link" class="icon-btn" title="초대 링크 복사" onclick="window.app.copyInviteLink()" style="margin-left: 12px; background: none; border: none; cursor: pointer; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); transition: all 0.2s;" onmouseover="this.style.filter='none'; this.style.opacity='1'" onmouseout="this.style.filter='grayscale(1) opacity(0.6)'">🔗</button>
             </div>
         `;
     }
@@ -2457,8 +2458,36 @@ class AntiCodeApp {
             this.renderUserInfo();
             this.setupPresence();
 
-            // 4. Default Channel
-            if (this.channels.length > 0) {
+            // 4. Default Channel (URL Parameter support for direct invite links)
+            const params = new URLSearchParams(window.location.search);
+            const targetChannelId = params.get('channel') || params.get('room');
+
+            if (targetChannelId) {
+                this._directJoinId = targetChannelId; // Grant temporary access for direct links
+                const target = this.channels.find(c => String(c.id) === String(targetChannelId));
+                if (target) {
+                    await this.switchChannel(target.id);
+                } else {
+                    // Try direct fetch if not in the default public list
+                    try {
+                        const { data: directChannel } = await this.supabase
+                            .from('anticode_channels')
+                            .select('*')
+                            .eq('id', targetChannelId)
+                            .maybeSingle();
+
+                        if (directChannel) {
+                            const ch = new Channel(directChannel);
+                            this.channels.push(ch);
+                            await this.switchChannel(ch.id);
+                        } else if (this.channels.length > 0) {
+                            await this.switchChannel(this.channels[0].id);
+                        }
+                    } catch (_) {
+                        if (this.channels.length > 0) await this.switchChannel(this.channels[0].id);
+                    }
+                }
+            } else if (this.channels.length > 0) {
                 await this.switchChannel(this.channels[0].id);
             }
         } catch (e) {
@@ -2892,6 +2921,40 @@ class AntiCodeApp {
         await this.switchChannel(channelId);
     }
 
+    copyInviteLink() {
+        if (!this.activeChannel) return;
+        
+        const url = new URL(window.location.href);
+        url.searchParams.set('channel', this.activeChannel.id);
+        const inviteUrl = url.toString();
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(inviteUrl).then(() => {
+                alert('초대 링크가 복사되었습니다!\n\n' + inviteUrl);
+            }).catch(err => {
+                this._fallbackCopyText(inviteUrl);
+            });
+        } else {
+            this._fallbackCopyText(inviteUrl);
+        }
+    }
+
+    _fallbackCopyText(text) {
+        const input = document.createElement('textarea');
+        input.value = text;
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        try {
+            document.execCommand('copy');
+            alert('초대 링크가 복사되었습니다!\n\n' + text);
+        } catch (err) {
+            alert('링크 복사 실패. 아래 주소를 직접 복사해주세요:\n\n' + text);
+        }
+        document.body.removeChild(input);
+    }
+
     async switchChannel(channelId) {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
@@ -2934,7 +2997,8 @@ class AntiCodeApp {
         await this.loadChannelBlocks(channel.id);
 
         // Secret channel gate: invited-only (or owner)
-        if (channel.type === 'secret' && !this._isAllowedInChannel(channel.id)) {
+        // [MOD] Allow access if they have a direct invite link (the link itself is the invitation)
+        if (channel.type === 'secret' && !this._isAllowedInChannel(channel.id) && this._directJoinId !== String(channel.id)) {
             alert('이 비밀 채팅방은 초대된 멤버만 입장할 수 있습니다.');
             // Attempt to fall back to a non-secret channel
             const fallback = this.channels.find(c => c.type !== 'secret') || this.channels[0];
@@ -2942,6 +3006,11 @@ class AntiCodeApp {
                 await this.switchChannel(fallback.id);
             }
             return;
+        }
+
+        // Clear direct join flag after passing the gate
+        if (this._directJoinId === String(channel.id)) {
+            this._directJoinId = null;
         }
 
         // After access is granted (secret or not), mark myself as a member so I show up (and invitations persist).
