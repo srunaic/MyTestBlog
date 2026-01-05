@@ -8,7 +8,7 @@ const ASSETS = [
     '/anticode.html',
     '/anticode.css',
     '/anticode.js',
-    '/manifest.json',
+    '/manifest-anticode.webmanifest',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 ];
 
