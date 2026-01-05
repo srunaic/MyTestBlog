@@ -8,8 +8,7 @@ const ASSETS = [
     '/anticode.html',
     '/anticode.css',
     '/anticode.js',
-    '/icon-192x192.png',
-    '/icon-512x512.png',
+    '/icon-192x192-maskable.png',
     '/manifest-v3.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 ];
