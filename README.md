@@ -1,5 +1,12 @@
 # [🚀 Anticode: 실시간 채팅 접속하기](https://mytestblog-d85.pages.dev/anticode.html)
 
+## 📱 Anticode 안드로이드 앱 설치 (Android APK)
+모바일에서 주소창 없이 더 편리하게 Anticode를 이용하세요!
+- **[안드로이드 전용 앱(APK) 다운로드](https://github.com/srunaic/MyTestBlog/releases)** (Releases 페이지에서 최신 APK를 받아주세요)
+- *설치 시 '출처를 알 수 없는 앱' 경고가 나오면 '무시하고 설치'를 선택해주세요.*
+
+---
+
 # 🌌 Nanodoroshi | Futuristic Cyber-Minimalist Blog
 
 [![Live Demo](https://img.shields.io/badge/demo-live-00f2ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://srunaic.github.io/MyTestBlog/)
