@@ -2403,6 +2403,34 @@ class AntiCodeApp {
     async init() {
         console.log('AntiCode Feature App initializing...');
 
+        // 0. Beta Access Check
+        const BETA_KEY = 'ANTICODE_BETA_2026'; // [BETA KEY] 
+        const granted = localStorage.getItem('anticode_beta_granted');
+        if (granted !== 'true') {
+            const guard = document.getElementById('beta-guard');
+            const input = document.getElementById('beta-key-input');
+            const btn = document.getElementById('verify-beta-btn');
+            
+            if (guard && input && btn) {
+                guard.style.display = 'flex';
+                btn.onclick = () => {
+                    if (input.value === BETA_KEY) {
+                        localStorage.setItem('anticode_beta_granted', 'true');
+                        guard.style.display = 'none';
+                        this.init(); // Restart init after granting access
+                    } else {
+                        alert('잘못된 베타키입니다.');
+                        input.value = '';
+                    }
+                };
+                // Also support Enter key
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') btn.click();
+                };
+            }
+            return; // Halt initialization until beta key is verified
+        }
+
         // Initialize Notifications Early
         NotificationManager.init();
         // One-time audio unlock on first user interaction (helps mobile play effects reliably)
