@@ -1,5 +1,5 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v1.6'; // Increment version to force refresh
+const CACHE_NAME = 'nanodoroshi-v1.7'; // Increment version to force refresh
 const ASSETS = [
     '/',
     '/index.html',
@@ -8,9 +8,16 @@ const ASSETS = [
     '/anticode.html',
     '/anticode.css',
     '/anticode.js',
-    '/manifest-anticode.webmanifest',
+    '/manifest-anticode.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 ];
+
+// Message listener for PWABuilder compatibility
+self.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "SKIP_WAITING") {
+        self.skipWaiting();
+    }
+});
 
 // Install Event: Cache critical assets
 self.addEventListener('install', event => {
