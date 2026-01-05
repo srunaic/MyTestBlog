@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anticode Beta Invitation</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #050510; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .invite-card { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(0,242,255,0.2); padding: 40px; border-radius: 20px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        h1 { color: #00f2ff; margin-bottom: 20px; font-size: 1.8rem; }
+        .secret-info { display: none; margin-top: 30px; text-align: left; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.2); }
+        .btn { display: inline-block; padding: 15px 30px; background: #ffb92f; color: black; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; transition: transform 0.2s; }
+        .btn:hover { transform: scale(1.05); }
+        .key-box { color: #00f2ff; font-family: monospace; font-size: 1.1rem; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 4px; }
+        .error-msg { color: #ff4d4d; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="invite-card">
+        <div id="loading">인증 확인 중...</div>
+        
+        <div id="content" style="display:none;">
+            <h1>🚀 Anticode Beta Test</h1>
+            <p>베타 테스트에 참여하신 것을 환영합니다.</p>
+            
+            <div class="secret-info" id="secrets">
+                <p style="margin-bottom:10px;"><strong>1. 앱 설치 파일</strong></p>
+                <a href="https://github.com/srunaic/MyTestBlog/raw/main/AntiCode-Beta-Signed.apk" class="btn" style="margin-top:0; width:100%; text-align:center;">APK 다운로드</a>
+                
+                <p style="margin-top:20px; margin-bottom:10px;"><strong>2. 압축 비번 (ZIP)</strong></p>
+                <span class="key-box">123456</span>
+                
+                <p style="margin-top:20px; margin-bottom:10px;"><strong>3. 앱 접속 베타키</strong></p>
+                <span class="key-box">ANTICODE_BETA_2026</span>
+            </div>
+
+            <div id="forbidden" style="display:none;">
+                <p class="error-msg">❌ 올바르지 않은 초대 코드입니다.</p>
+                <p style="font-size:0.8rem; color:#888; margin-top:10px;">관리자에게 올바른 링크를 요청하세요.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const SECRET_CODE = 'NANO_BETA_OPEN'; // 관리자님이 테스터에게 줄 비밀 코드
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+
+            if (code === SECRET_CODE) {
+                document.getElementById('secrets').style.display = 'block';
+            } else {
+                document.getElementById('forbidden').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>
+
