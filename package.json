@@ -4,7 +4,7 @@
     "description": "Futuristic Cyber-Minimalist Blog",
     "main": "script.js",
     "scripts": {
-        "build": "npx rimraf public .build && npx shx mkdir -p public .build && node scripts/inject-env.js && npx shx cp index.html style.css manifest.json manifest-v3.json anticode-icon.png robots.txt sitemap.xml anticode.html anticode.css lotto.html pwabuilder-sw.js public/ && npx javascript-obfuscator ./.build/script.injected.js --output ./public/script.js --compact true --self-defending true --string-array true --string-array-rotate true --string-array-shuffle true --string-array-index-shift true && npx shx cp ./sw.js ./public/sw.js && npx javascript-obfuscator ./.build/anticode.injected.js --output ./public/anticode.js --compact true"
+        "build": "npx rimraf public .build && npx shx mkdir -p public .build && node scripts/inject-env.js && npx shx cp index.html style.css manifest.json manifest-v3.json icon-192x192.png icon-512x512.png robots.txt sitemap.xml anticode.html anticode.css lotto.html pwabuilder-sw.js public/ && npx javascript-obfuscator ./.build/script.injected.js --output ./public/script.js --compact true --self-defending true --string-array true --string-array-rotate true --string-array-shuffle true --string-array-index-shift true && npx shx cp ./sw.js ./public/sw.js && npx javascript-obfuscator ./.build/anticode.injected.js --output ./public/anticode.js --compact true"
     },
     "devDependencies": {
         "javascript-obfuscator": "^4.1.0"
