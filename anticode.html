@@ -398,6 +398,15 @@
         preload="auto"></audio>
 
     <script type="module" src="anticode.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Service Worker registered'))
+                    .catch(err => console.error('PWA Service Worker registration failed', err));
+            });
+        }
+    </script>
 </body>
 
 </html>
