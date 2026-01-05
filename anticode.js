@@ -881,14 +881,14 @@ class AntiCodeApp {
             const label = this._channelLabel(ch);
             return `
               <div class="member-card draggable-item" draggable="true" data-pid="${pid}" data-cid="${ch.id}" style="margin-bottom:8px;">
-                <div class="member-info">
-                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span class="drag-handle">⋮⋮</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                <div class="member-info" style="cursor:pointer;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">
+                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span class="drag-handle">⋮⋮</span><span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
                   <span class="member-status-sub">${this.escapeHtml(label)}</span>
                 </div>
                 <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">이동</button>
                   <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">제거</button>
-                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
+                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
                 </div>
               </div>
             `;
@@ -921,14 +921,16 @@ class AntiCodeApp {
             const canAdd = pid !== 'all';
             return `
               <div class="member-card" style="margin-bottom:8px;">
-                <div class="member-info">
-                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}">${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                <div class="member-info" style="cursor:pointer;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">
+                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}">
+                    <span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}
+                  </span>
                   <span class="member-status-sub">${this.escapeHtml(label)}</span>
                 </div>
                 <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}')">열기</button>
-                  ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">페이지에 추가</button>` : ''}
-                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">친구초대</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.switchChannel && window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none';">이동</button>
+                  ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">추가</button>` : ''}
+                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
                 </div>
               </div>
             `;
@@ -3225,6 +3227,21 @@ class AntiCodeApp {
             }, payload => {
                 this.queueMessage(payload.new);
             })
+            .on('postgres_changes', {
+                event: 'DELETE',
+                schema: 'public',
+                table: 'anticode_messages'
+                // Note: filter on channel_id may not work for DELETE if not in PK, 
+                // but we can filter in the callback or trust Supabase if it works.
+            }, payload => {
+                const id = payload.old?.id;
+                if (!id) return;
+                const el = document.getElementById(`msg-${id}`);
+                if (el) {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 300);
+                }
+            })
             .subscribe((status) => {
                 console.log(`Subscription status for ${channelId}:`, status);
             });
@@ -3475,6 +3492,7 @@ class AntiCodeApp {
 
             const msgEl = document.createElement('div');
             msgEl.className = 'message-item';
+            if (msg.id) msgEl.id = `msg-${msg.id}`;
             if (isOptimistic) {
                 msgEl.style.opacity = '0.7';
                 msgEl.setAttribute('data-optimistic', 'true');
@@ -3492,12 +3510,16 @@ class AntiCodeApp {
         `;
 
             const filtered = this.filterProfanity(msg.content || '');
+            const isMyMessage = msg.user_id === this.currentUser.username;
+            const canDelete = isMyMessage || this.isAdminMode;
+
             msgEl.innerHTML = `
                 ${avatarHtml}
                 <div class="message-content-wrapper">
                     <div class="message-meta">
                         <span class="member-name">${info.nickname}</span>
                         <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
+                        ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="window.app && window.app.deleteMessage && window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
                     </div>
                     <div class="message-text">
                         ${this.linkify(this.escapeHtml(filtered.text))}
@@ -3524,6 +3546,29 @@ class AntiCodeApp {
         const statusText = opt.querySelector('.sending-status');
         if (statusText) statusText.remove();
         if (realId) this.processedMessageIds.add(realId);
+    }
+
+    async deleteMessage(messageId) {
+        if (!messageId) return;
+        if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
+
+        try {
+            const { error } = await this.supabase
+                .from('anticode_messages')
+                .delete()
+                .eq('id', messageId);
+
+            if (error) {
+                console.error('Delete error:', error);
+                alert('삭제 실패: ' + error.message);
+                return;
+            }
+            // The UI will be updated via real-time subscription (or just remove it if you want immediate)
+            // But usually we rely on the DELETE event from Supabase.
+        } catch (e) {
+            console.error('Delete exception:', e);
+            alert('삭제 중 오류가 발생했습니다.');
+        }
     }
 
 
