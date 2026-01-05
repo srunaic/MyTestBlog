@@ -90,14 +90,25 @@ const NotificationManager = {
     initialized: false,
 
     async init() {
-        if (this.initialized) return;
+        if (this.initialized) this.cleanup();
         this.updateBadge();
         this.updateButtons();
 
         // Use a small delay to ensure supabase is ready
-        setTimeout(() => this.setupSubscriptions(), 2000);
+        this._subTimeout = setTimeout(() => this.setupSubscriptions(), 2000);
 
         this.initialized = true;
+    },
+
+    cleanup() {
+        if (!this.initialized) return;
+        if (this._subTimeout) clearTimeout(this._subTimeout);
+        if (supabase) {
+            supabase.removeChannel(supabase.channel('notif-posts'));
+            supabase.removeChannel(supabase.channel('notif-comments'));
+            supabase.removeChannel(supabase.channel('chat-notif'));
+        }
+        this.initialized = false;
     },
 
     setupSubscriptions() {
@@ -525,31 +536,28 @@ async function loadData() {
     if (!supabase) return;
 
     try {
-        // Fetch Posts
+        // Fetch only needed posts (Basic Pagination support)
         const { data: postData, error: postError } = await supabase
             .from('posts')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(0, 100); // Limit to latest 100 for now to keep it snappy
 
         if (postError) throw postError;
         posts = postData && postData.length > 0 ? postData : [];
 
-        // Fetch Users
-        const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*');
-
-        if (userError) throw userError;
-
-        // Update local users list
-        if (userData && userData.length > 0) {
-            users = userData;
+        // Don't fetch all users - only if admin needs them for management
+        if (isAdminMode) {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .limit(500); // Cap it
+            if (!userError && userData) users = userData;
         }
 
         // Fetch Social Links
         const { data: linkData, error: linkError } = await supabase.from('social_links').select('*').order('id', { ascending: true });
         if (!linkError) socialLinks = linkData || [];
-
 
     } catch (err) {
         console.error('Data load error:', err);

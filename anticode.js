@@ -162,16 +162,30 @@ const NotificationManager = {
     initialized: false,
 
     async init() {
-        if (this.initialized) return;
+        if (this.initialized) this.cleanup(); // Clean up existing subs/timers before re-init
         this.updateBadge();
         this.updateButtons();
         this.applyVolume();
         this.updateOsPermissionButton();
 
         // Use a small delay to ensure supabase is ready
-        setTimeout(() => this.setupSubscriptions(), 2000);
+        this._subTimeout = setTimeout(() => this.setupSubscriptions(), 2000);
 
         this.initialized = true;
+    },
+
+    cleanup() {
+        if (!this.initialized) return;
+        if (this._subTimeout) clearTimeout(this._subTimeout);
+        if (this._toastTimer) clearTimeout(this._toastTimer);
+        
+        if (window.app && window.app.supabase) {
+            const supabase = window.app.supabase;
+            supabase.removeChannel(supabase.channel('notif-posts-ac'));
+            supabase.removeChannel(supabase.channel('notif-comments-ac'));
+            supabase.removeChannel(supabase.channel('chat-notif-ac'));
+        }
+        this.initialized = false;
     },
 
     setupSubscriptions() {
@@ -382,7 +396,7 @@ window.toggleNotifSound = () => NotificationManager.toggleSound();
 window.clearNotifications = () => NotificationManager.clearNotifications();
 
 // Free-tier friendly limits (server + client)
-const MESSAGE_RETENTION_PER_CHANNEL = 300; // keep latest N messages per channel (DB trigger enforces this)
+const MESSAGE_RETENTION_PER_CHANNEL = 100; // Optimized: reduced from 300 to 100 for faster initial load
 const FREE_VOICE_DAILY_SECONDS = 10 * 60;  // free tier voice time per day (seconds)
 const FREE_MAX_PERSONAL_PAGES = 1;
 const FREE_MAX_CHANNELS_PER_PAGE = 20;
@@ -2880,7 +2894,8 @@ class AntiCodeApp {
 
     renderChannels() {
         const container = document.getElementById('categorized-channels');
-        container.innerHTML = '';
+        if (!container) return;
+
         const categories = {};
         const visible = this._getVisibleChannelsByActivePage();
         visible.forEach(ch => {
@@ -2888,7 +2903,6 @@ class AntiCodeApp {
             categories[ch.category].push(ch);
         });
 
-        // Render known categories first, then any custom categories present in DB
         const known = Object.keys(CATEGORY_NAMES);
         const extras = Object.keys(categories).filter(k => !known.includes(k));
         const orderedCats = [...known, ...extras];
@@ -2901,10 +2915,14 @@ class AntiCodeApp {
             try { return JSON.parse(localStorage.getItem(collapseKey) || '{}') || {}; } catch (_) { return {}; }
         })();
 
+        // Use DocumentFragment for faster rendering
+        const fragment = document.createDocumentFragment();
+
         orderedCats.forEach(catId => {
             const chans = categories[catId] || [];
             if (chans.length === 0 && catId !== 'chat') return;
             const isCollapsed = !!collapsed?.[catId];
+            
             const group = document.createElement('div');
             group.className = 'channel-group' + (isCollapsed ? ' collapsed' : '');
             group.innerHTML = `
@@ -2920,35 +2938,39 @@ class AntiCodeApp {
                     }).join('')}
                 </div>
             `;
-            container.appendChild(group);
-        });
 
-        container.querySelectorAll('.channel-sub-link').forEach(item => {
-            item.onclick = () => this.handleChannelSwitch(item.dataset.id);
-        });
-        // Collapsible groups
-        container.querySelectorAll('.group-header[data-cat]').forEach(h => {
-            h.onclick = (e) => {
-                // allow "+" without toggling
+            // Event binding for collapse
+            const header = group.querySelector('.group-header');
+            header.onclick = (e) => {
                 if (e?.target?.id === 'open-create-channel-cat') return;
-                const catId = h.getAttribute('data-cat');
-                const g = h.closest('.channel-group');
-                const list = g?.querySelector('.sidebar-list');
-                if (!catId || !g || !list) return;
-                const nowCollapsed = !g.classList.contains('collapsed');
-                if (nowCollapsed) { g.classList.add('collapsed'); list.style.display = 'none'; }
-                else { g.classList.remove('collapsed'); list.style.display = ''; }
+                const list = group.querySelector('.sidebar-list');
+                const nowCollapsed = !group.classList.contains('collapsed');
+                if (nowCollapsed) { group.classList.add('collapsed'); if(list) list.style.display = 'none'; }
+                else { group.classList.remove('collapsed'); if(list) list.style.display = ''; }
+                
                 try {
-                    const prev = (() => { try { return JSON.parse(localStorage.getItem(collapseKey) || '{}') || {}; } catch (_) { return {}; } })();
+                    const prev = JSON.parse(localStorage.getItem(collapseKey) || '{}');
                     prev[catId] = nowCollapsed;
                     localStorage.setItem(collapseKey, JSON.stringify(prev));
                 } catch (_) { }
-                const label = h.querySelector('.group-label');
+                
+                const label = header.querySelector('.group-label');
                 if (label) label.textContent = `${nowCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}`;
             };
+
+            const createBtnInCat = group.querySelector('#open-create-channel-cat');
+            if (createBtnInCat) createBtnInCat.onclick = () => document.getElementById('create-channel-modal').style.display = 'flex';
+
+            fragment.appendChild(group);
         });
-        const createBtn = document.getElementById('open-create-channel-cat');
-        if (createBtn) createBtn.onclick = () => document.getElementById('create-channel-modal').style.display = 'flex';
+
+        container.innerHTML = '';
+        container.appendChild(fragment);
+
+        // Bind channel clicks
+        container.querySelectorAll('.channel-sub-link').forEach(item => {
+            item.onclick = () => this.handleChannelSwitch(item.dataset.id);
+        });
     }
 
     async handleChannelSwitch(channelId) {
@@ -3356,6 +3378,9 @@ class AntiCodeApp {
     }
 
     setupPresence() {
+        if (this.presenceChannel) this.supabase.removeChannel(this.presenceChannel);
+        if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
+
         this.presenceChannel = this.supabase.channel('online-users');
         this.presenceChannel
             .on('presence', { event: 'sync' }, () => {
@@ -3375,7 +3400,6 @@ class AntiCodeApp {
 
                     // Periodic last_seen update in DB
                     this.updateLastSeen();
-                    if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
                     this.lastSeenInterval = setInterval(() => this.updateLastSeen(), 60000);
                 }
             });
