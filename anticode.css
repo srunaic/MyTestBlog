@@ -631,18 +631,22 @@
 }
 
 .back-link {
-    color: var(--text-muted);
+    color: var(--accent);
     text-decoration: none;
-    font-size: 0.8rem;
-    padding: 4px 12px;
-    border: 1px solid var(--text-muted);
-    border-radius: 4px;
+    font-size: 1.1rem;
+    padding: 4px 8px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
     transition: 0.3s;
+    background: rgba(0, 242, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .back-link:hover {
-    color: var(--accent);
-    border-color: var(--accent);
+    background: rgba(0, 242, 255, 0.15);
+    transform: scale(1.1);
 }
 
 .message-container {
@@ -858,19 +862,19 @@
 
 .message-image-content {
     margin-top: 8px;
-    max-width: 400px;
+    max-width: min(100%, 400px);
     width: fit-content;
 }
 
 .yt-preview {
     margin-top: 8px;
-    max-width: 400px;
+    max-width: min(100%, 400px);
     width: fit-content;
 }
 
 .yt-thumb {
     max-width: 100%;
-    max-height: 225px;
+    height: auto;
     border-radius: 8px;
     cursor: pointer;
     border: 1px solid var(--border-color);
@@ -885,7 +889,7 @@
 
 .chat-img {
     max-width: 100%;
-    max-height: 400px;
+    height: auto;
     border-radius: 8px;
     cursor: pointer;
     border: 1px solid var(--border-color);
@@ -1264,12 +1268,20 @@
         font-weight: bold !important;
     }
 
+    /* Chat welcome smaller */
+    .chat-welcome h1 {
+        font-size: 1.5rem;
+    }
+
     /* Back link smaller for space */
     .back-link {
-        font-size: 0.65rem;
-        padding: 4px 6px;
+        font-size: 1.2rem;
+        padding: 4px 10px;
         white-space: nowrap;
         flex-shrink: 0;
+        min-width: 40px;
+        height: 38px;
+        border-width: 2px;
     }
 
     /* Chat message padding */
