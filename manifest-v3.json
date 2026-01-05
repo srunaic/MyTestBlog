@@ -12,13 +12,19 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "anticode-icon.png",
+      "src": "/anticode-icon.png?v=3",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "anticode-icon.png",
+      "src": "/anticode-icon.png?v=3",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/anticode-icon.png?v=3",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
