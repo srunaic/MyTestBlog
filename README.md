@@ -1,11 +1,14 @@
 # [🚀 Anticode: 실시간 채팅 접속하기](https://mytestblog-d85.pages.dev/anticode.html)
 
 ## 📱 Anticode 안드로이드 앱 설치 (Android APK)
-현재 베타테스트 중 베타키가 있어야 설치가 가능합니다。
-모바일에서 주소창 없이 더 편리하게 Anticode를 이용하세요!
-- **[안드로이드 전용 앱(APK) 다이렉트 다운로드](https://github.com/srunaic/MyTestBlog/raw/main/AntiCode-v1.1.0-Android.apk)**
-- **베타 키**: `ANTICODE_BETA_2026`
-- *설치 시 '출처를 알 수 없는 앱' 경고가 나오면 '무시하고 설치'를 선택해주세요.*
+현재 베타테스트 중이며, 아래 설치 파일을 통해 앱을 이용하실 수 있습니다.
+- **[📥 Anticode 안드로이드 앱 다이렉트 다운로드](https://github.com/srunaic/MyTestBlog/raw/main/AntiCode-Beta-Signed.apk)**
+- **베타 인증 키**: `ANTICODE_BETA_2026`
+
+**⚠️ 설치 안내**
+1. 위 링크를 클릭하여 `.apk` 파일을 다운로드합니다.
+2. 설치 중 "출처를 알 수 없는 앱" 경고가 뜨면 **[무시하고 설치]**를 눌러주세요.
+3. 앱 실행 후 첫 화면에서 베타 인증 키를 입력하면 접속됩니다!
 
 ---
 
