@@ -3183,27 +3183,65 @@ class AntiCodeApp {
         return false;
     }
 
+    async preloadUsers(usernames) {
+        const uniqueNames = [...new Set(usernames)].filter(u => u && !this.userCache[u] && !this.userRequestCache[u]);
+        if (uniqueNames.length === 0) return;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_users')
+                .select('username, nickname, avatar_url')
+                .in('username', uniqueNames);
+
+            if (!error && data) {
+                data.forEach(user => {
+                    this.userCache[user.username] = { nickname: user.nickname, avatar_url: user.avatar_url };
+                });
+            }
+        } catch (e) {
+            console.warn('preloadUsers error:', e);
+        }
+    }
+
     async loadMessages(channelId) {
+        const container = document.getElementById('message-container');
+        if (!container) return;
+
+        // Clear and show loading
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">메시지를 불러오는 중...</div>';
+
         const { data, error } = await this.supabase
             .from('anticode_messages')
             .select('*')
             .eq('channel_id', channelId)
-            // Fetch newest N, then reverse to render chronologically (oldest -> newest)
             .order('created_at', { ascending: false })
             .order('id', { ascending: false })
             .limit(MESSAGE_RETENTION_PER_CHANNEL);
 
         if (error) {
-            // Don't wipe existing messages on transient errors
             console.error('Failed to load messages:', error);
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#ff4d4d;">메시지 로드 실패</div>';
             return;
         }
 
-        const container = document.getElementById('message-container');
-        if (!container) return;
-        container.innerHTML = '';
         const rows = (data || []).slice().reverse();
-        for (const msg of rows) await this.appendMessage(msg);
+
+        // 1. Preload all user info in ONE batch query
+        const usernames = rows.map(m => m.user_id);
+        await this.preloadUsers(usernames);
+
+        // 2. Clear container and render all messages using DocumentFragment
+        container.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        
+        // Process messages. Since users are preloaded, createMessageElement will be fast.
+        for (const msg of rows) {
+            const msgEl = await this.createMessageElement(msg);
+            if (msgEl) fragment.appendChild(msgEl);
+        }
+
+        container.appendChild(fragment);
+        container.scrollTop = container.scrollHeight;
     }
 
     setupMessageSubscription(channelId) {
@@ -3449,63 +3487,24 @@ class AntiCodeApp {
         return false;
     }
 
-    async appendMessage(msg, isOptimistic = false) {
+    async createMessageElement(msg, isOptimistic = false) {
         try {
-            const container = document.getElementById('message-container');
-            if (!container) return;
-
-            // Message Deduplication & Optimistic Finalization
-            if (!isOptimistic) {
-                // Priority 1: Match by exact ID (Broadcast/Postgres)
-                if (msg.id && this.processedMessageIds.has(msg.id)) return;
-
-                // Priority 2: Finalize my own optimistic message
-                const optimisticMsgs = container.querySelectorAll('.message-item[data-optimistic="true"]');
-                for (let i = optimisticMsgs.length - 1; i >= 0; i--) {
-                    const opt = optimisticMsgs[i];
-
-                    // Match by temp ID if available
-                    if (msg.id && opt.dataset.tempId === msg.id) {
-                        this.finalizeOptimistic(opt, msg.id);
-                        return;
-                    }
-
-                    // Fallback to content matching for Postgres events (where tempId is lost)
-                    if (msg.user_id === this.currentUser.username) {
-                        const textContentElement = opt.querySelector('.message-text');
-                        const text = textContentElement?.innerText.trim();
-                        if (text === (msg.content || '').trim()) {
-                            this.finalizeOptimistic(opt, msg.id);
-                            return;
-                        }
-                    }
-                }
-
-                if (msg.id) this.processedMessageIds.add(msg.id);
-            }
-
-            // Dedup Broadcast vs Postgres when IDs differ (other users)
-            if (!isOptimistic && this._isRecentDuplicate(msg)) {
-                if (msg.id) this.processedMessageIds.add(msg.id);
-                return;
-            }
-
             const msgEl = document.createElement('div');
             msgEl.className = 'message-item';
             if (msg.id) msgEl.id = `msg-${msg.id}`;
             if (isOptimistic) {
                 msgEl.style.opacity = '0.7';
                 msgEl.setAttribute('data-optimistic', 'true');
-                if (msg.id) msgEl.dataset.tempId = msg.id; // Store tempId for matching
+                if (msg.id) msgEl.dataset.tempId = msg.id;
             }
 
             const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
             const info = await this.getUserInfo(msg.user_id);
+            const initial = (info.nickname || msg.author || '?')[0];
             const avatarHtml = `
             <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0;">
                 ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-                <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${msg.author[0]}</div>
+                <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
             </div>
         `;
 
@@ -3527,13 +3526,36 @@ class AntiCodeApp {
                     </div>
                 </div>
             `;
+            return msgEl;
+        } catch (e) {
+            console.error('Failed to create message element:', e);
+            return null;
+        }
+    }
+
+    async appendMessage(msg, isOptimistic = false) {
+        try {
+            const container = document.getElementById('message-container');
+            if (!container) return;
+
+            // Dedup & Optimistic Matching
+            if (!isOptimistic) {
+                if (msg.id && this.processedMessageIds.has(msg.id)) return;
+                const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${msg.id}"]`);
+                if (opt) { this.finalizeOptimistic(opt, msg.id); return; }
+                
+                if (this._isRecentDuplicate(msg)) return;
+            }
+
+            const msgEl = await this.createMessageElement(msg, isOptimistic);
+            if (!msgEl) return;
+
             container.appendChild(msgEl);
-            // Prevent unbounded DOM growth (even if retention is enforced server-side)
-            try {
-                while (container.children.length > (MESSAGE_RETENTION_PER_CHANNEL + 20)) {
-                    container.removeChild(container.firstElementChild);
-                }
-            } catch (_) { }
+            if (msg.id) this.processedMessageIds.add(msg.id);
+
+            while (container.children.length > (MESSAGE_RETENTION_PER_CHANNEL + 20)) {
+                container.removeChild(container.firstElementChild);
+            }
             container.scrollTop = container.scrollHeight;
         } catch (e) {
             console.error('Failed to append message:', e, msg);
@@ -3552,6 +3574,13 @@ class AntiCodeApp {
         if (!messageId) return;
         if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
 
+        // Optimistic UI: Remove from DOM immediately
+        const el = document.getElementById(`msg-${messageId}`);
+        if (el) {
+            el.style.opacity = '0.5';
+            el.style.pointerEvents = 'none'; // Prevent double delete
+        }
+
         try {
             const { error } = await this.supabase
                 .from('anticode_messages')
@@ -3561,13 +3590,22 @@ class AntiCodeApp {
             if (error) {
                 console.error('Delete error:', error);
                 alert('삭제 실패: ' + error.message);
+                if (el) {
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                }
                 return;
             }
-            // The UI will be updated via real-time subscription (or just remove it if you want immediate)
-            // But usually we rely on the DELETE event from Supabase.
+            // If success, the real-time DELETE event will handle the final removal
+            // but we can also just remove it now to be faster
+            if (el) el.remove();
         } catch (e) {
             console.error('Delete exception:', e);
             alert('삭제 중 오류가 발생했습니다.');
+            if (el) {
+                el.style.opacity = '1';
+                el.style.pointerEvents = 'auto';
+            }
         }
     }
 
