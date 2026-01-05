@@ -1,5 +1,5 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v1.7'; // Increment version to force refresh
+const CACHE_NAME = 'nanodoroshi-v1.8'; // Increment version to force refresh
 const ASSETS = [
     '/',
     '/index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
     '/anticode.html',
     '/anticode.css',
     '/anticode.js',
+    '/anticode-icon.png',
     '/manifest-anticode.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 ];
