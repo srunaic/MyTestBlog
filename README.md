@@ -3,7 +3,8 @@
 ## 📱 Anticode 안드로이드 앱 설치 (Android APK)
 현재 베타테스트 중 베타키가 있어야 설치가 가능합니다。
 모바일에서 주소창 없이 더 편리하게 Anticode를 이용하세요!
-- **[안드로이드 전용 앱(APK) 다운로드](https://github.com/srunaic/MyTestBlog/releases)** (Releases 페이지에서 최신 APK를 받아주세요)
+- **[안드로이드 전용 앱(APK) 다이렉트 다운로드](https://github.com/srunaic/MyTestBlog/raw/main/AntiCode-v1.1.0-Android.apk)**
+- **베타 키**: `ANTICODE_BETA_2026`
 - *설치 시 '출처를 알 수 없는 앱' 경고가 나오면 '무시하고 설치'를 선택해주세요.*
 
 ---
