@@ -3676,7 +3676,7 @@ class AntiCodeApp {
 
         if (error) {
             console.error('Failed to send message:', error);
-            // Revert optimistic state if needed
+            this._markOptimisticFailed(tempId, error?.message || String(error));
             return;
         }
 
@@ -3754,6 +3754,17 @@ class AntiCodeApp {
         const statusText = opt.querySelector('.sending-status');
         if (statusText) statusText.remove();
         if (realId) this.processedMessageIds.add(realId);
+    }
+
+    _markOptimisticFailed(tempId, reason = '') {
+        try {
+            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+            if (!opt) return;
+            opt.setAttribute('data-send-failed', 'true');
+            const statusText = opt.querySelector('.sending-status');
+            if (statusText) statusText.textContent = '(전송 실패)';
+            if (reason) console.warn('Message send failed:', reason);
+        } catch (_) { }
     }
 
     async deleteMessage(messageId) {
@@ -4306,6 +4317,7 @@ class AntiCodeApp {
 
                     if (error) {
                         console.error('Failed to send image message:', error);
+                        this._markOptimisticFailed(tempId, error?.message || String(error));
                         return;
                     }
 

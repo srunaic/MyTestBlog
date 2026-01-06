@@ -24,9 +24,23 @@ on public.anticode_channel_participants (channel_id, last_message_at desc);
 -- Trigger: when a message is inserted, upsert participant row
 create or replace function public._anticode_channel_participants_touch()
 returns trigger as $$
+declare
+  ch uuid;
 begin
+  -- anticode_messages.channel_id is TEXT in this project; participants.channel_id is UUID.
+  -- Convert safely by looking up the channel UUID.
+  select c.id into ch
+  from public.anticode_channels c
+  where c.id::text = new.channel_id
+  limit 1;
+
+  -- If we can't resolve channel UUID, do nothing (but never fail the message insert).
+  if ch is null then
+    return new;
+  end if;
+
   insert into public.anticode_channel_participants (channel_id, username, last_message_at)
-  values (new.channel_id, new.user_id, coalesce(new.created_at, now()))
+  values (ch, new.user_id, coalesce(new.created_at, now()))
   on conflict (channel_id, username)
   do update set last_message_at = excluded.last_message_at;
   return new;
