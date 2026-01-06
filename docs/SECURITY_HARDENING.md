@@ -49,3 +49,4 @@ Supabase Auth를 쓰면 `auth.uid()`로 “로그인한 사용자”를 DB에서
 
 
 
+
