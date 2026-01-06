@@ -437,7 +437,7 @@ async function init() {
     setupBulkActions();
     setupMusic();
 
-    // 4. Initial Render
+    // 4. Initial Render (Placeholder/Skeleton)
     restoreUIState();
     checkSession();
     renderAll();
@@ -445,63 +445,39 @@ async function init() {
     initChatbot();
     initEmoticonPicker();
     setupActivityTabs();
-    NotificationManager.init();
+
+    // Initialize Notifications (Non-blocking)
+    setTimeout(() => NotificationManager.init(), 500);
 
     if (submitCommentBtn) {
         submitCommentBtn.onclick = submitComment;
     }
 
-    // 4. Data Loading Status
-    const statusDiv = document.createElement('div');
-    statusDiv.style.position = 'fixed';
-    statusDiv.style.bottom = '10px';
-    statusDiv.style.left = '10px';
-    statusDiv.style.padding = '5px 10px';
-    statusDiv.style.borderRadius = '20px';
-    statusDiv.style.fontSize = '12px';
-    statusDiv.style.zIndex = '9999';
-    statusDiv.style.fontWeight = 'bold';
-    statusDiv.id = 'db-status-indicator';
-    statusDiv.style.display = 'none'; // Hidden by default
-    document.body.appendChild(statusDiv);
-
     if (supabase) {
         try {
-            console.log('Fetching data from Supabase...');
-            await loadData();
+            console.log('Fetching data in parallel...');
+            // Parallelize initial data fetch
+            await Promise.all([
+                loadData(),
+                updateSubscriberCount()
+            ]);
 
             checkSession();
             renderAll();
 
             // Success indicator (Simplified & Admin Only)
-            statusDiv.innerHTML = '🟢 Cloud Mode (DB Connected)';
-            statusDiv.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
-            statusDiv.style.color = '#00ff00';
-            statusDiv.style.border = '1px solid #00ff00';
-
-            // Show status indicator ONLY for admins
-            if (isAdminMode) {
-                statusDiv.style.display = 'block';
-            } else {
-                statusDiv.style.display = 'none';
+            const statusDiv = document.getElementById('db-status-indicator');
+            if (statusDiv) {
+                statusDiv.innerHTML = '🟢 Cloud Mode';
+                statusDiv.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                statusDiv.style.color = '#00ff00';
+                statusDiv.style.border = '1px solid #00ff00';
+                statusDiv.style.display = isAdminMode ? 'block' : 'none';
             }
-
-            updateSubscriberCount();
 
         } catch (err) {
             console.error('Data load error:', err);
-            statusDiv.innerHTML = '🔴 DB Load Error';
-            if (isAdminMode) statusDiv.style.display = 'block';
-            updateSubscriberCount();
         }
-    } else {
-        console.warn('Supabase client failed to initialize.');
-        statusDiv.innerHTML = '⚠️ Local Mode';
-        statusDiv.style.backgroundColor = 'rgba(255, 255, 0, 0.1)';
-        statusDiv.style.color = '#ffff00';
-        statusDiv.style.border = '1px solid #ffff00';
-        if (isAdminMode) statusDiv.style.display = 'block';
-        updateSubscriberCount();
     }
 }
 

@@ -2518,14 +2518,15 @@ class AntiCodeApp {
             // Admin-only: auto-clean old chat messages on a 90-day cadence
             await this.maybeAutoCleanupMessages();
 
-            // 1. Sync User Metadata
-            await this.syncUserMetadata();
-            await this.refreshEntitlements();
+            // 1 & 2. Sync Metadata & Load Data in Parallel (High Speed)
+            const [metadata, entitlements, channels, friends, pages] = await Promise.all([
+                this.syncUserMetadata(),
+                this.refreshEntitlements(),
+                this.loadChannels(),
+                this.loadFriends(),
+                this.loadChannelPages()
+            ]);
 
-            // 2. Load Data
-            await this.loadChannels();
-            await this.loadFriends();
-            await this.loadChannelPages();
             this._loadActiveChannelPageId();
             this.renderChannelPageSelector();
 
@@ -2534,17 +2535,16 @@ class AntiCodeApp {
             this.renderUserInfo();
             this.setupPresence();
 
-            // 4. Default Channel (URL Parameter support for direct invite links)
+            // 4. Default Channel
             const params = new URLSearchParams(window.location.search);
             const targetChannelId = params.get('channel') || params.get('room');
 
             if (targetChannelId) {
-                this._directJoinId = targetChannelId; // Grant temporary access for direct links
+                this._directJoinId = targetChannelId;
                 const target = this.channels.find(c => String(c.id) === String(targetChannelId));
                 if (target) {
-                    await this.handleChannelSwitch(target.id); // Use handleChannelSwitch to respect password gates
+                    await this.handleChannelSwitch(target.id);
                 } else {
-                    // Try direct fetch if not in the default public list
                     try {
                         const { data: directChannel } = await this.supabase
                             .from('anticode_channels')
@@ -2556,7 +2556,7 @@ class AntiCodeApp {
                             const ch = new Channel(directChannel);
                             this.channels.push(ch);
                             await this.handleChannelSwitch(ch.id);
-                        } else if (this.channels.length > 0) {
+                        } else {
                             await this.handleLastVisitedOrFirstChannel();
                         }
                     } catch (_) {
