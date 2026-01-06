@@ -894,14 +894,14 @@ class AntiCodeApp {
         itemsBox.innerHTML = chans.map((ch) => {
             const label = this._channelLabel(ch);
             return `
-              <div class="member-card draggable-item" draggable="true" data-pid="${pid}" data-cid="${ch.id}" style="margin-bottom:8px;">
+              <div class="member-card draggable-item" data-pid="${pid}" data-cid="${ch.id}" style="margin-bottom:8px;">
                 <div class="member-info" style="cursor:pointer;" 
-                     onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
-                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span class="drag-handle">⋮⋮</span><span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
+                     onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
+                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}"><span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}</span>
                   <span class="member-status-sub">${this.escapeHtml(label)}</span>
                 </div>
                 <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
                   <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">제거</button>
                   <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
                 </div>
@@ -937,14 +937,14 @@ class AntiCodeApp {
             return `
               <div class="member-card" style="margin-bottom:8px;">
                 <div class="member-info" style="cursor:pointer;" 
-                     onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
+                     onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
                   <span class="member-name-text" title="${this.escapeHtml(ch.name)}">
                     <span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}
                   </span>
                   <span class="member-status-sub">${this.escapeHtml(label)}</span>
                 </div>
                 <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.switchChannel('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
                   ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">추가</button>` : ''}
                   <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
                 </div>
@@ -2542,7 +2542,7 @@ class AntiCodeApp {
                 this._directJoinId = targetChannelId; // Grant temporary access for direct links
                 const target = this.channels.find(c => String(c.id) === String(targetChannelId));
                 if (target) {
-                    await this.switchChannel(target.id);
+                    await this.handleChannelSwitch(target.id); // Use handleChannelSwitch to respect password gates
                 } else {
                     // Try direct fetch if not in the default public list
                     try {
@@ -2555,20 +2555,40 @@ class AntiCodeApp {
                         if (directChannel) {
                             const ch = new Channel(directChannel);
                             this.channels.push(ch);
-                            await this.switchChannel(ch.id);
+                            await this.handleChannelSwitch(ch.id);
                         } else if (this.channels.length > 0) {
-                            await this.switchChannel(this.channels[0].id);
+                            await this.handleLastVisitedOrFirstChannel();
                         }
                     } catch (_) {
-                        if (this.channels.length > 0) await this.switchChannel(this.channels[0].id);
+                        await this.handleLastVisitedOrFirstChannel();
                     }
                 }
-            } else if (this.channels.length > 0) {
-                await this.switchChannel(this.channels[0].id);
+            } else {
+                await this.handleLastVisitedOrFirstChannel();
             }
         } catch (e) {
             console.error('App Init Error:', e);
         }
+    }
+
+    async handleLastVisitedOrFirstChannel() {
+        if (!this.channels || this.channels.length === 0) return;
+        
+        try {
+            const u = this.currentUser?.username || 'anonymous';
+            const lastId = localStorage.getItem(`anticode_last_channel::${u}`);
+            
+            if (lastId) {
+                const target = this.channels.find(c => String(c.id) === String(lastId));
+                if (target) {
+                    await this.handleChannelSwitch(target.id);
+                    return;
+                }
+            }
+        } catch (_) { }
+
+        // Fallback to first channel if no last visited or last visited not found
+        await this.handleChannelSwitch(this.channels[0].id);
     }
 
     getAuth() {
@@ -2976,6 +2996,12 @@ class AntiCodeApp {
     async handleChannelSwitch(channelId) {
         const channel = this.channels.find(c => c.id === channelId);
         if (!channel) return;
+
+        // Remember last visited channel for this user
+        try {
+            const u = this.currentUser?.username || 'anonymous';
+            localStorage.setItem(`anticode_last_channel::${u}`, channelId);
+        } catch (_) { }
 
         // If user clicks the already-active channel, do nothing (prevents reloading/clearing messages)
         if (this.activeChannel && this.activeChannel.id === channelId) {
