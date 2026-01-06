@@ -2751,8 +2751,12 @@ class AntiCodeApp {
                 .order('last_message_at', { ascending: false })
                 .limit(5000);
             if (error) throw error;
-            this.channelParticipants = data || [];
-            return;
+            // If the table exists but is still empty (common right after adding trigger),
+            // fall back to current retained messages so the UI doesn't look broken.
+            if (Array.isArray(data) && data.length > 0) {
+                this.channelParticipants = data;
+                return;
+            }
         } catch (e) {
             console.warn('loadChannelParticipants fallback (table missing?):', e?.message || e);
         }
