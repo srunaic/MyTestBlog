@@ -1673,34 +1673,57 @@ class AntiCodeApp {
         });
 
         // Then render offline participants who have chatted at least once in this room
-        for (const uname of participantNames) {
+        // PERF: batch fetch user info instead of N sequential requests (prevents "blank" panel on large rooms)
+        const offlineNames = participantNames.slice(0, 500);
+        const infoMap = new Map(); // username -> { nickname, avatar_url, last_seen }
+        if (offlineNames.length > 0) {
             try {
-                const info = await this.getUserInfo(uname);
-                const nick = info?.nickname || uname;
-                const tn = this._truncateName(nick, 8);
-                const avatar = info?.avatar_url;
-                const isFriend = friendUsernames.has(uname);
-                const lastSeen = info?.last_seen ? formatDistanceToNow(info.last_seen) : '오프라인';
-                const showKick = this._canKickInActiveChannel(uname);
-                const isBlocked = this._isBlockedInActiveChannel(uname);
-                parts.push(`
-                    <div class="member-card offline">
-                        <div class="avatar-wrapper">
-                            ${avatar ? `<img src="${avatar}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-                            <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${this.escapeHtml(String(nick || uname || '?')[0] || '?')}</div>
-                        </div>
-                        <div class="member-info">
-                            <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
-                            <span class="member-status-sub">${this.escapeHtml(lastSeen)}</span>
-                        </div>
-                        <div class="member-actions">
-                            ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
-                            ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
-                            ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
-                        </div>
-                    </div>
-                `);
+                const { data, error } = await this.supabase
+                    .from('anticode_users')
+                    .select('username,nickname,avatar_url,last_seen')
+                    .in('username', offlineNames);
+                if (!error && Array.isArray(data)) {
+                    for (const row of data) {
+                        const u = row?.username ? String(row.username) : '';
+                        if (u) infoMap.set(u, row);
+                        // populate cache for later reuse
+                        if (u) this.userCache[u] = row;
+                    }
+                }
             } catch (_) { }
+        }
+
+        for (const uname of offlineNames) {
+            const info = infoMap.get(uname) || this.userCache[uname] || { nickname: uname, avatar_url: null, last_seen: null };
+            const nick = info?.nickname || uname;
+            const tn = this._truncateName(nick, 8);
+            const avatar = info?.avatar_url;
+            const isFriend = friendUsernames.has(uname);
+            const lastSeen = info?.last_seen ? formatDistanceToNow(info.last_seen) : '오프라인';
+            const showKick = this._canKickInActiveChannel(uname);
+            const isBlocked = this._isBlockedInActiveChannel(uname);
+            parts.push(`
+                <div class="member-card offline">
+                    <div class="avatar-wrapper">
+                        ${avatar ? `<img src="${avatar}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                        <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${this.escapeHtml(String(nick || uname || '?')[0] || '?')}</div>
+                    </div>
+                    <div class="member-info">
+                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
+                        <span class="member-status-sub">${this.escapeHtml(lastSeen)}</span>
+                    </div>
+                    <div class="member-actions">
+                        ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
+                        ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
+                        ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
+                    </div>
+                </div>
+            `);
+        }
+
+        if (parts.length === 0) {
+            memberList.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px;">아직 이 채널에 참여자가 없습니다.</div>`;
+            return;
         }
 
         memberList.innerHTML = parts.join('');
