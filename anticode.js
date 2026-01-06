@@ -560,8 +560,7 @@ class AntiCodeApp {
     }
 
     canUploadImages() {
-        // Admin is treated as pro in _refreshPlanTier(), so this covers super account too.
-        return this._isProUser();
+        return true;
     }
 
     _truncateName(name, maxChars = 8) {
@@ -1595,49 +1594,58 @@ class AntiCodeApp {
         const onlineCountText = document.getElementById('online-count');
         if (!memberList) return;
 
-        const onlineUsers = [];
-        for (const id in (state || {})) onlineUsers.push(state[id][0]);
-        const onlineUsernames = new Set(onlineUsers.map(u => u.username));
+        // ✅ Requirement (2026-01): show ONLY users currently inside this chat room (presence)
+        // - Free/Pro irrelevant here; admin must be included as a normal online user
+        const raw = [];
+        for (const id in (state || {})) {
+            const arr = state?.[id];
+            if (Array.isArray(arr)) {
+                for (const u of arr) if (u) raw.push(u);
+            }
+        }
+
+        // De-duplicate by username (presence key is username, but keep it safe)
+        const byUsername = new Map();
+        for (const u of raw) {
+            const uname = u?.username ? String(u.username) : '';
+            if (!uname) continue;
+            if (!byUsername.has(uname)) byUsername.set(uname, u);
+        }
+
+        const onlineUsers = Array.from(byUsername.values());
         if (onlineCountText) onlineCountText.innerText = String(onlineUsers.length);
 
-        const friendUsernames = new Set(this.friends.map(f => f.username));
-        // ✅ Requirement:
-        // - Show ONLY users who are currently inside this room (presence = online)
-        // - If user closes app/browser -> they disappear (presence handles this)
-        // - Exception: friends can be shown even if offline, but only if they are a member/invite of this room
-        const offlineFriendUsernamesInRoom = (this.channelMembers || [])
-            .filter((u) => !!u && friendUsernames.has(u) && !onlineUsernames.has(u));
+        // Admins first, then by nickname/username (stable + friendly)
+        onlineUsers.sort((a, b) => {
+            const aAdmin = String(a?.role || '').toLowerCase() === 'admin';
+            const bAdmin = String(b?.role || '').toLowerCase() === 'admin';
+            if (aAdmin !== bAdmin) return aAdmin ? -1 : 1;
+            const an = String(a?.nickname || a?.username || '');
+            const bn = String(b?.nickname || b?.username || '');
+            return an.localeCompare(bn, 'ko');
+        });
 
-        // Order: online first, then offline friends (exception)
-        const ordered = [
-            ...Array.from(onlineUsernames),
-            ...offlineFriendUsernamesInRoom
-        ];
-
-        const onlineMap = new Map(onlineUsers.map(u => [u.username, u]));
-        const parts = [];
-        for (const uname of ordered) {
-            const presenceUser = onlineMap.get(uname);
-            const isOnline = !!presenceUser;
-            // Safety: never show offline non-friends
-            if (!isOnline && !friendUsernames.has(uname)) continue;
-            const info = isOnline ? presenceUser : await this.getUserInfo(uname);
+        const friendUsernames = new Set((this.friends || []).map(f => f.username));
+        const parts = onlineUsers.map((info) => {
+            const uname = String(info?.username || '');
             const nick = info?.nickname || uname;
             const tn = this._truncateName(nick, 8);
             const avatar = info?.avatar_url;
             const isFriend = friendUsernames.has(uname);
+            const isAdmin = String(info?.role || '').toLowerCase() === 'admin';
             const showKick = this._canKickInActiveChannel(uname);
             const isBlocked = this._isBlockedInActiveChannel(uname);
-            parts.push(`
-                <div class="member-card ${isOnline ? 'online' : 'offline'}">
+
+            return `
+                <div class="member-card online">
                     <div class="avatar-wrapper">
                         ${avatar ? `<img src="${avatar}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-                        <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${nick[0]}</div>
-                        ${isOnline ? '<span class="online-dot"></span>' : ''}
+                        <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${this.escapeHtml(String(nick || uname || '?')[0] || '?')}</div>
+                        <span class="online-dot"></span>
                     </div>
                     <div class="member-info">
-                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
-                        <span class="member-status-sub">${isOnline ? '온라인' : '오프라인'}</span>
+                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isAdmin ? '<span class="friend-badge">[관리자]</span>' : (isFriend ? '<span class="friend-badge">[친구]</span>' : '')}</span>
+                        <span class="member-status-sub">온라인</span>
                     </div>
                     <div class="member-actions">
                         ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
@@ -1645,8 +1653,8 @@ class AntiCodeApp {
                         ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
                     </div>
                 </div>
-            `);
-        }
+            `;
+        });
 
         memberList.innerHTML = parts.join('');
     }
@@ -1677,6 +1685,7 @@ class AntiCodeApp {
                         nickname: this.currentUser.nickname,
                         uid: this.currentUser.uid,
                         avatar_url: this.currentUser.avatar_url,
+                        role: this.currentUser?.role || 'user',
                         online_at: new Date().toISOString(),
                     };
                     try { await this.channelPresenceChannel.track(trackData); } catch (_) { }
@@ -2002,6 +2011,7 @@ class AntiCodeApp {
                         nickname: this.currentUser.nickname,
                         uid: this.currentUser.uid,
                         avatar_url: this.currentUser.avatar_url,
+                        role: this.currentUser?.role || 'user',
                         online_at: new Date().toISOString(),
                         voice: true
                     });
@@ -2051,6 +2061,7 @@ class AntiCodeApp {
                     nickname: this.currentUser.nickname,
                     uid: this.currentUser.uid,
                     avatar_url: this.currentUser.avatar_url,
+                    role: this.currentUser?.role || 'user',
                     online_at: new Date().toISOString(),
                     voice: false
                 });
@@ -4106,10 +4117,6 @@ class AntiCodeApp {
         const chatFileInput = document.getElementById('chat-file-input');
         const attachBtn = document.getElementById('attach-btn');
         if (attachBtn && chatFileInput) {
-            // Free users: hide image/file upload completely
-            if (!this.canUploadImages()) {
-                attachBtn.style.display = 'none';
-            } else {
             attachBtn.onclick = () => chatFileInput.click();
             chatFileInput.onchange = async (e) => {
                 const file = e.target.files[0];
@@ -4119,14 +4126,33 @@ class AntiCodeApp {
                 attachBtn.textContent = '...';
                 try {
                     const isImage = !!file.type && file.type.startsWith('image/');
-                    // Very small limits for non-image attachments (as requested)
-                    const maxBytes = isImage ? (5 * 1024 * 1024) : (file.name?.toLowerCase().endsWith('.zip') ? (1 * 1024 * 1024) : (200 * 1024));
-                    if (file.size > maxBytes) {
-                        alert(`파일 용량이 너무 큽니다.\\n- 이미지: 최대 5MB\\n- ZIP: 최대 1MB\\n- TXT: 최대 200KB`);
-                        return;
+                    const isPro = this._isProUser();
+                    
+                    // ✅ User Request:
+                    // - Free: allow image attachment, but enforce 500KB (after compression)
+                    // - Pro: no limit for images
+                    // - Non-images: keep conservative limits
+
+                    let uploadFile = file;
+                    if (isImage) {
+                        // compress first (improves speed + makes 500KB cap workable)
+                        uploadFile = await this.compressImageFile(file);
+                        if (!isPro) {
+                            const maxBytes = 500 * 1024;
+                            if (uploadFile.size > maxBytes) {
+                                alert(`이미지 용량이 너무 큽니다.\\n무료 플랜은 500KB 이하만 업로드할 수 있어요.\\n(유료(Pro)는 제한 없음)`);
+                                return;
+                            }
+                        }
+                    } else {
+                        const maxBytes = isPro ? (50 * 1024 * 1024) : (file.name?.toLowerCase().endsWith('.zip') ? (1 * 1024 * 1024) : (200 * 1024));
+                        if (file.size > maxBytes) {
+                            const limitText = isPro ? "50MB+" : (file.name?.toLowerCase().endsWith('.zip') ? "1MB" : "200KB");
+                            alert(`파일 용량이 너무 큽니다.\\n현재 등급 최대 ${limitText}`);
+                            return;
+                        }
                     }
 
-                    const uploadFile = isImage ? await this.compressImageFile(file) : file;
                     const url = await this.uploadFile(uploadFile);
 
                     // Use same optimistic + finalize flow as text messages
@@ -4180,16 +4206,11 @@ class AntiCodeApp {
                     chatFileInput.value = '';
                 }
             };
-            }
         }
 
         const avatarFileInput = document.getElementById('avatar-file-input');
         const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
         if (uploadAvatarBtn && avatarFileInput) {
-            // Free users: hide avatar file upload button (URL input remains)
-            if (!this.canUploadImages()) {
-                uploadAvatarBtn.style.display = 'none';
-            } else {
             uploadAvatarBtn.onclick = () => avatarFileInput.click();
             avatarFileInput.onchange = async (e) => {
                 const file = e.target.files[0];
@@ -4208,7 +4229,6 @@ class AntiCodeApp {
                     avatarFileInput.value = '';
                 }
             };
-            }
         }
     }
 }
