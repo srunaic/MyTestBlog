@@ -425,6 +425,8 @@ class AntiCodeApp {
         this.channelMembers = []; // usernames invited/joined for current channel
         this.channelMemberMeta = new Map(); // username -> { invited_by }
         this.channelBlockedUsernames = new Set(); // usernames blocked by me in active channel (invite/kick control)
+        // Room participants (ever chatted in this room). Loaded per-channel for offline list UI.
+        this.channelParticipants = []; // [{ username, last_message_at }]
         this.messageQueue = [];
         this.isProcessingQueue = false;
         // Voice chat
@@ -1626,6 +1628,20 @@ class AntiCodeApp {
         });
 
         const friendUsernames = new Set((this.friends || []).map(f => f.username));
+        const onlineNames = new Set(onlineUsers.map(u => String(u?.username || '')).filter(Boolean));
+
+        // Offline participants (ever chatted) = participants - currently online
+        const participants = Array.isArray(this.channelParticipants) ? this.channelParticipants : [];
+        const participantNames = [];
+        const seen = new Set();
+        for (const p of participants) {
+            const uname = p?.username ? String(p.username) : (typeof p === 'string' ? p : '');
+            if (!uname || seen.has(uname)) continue;
+            seen.add(uname);
+            if (!onlineNames.has(uname)) participantNames.push(uname);
+        }
+
+        // Render online first
         const parts = onlineUsers.map((info) => {
             const uname = String(info?.username || '');
             const nick = info?.nickname || uname;
@@ -1655,6 +1671,37 @@ class AntiCodeApp {
                 </div>
             `;
         });
+
+        // Then render offline participants who have chatted at least once in this room
+        for (const uname of participantNames) {
+            try {
+                const info = await this.getUserInfo(uname);
+                const nick = info?.nickname || uname;
+                const tn = this._truncateName(nick, 8);
+                const avatar = info?.avatar_url;
+                const isFriend = friendUsernames.has(uname);
+                const lastSeen = info?.last_seen ? formatDistanceToNow(info.last_seen) : '오프라인';
+                const showKick = this._canKickInActiveChannel(uname);
+                const isBlocked = this._isBlockedInActiveChannel(uname);
+                parts.push(`
+                    <div class="member-card offline">
+                        <div class="avatar-wrapper">
+                            ${avatar ? `<img src="${avatar}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                            <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${this.escapeHtml(String(nick || uname || '?')[0] || '?')}</div>
+                        </div>
+                        <div class="member-info">
+                            <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
+                            <span class="member-status-sub">${this.escapeHtml(lastSeen)}</span>
+                        </div>
+                        <div class="member-actions">
+                            ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
+                            ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
+                            ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
+                        </div>
+                    </div>
+                `);
+            } catch (_) { }
+        }
 
         memberList.innerHTML = parts.join('');
     }
@@ -2649,7 +2696,7 @@ class AntiCodeApp {
             try {
                 const { data, error } = await this.supabase
                     .from('anticode_users')
-                    .select('nickname, avatar_url')
+                    .select('nickname, avatar_url, last_seen')
                     .eq('username', username)
                     .single();
 
@@ -2662,11 +2709,53 @@ class AntiCodeApp {
             } finally {
                 delete this.userRequestCache[username];
             }
-            return { nickname: username, avatar_url: null };
+            return { nickname: username, avatar_url: null, last_seen: null };
         };
 
         this.userRequestCache[username] = fetchInfo();
         return this.userRequestCache[username];
+    }
+
+    async loadChannelParticipants(channelId) {
+        // Offline list should show users who have ever chatted in this room.
+        // We rely on DB-maintained table: public.anticode_channel_participants (see supabase/sql/anticode_channel_participants.sql).
+        // If the table doesn't exist yet, fall back to best-effort (recent messages) so UI still works.
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_channel_participants')
+                .select('username,last_message_at')
+                .eq('channel_id', channelId)
+                .order('last_message_at', { ascending: false })
+                .limit(5000);
+            if (error) throw error;
+            this.channelParticipants = data || [];
+            return;
+        } catch (e) {
+            console.warn('loadChannelParticipants fallback (table missing?):', e?.message || e);
+        }
+
+        // Fallback: derive from current retained messages only (NOT truly "ever", but avoids blank offline list).
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_messages')
+                .select('user_id,created_at')
+                .eq('channel_id', channelId)
+                .order('created_at', { ascending: false })
+                .limit(300);
+            if (error) throw error;
+            const seen = new Set();
+            const out = [];
+            for (const row of (data || [])) {
+                const u = row?.user_id ? String(row.user_id) : '';
+                if (!u || seen.has(u)) continue;
+                seen.add(u);
+                out.push({ username: u, last_message_at: row?.created_at || null });
+            }
+            this.channelParticipants = out;
+        } catch (e2) {
+            console.warn('loadChannelParticipants fallback failed:', e2?.message || e2);
+            this.channelParticipants = [];
+        }
     }
 
     async updateProfile(nickname, avatarUrl) {
@@ -3144,6 +3233,7 @@ class AntiCodeApp {
         this.setupMessageSubscription(channel.id);
 
         // Per-channel online panel
+        await this.loadChannelParticipants(channel.id);
         this.setupChannelPresence(channel.id);
         try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
     }
