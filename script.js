@@ -223,7 +223,6 @@ function isProUser() {
         if (o === 'pro') return true;
     } catch (_) { }
 
-<<<<<<< HEAD
     // Super admin always has full access
     if (currentUser && currentUser.role === 'admin') return true;
 
@@ -242,26 +241,6 @@ function canUploadImages() {
 async function uploadToR2(file, folder = 'blog') {
     if (!R2_UPLOAD_BASE_URL || String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
         throw new Error('R2_UPLOAD_BASE_URL가 설정되지 않았습니다. Cloudflare Pages 환경변수에 R2_UPLOAD_BASE_URL을 추가하세요.');
-=======
-    // 500KB Size Limit Check
-    if (file.size > 512000) {
-        throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
-    }
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    console.log(`[Upload] Attempting to upload to ${bucket}/${filePath} (${Math.round(file.size / 1024)}KB)`);
-
-    const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file);
-
-    if (error) {
-        console.error('Full Upload Error:', error);
-        throw error;
->>>>>>> 5b9fb81 (Fix: Image upload reliability, sequential chat processing, and friends list fetch)
     }
     const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
     const url = `${base}/upload?folder=${encodeURIComponent(folder)}`;
@@ -280,6 +259,37 @@ async function uploadToR2(file, folder = 'blog') {
         throw new Error(errMsg);
     }
     return data.url;
+}
+
+// --- NEW: Storage Upload Utility (Supabase) ---
+async function uploadToSupabase(file, bucket = 'uploads') {
+    if (!supabase) throw new Error('Supabase not initialized');
+
+    // 500KB Size Limit Check
+    if (file.size > 512000) {
+        throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    console.log(`[Upload] Attempting to upload to ${bucket}/${filePath} (${Math.round(file.size / 1024)}KB)`);
+
+    const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+    if (error) {
+        console.error('Full Upload Error:', error);
+        throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+
+    return publicUrl;
 }
 
 // Initialize Client Immediate (Modules are awaited)
@@ -1275,28 +1285,28 @@ function setupEventListeners() {
         if (!canUploadImages()) {
             uploadPostImgBtn.style.display = 'none';
         } else {
-        uploadPostImgBtn.onclick = () => {
-            console.log('Post image upload button clicked');
-            postFileInput.click();
-        }
-        postFileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            console.log('File selected:', file.name);
-            uploadPostImgBtn.textContent = '업로드 중...';
-            try {
-                const url = await uploadToR2(file, 'blog');
-                console.log('Upload successful:', url);
-                const postImgInput = document.getElementById('post-img');
-                if (postImgInput) postImgInput.value = url;
-                alert('이미지가 업로드되었습니다.');
-            } catch (err) {
-                console.error('Upload failed:', err);
-                const errMsg = err.message || JSON.stringify(err);
-                alert('업로드 실패: ' + errMsg);
+            uploadPostImgBtn.onclick = () => {
+                console.log('Post image upload button clicked');
+                postFileInput.click();
             }
-            finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
-        };
+            postFileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                console.log('File selected:', file.name);
+                uploadPostImgBtn.textContent = '업로드 중...';
+                try {
+                    const url = await uploadToR2(file, 'blog');
+                    console.log('Upload successful:', url);
+                    const postImgInput = document.getElementById('post-img');
+                    if (postImgInput) postImgInput.value = url;
+                    alert('이미지가 업로드되었습니다.');
+                } catch (err) {
+                    console.error('Upload failed:', err);
+                    const errMsg = err.message || JSON.stringify(err);
+                    alert('업로드 실패: ' + errMsg);
+                }
+                finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
+            };
         }
     }
 
@@ -1308,18 +1318,18 @@ function setupEventListeners() {
         if (!canUploadImages()) {
             uploadAccAvatarBtn.style.display = 'none';
         } else {
-        uploadAccAvatarBtn.onclick = () => accAvatarFileInput.click();
-        accAvatarFileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            uploadAccAvatarBtn.textContent = '...';
-            try {
-                const url = await uploadToR2(file, 'blog');
-                document.getElementById('acc-avatar-url').value = url;
-                alert('프로필 이미지가 업로드되었습니다.');
-            } catch (err) { alert('업로드 실패: ' + err.message); }
-            finally { uploadAccAvatarBtn.textContent = '이미지 업로드'; accAvatarFileInput.value = ''; }
-        };
+            uploadAccAvatarBtn.onclick = () => accAvatarFileInput.click();
+            accAvatarFileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                uploadAccAvatarBtn.textContent = '...';
+                try {
+                    const url = await uploadToR2(file, 'blog');
+                    document.getElementById('acc-avatar-url').value = url;
+                    alert('프로필 이미지가 업로드되었습니다.');
+                } catch (err) { alert('업로드 실패: ' + err.message); }
+                finally { uploadAccAvatarBtn.textContent = '이미지 업로드'; accAvatarFileInput.value = ''; }
+            };
         }
     }
 }
