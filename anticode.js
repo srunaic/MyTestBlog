@@ -178,7 +178,7 @@ const NotificationManager = {
         if (!this.initialized) return;
         if (this._subTimeout) clearTimeout(this._subTimeout);
         if (this._toastTimer) clearTimeout(this._toastTimer);
-        
+
         if (window.app && window.app.supabase) {
             const supabase = window.app.supabase;
             supabase.removeChannel(supabase.channel('notif-posts-ac'));
@@ -2230,7 +2230,7 @@ class AntiCodeApp {
             }
             audio.srcObject = stream;
             // Mobile sometimes requires explicit play after user gesture; this is best-effort
-            audio.play?.().catch(() => {});
+            audio.play?.().catch(() => { });
         };
 
         pc.onconnectionstatechange = () => {
@@ -2459,7 +2459,11 @@ class AntiCodeApp {
     }
 
     async uploadFile(file, bucket = 'uploads') {
-<<<<<<< HEAD
+        // 500KB Size Limit Check
+        if (file.size > 512000) {
+            throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
+        }
+
         // Prefer Cloudflare R2 (via Worker) to avoid Supabase Storage limits/cost
         if (R2_UPLOAD_BASE_URL && !String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
             const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
@@ -2479,14 +2483,7 @@ class AntiCodeApp {
             return data.url;
         }
 
-        // Fallback: Supabase Storage (legacy)
-=======
-        // 500KB Size Limit Check
-        if (file.size > 512000) {
-            throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
-        }
-
->>>>>>> 5b9fb81 (Fix: Image upload reliability, sequential chat processing, and friends list fetch)
+        // Fallback: Supabase Storage
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;
@@ -2515,7 +2512,7 @@ class AntiCodeApp {
         // 0. Beta Access Check (Restrict browser access, allow only APK/App context)
         const BETA_KEY = 'ANTICODE_BETA_2026';
         const granted = localStorage.getItem('anticode_beta_granted');
-        
+
         // Admin Exception: if already logged in as admin, bypass all checks
         const tempAuth = this.getAuth();
         const isAdmin = tempAuth && tempAuth.role === 'admin';
@@ -2523,7 +2520,7 @@ class AntiCodeApp {
         if (!isAdmin) {
             // Check if running inside a standalone app (APK/PWA)
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || document.referrer.includes('android-app://');
-            
+
             if (!isStandalone) {
                 // Block general browser access
                 document.body.innerHTML = `
@@ -2551,14 +2548,14 @@ class AntiCodeApp {
                 const guard = document.getElementById('beta-guard');
                 const input = document.getElementById('beta-key-input');
                 const btn = document.getElementById('verify-beta-btn');
-                
+
                 if (guard && input && btn) {
                     guard.style.display = 'flex';
                     btn.onclick = () => {
                         if (input.value === BETA_KEY) {
                             localStorage.setItem('anticode_beta_granted', 'true');
                             guard.style.display = 'none';
-                            this.init(); 
+                            this.init();
                         } else {
                             alert('잘못된 베타키입니다.');
                             input.value = '';
@@ -2664,11 +2661,11 @@ class AntiCodeApp {
 
     async handleLastVisitedOrFirstChannel() {
         if (!this.channels || this.channels.length === 0) return;
-        
+
         try {
             const u = this.currentUser?.username || 'anonymous';
             const lastId = localStorage.getItem(`anticode_last_channel::${u}`);
-            
+
             if (lastId) {
                 const target = this.channels.find(c => String(c.id) === String(lastId));
                 if (target) {
@@ -3079,7 +3076,7 @@ class AntiCodeApp {
             const chans = categories[catId] || [];
             if (chans.length === 0 && catId !== 'chat') return;
             const isCollapsed = !!collapsed?.[catId];
-            
+
             const group = document.createElement('div');
             group.className = 'channel-group' + (isCollapsed ? ' collapsed' : '');
             group.innerHTML = `
@@ -3089,10 +3086,10 @@ class AntiCodeApp {
                 </div>
                 <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">
                     ${chans.map(c => {
-                        const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
-                        const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
-                        return c.renderSidebarItem(isActive, this.isAdminMode, voiceState);
-                    }).join('')}
+                const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
+                const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
+                return c.renderSidebarItem(isActive, this.isAdminMode, voiceState);
+            }).join('')}
                 </div>
             `;
 
@@ -3102,15 +3099,15 @@ class AntiCodeApp {
                 if (e?.target?.id === 'open-create-channel-cat') return;
                 const list = group.querySelector('.sidebar-list');
                 const nowCollapsed = !group.classList.contains('collapsed');
-                if (nowCollapsed) { group.classList.add('collapsed'); if(list) list.style.display = 'none'; }
-                else { group.classList.remove('collapsed'); if(list) list.style.display = ''; }
-                
+                if (nowCollapsed) { group.classList.add('collapsed'); if (list) list.style.display = 'none'; }
+                else { group.classList.remove('collapsed'); if (list) list.style.display = ''; }
+
                 try {
                     const prev = JSON.parse(localStorage.getItem(collapseKey) || '{}');
                     prev[catId] = nowCollapsed;
                     localStorage.setItem(collapseKey, JSON.stringify(prev));
                 } catch (_) { }
-                
+
                 const label = header.querySelector('.group-label');
                 if (label) label.textContent = `${nowCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}`;
             };
@@ -3170,7 +3167,7 @@ class AntiCodeApp {
 
     copyInviteLink() {
         if (!this.activeChannel) return;
-        
+
         const url = new URL(window.location.href);
         url.searchParams.set('channel', this.activeChannel.id);
         const inviteUrl = url.toString();
@@ -3421,7 +3418,7 @@ class AntiCodeApp {
         // 2. Render all messages synchronously using DocumentFragment (Now super fast)
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
-        
+
         for (const msg of rows) {
             // Get user info synchronously from cache (since we preloaded)
             const info = this.userCache[msg.user_id] || { nickname: msg.author || '?', avatar_url: null };
@@ -3739,7 +3736,7 @@ class AntiCodeApp {
                 if (msg.id && this.processedMessageIds.has(msg.id)) return;
                 const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${msg.id}"]`);
                 if (opt) { this.finalizeOptimistic(opt, msg.id); return; }
-                
+
                 if (this._isRecentDuplicate(msg)) return;
             }
 
@@ -4265,7 +4262,7 @@ class AntiCodeApp {
                 try {
                     const isImage = !!file.type && file.type.startsWith('image/');
                     const isPro = this._isProUser();
-                    
+
                     // ✅ User Request:
                     // - Free: allow image attachment, but enforce 500KB (after compression)
                     // - Pro: no limit for images
