@@ -223,6 +223,7 @@ function isProUser() {
         if (o === 'pro') return true;
     } catch (_) { }
 
+<<<<<<< HEAD
     // Super admin always has full access
     if (currentUser && currentUser.role === 'admin') return true;
 
@@ -241,6 +242,26 @@ function canUploadImages() {
 async function uploadToR2(file, folder = 'blog') {
     if (!R2_UPLOAD_BASE_URL || String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
         throw new Error('R2_UPLOAD_BASE_URL가 설정되지 않았습니다. Cloudflare Pages 환경변수에 R2_UPLOAD_BASE_URL을 추가하세요.');
+=======
+    // 500KB Size Limit Check
+    if (file.size > 512000) {
+        throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    console.log(`[Upload] Attempting to upload to ${bucket}/${filePath} (${Math.round(file.size / 1024)}KB)`);
+
+    const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+    if (error) {
+        console.error('Full Upload Error:', error);
+        throw error;
+>>>>>>> 5b9fb81 (Fix: Image upload reliability, sequential chat processing, and friends list fetch)
     }
     const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
     const url = `${base}/upload?folder=${encodeURIComponent(folder)}`;
@@ -1271,7 +1292,8 @@ function setupEventListeners() {
                 alert('이미지가 업로드되었습니다.');
             } catch (err) {
                 console.error('Upload failed:', err);
-                alert('업로드 실패: ' + err.message);
+                const errMsg = err.message || JSON.stringify(err);
+                alert('업로드 실패: ' + errMsg);
             }
             finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
         };

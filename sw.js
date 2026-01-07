@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
 const CACHE_NAME = 'nanodoroshi-v1.9'; // Increment version to force refresh
+=======
+const CACHE_NAME = 'nanodoroshi-v1.7'; // Force refresh for upload fixes
+>>>>>>> 5b9fb81 (Fix: Image upload reliability, sequential chat processing, and friends list fetch)
 const ASSETS = [
     '/',
     '/index.html',

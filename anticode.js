@@ -2459,6 +2459,7 @@ class AntiCodeApp {
     }
 
     async uploadFile(file, bucket = 'uploads') {
+<<<<<<< HEAD
         // Prefer Cloudflare R2 (via Worker) to avoid Supabase Storage limits/cost
         if (R2_UPLOAD_BASE_URL && !String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
             const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
@@ -2479,16 +2480,25 @@ class AntiCodeApp {
         }
 
         // Fallback: Supabase Storage (legacy)
+=======
+        // 500KB Size Limit Check
+        if (file.size > 512000) {
+            throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
+        }
+
+>>>>>>> 5b9fb81 (Fix: Image upload reliability, sequential chat processing, and friends list fetch)
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;
+
+        console.log(`[AntiCode Upload] Attempting to upload to ${bucket}/${filePath} (${Math.round(file.size / 1024)}KB)`);
 
         const { data, error } = await this.supabase.storage
             .from(bucket)
             .upload(filePath, file);
 
         if (error) {
-            console.error('Upload error:', error);
+            console.error('AntiCode Upload Error:', error);
             throw error;
         }
 
@@ -4329,7 +4339,8 @@ class AntiCodeApp {
                     // Offline push notification (file/image message)
                     this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content: isImage ? '[이미지]' : fileLabel });
                 } catch (err) {
-                    alert('이미지 업로드 실패: ' + err.message);
+                    const errMsg = err.message || JSON.stringify(err);
+                    alert('이미지 업로드 실패: ' + errMsg);
                 } finally {
                     attachBtn.textContent = originalBtnText;
                     chatFileInput.value = '';
@@ -4352,7 +4363,8 @@ class AntiCodeApp {
                     document.getElementById('edit-avatar-url').value = url;
                     alert('프로필 이미지가 업로드되었습니다. 저장 버튼을 눌러 확정하세요.');
                 } catch (err) {
-                    alert('이미지 업로드 실패: ' + err.message);
+                    const errMsg = err.message || JSON.stringify(err);
+                    alert('이미지 업로드 실패: ' + errMsg);
                 } finally {
                     uploadAvatarBtn.textContent = '파일 선택';
                     avatarFileInput.value = '';
