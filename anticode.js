@@ -2423,8 +2423,8 @@ class AntiCodeApp {
     }
 
     async uploadFile(file, bucket = 'uploads') {
-        // 500KB Size Limit Check
-        if (file.size > 512000) {
+        // 500KB Size Limit Check (Bypassed for Pro/Admin)
+        if (file.size > 512000 && !(this._isAdmin() || this._isProUser())) {
             throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
         }
 

@@ -309,8 +309,8 @@ async function uploadToR2(file, folder = 'blog') {
 async function uploadToSupabase(file, bucket = 'uploads') {
     if (!supabase) throw new Error('Supabase not initialized');
 
-    // 500KB Size Limit Check
-    if (file.size > 512000) {
+    // 500KB Size Limit Check (Bypassed for Pro/Admin)
+    if (file.size > 512000 && !isProUser()) {
         throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
     }
 
