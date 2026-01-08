@@ -1,10 +1,11 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v1.9'; // Increment version to force refresh
+const CACHE_NAME = 'nanodoroshi-v2.0'; // [PERFORMANCE] Increment version
 const ASSETS = [
     '/',
     '/index.html',
     '/style.css',
     '/script.js',
+    '/worker.js', // [MULTI-THREAD] Add worker to cache
     '/anticode.html',
     '/anticode.css',
     '/anticode.js',
@@ -12,7 +13,6 @@ const ASSETS = [
     '/manifest-v3.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 ];
-
 // Message listener for PWABuilder compatibility
 self.addEventListener("message", (event) => {
     if (event.data && event.data.type === "SKIP_WAITING") {
@@ -44,28 +44,28 @@ self.addEventListener('activate', event => {
     self.clients.claim();
 });
 
-// Fetch Event: Network-First Strategy
+// Fetch Event: [PERFORMANCE] Stale-While-Revalidate Strategy
 self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET') return;
     const url = new URL(event.request.url);
 
-    // Skip non-GET requests and Supabase Realtime/Storage if necessary (usually they are POST/WebSocket)
-    if (event.request.method !== 'GET') return;
+    // Skip Supabase Realtime/Auth (Always network)
+    if (url.hostname.includes('supabase.co')) return;
 
-    // Network-First for everything to ensure updates are caught
     event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // Update cache with fresh version if it's a successful response
-                if (response && response.status === 200) {
-                    const copy = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-                }
-                return response;
-            })
-            .catch(() => {
-                // Fallback to cache if network fails
-                return caches.match(event.request);
-            })
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.match(event.request).then(response => {
+                const fetchPromise = fetch(event.request).then(networkResponse => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                }).catch(() => null);
+
+                // Return cached response immediately if available, else wait for network
+                return response || fetchPromise;
+            });
+        })
     );
 });
 

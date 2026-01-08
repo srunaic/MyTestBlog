@@ -24,6 +24,42 @@ var SESSION_KEY = 'nano_dorothy_session';
 var currentPage = 1;
 var postsPerPage = 12;
 
+// 🧵 Web Worker (Logic Thread) Manager
+const LogicWorker = {
+    worker: null,
+    callbacks: new Map(),
+    idCounter: 0,
+
+    init() {
+        if (this.worker) return;
+        try {
+            this.worker = new Worker('./worker.js');
+            this.worker.onmessage = (e) => {
+                const { id, result, error } = e.data;
+                const callback = this.callbacks.get(id);
+                if (callback) {
+                    this.callbacks.delete(id);
+                    if (error) callback.reject(new Error(error));
+                    else callback.resolve(result);
+                }
+            };
+            this.worker.onerror = (err) => console.error('LogicWorker Error:', err);
+            console.log('LogicWorker (Logic Thread) ready.');
+        } catch (e) {
+            console.warn('LogicWorker init failed (fallback to main thread):', e);
+        }
+    },
+
+    execute(type, payload) {
+        if (!this.worker) return Promise.reject('Worker not initialized');
+        return new Promise((resolve, reject) => {
+            const id = this.idCounter++;
+            this.callbacks.set(id, { resolve, reject });
+            this.worker.postMessage({ type, payload, id });
+        });
+    }
+};
+
 // ==========================================
 // 2. SESSION & STATE MANAGER
 // ==========================================
@@ -453,6 +489,7 @@ window.toggleMobileMore = () => {
 
 async function init() {
     console.log('Initializing Blog...');
+    LogicWorker.init(); // [MULTI-THREAD] Start the Logic Thread
     applyViewMode(); // Apply saved mode immediately
 
     // 1. Initialize Globals
@@ -543,28 +580,31 @@ async function loadData() {
     if (!supabase) return;
 
     try {
-        // Fetch only needed posts (Basic Pagination support)
-        const { data: postData, error: postError } = await supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .range(0, 100); // Limit to latest 100 for now to keep it snappy
+        const promises = [
+            supabase.from('posts').select('*').order('created_at', { ascending: false }).range(0, 100),
+            supabase.from('social_links').select('*').order('id', { ascending: true })
+        ];
 
+        if (isAdminMode) {
+            promises.push(supabase.from('users').select('*').limit(500));
+        }
+
+        const results = await Promise.all(promises);
+
+        // Posts Result
+        const { data: postData, error: postError } = results[0];
         if (postError) throw postError;
         posts = postData && postData.length > 0 ? postData : [];
 
-        // Don't fetch all users - only if admin needs them for management
-        if (isAdminMode) {
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select('*')
-                .limit(500); // Cap it
+        // Social Links Result
+        const { data: linkData, error: linkError } = results[1];
+        if (!linkError) socialLinks = linkData || [];
+
+        // Users Result (Admin Only)
+        if (isAdminMode && results[2]) {
+            const { data: userData, error: userError } = results[2];
             if (!userError && userData) users = userData;
         }
-
-        // Fetch Social Links
-        const { data: linkData, error: linkError } = await supabase.from('social_links').select('*').order('id', { ascending: true });
-        if (!linkError) socialLinks = linkData || [];
 
     } catch (err) {
         console.error('Data load error:', err);
@@ -1581,56 +1621,27 @@ async function getHelpResponse(query) {
     return await oracleBrain(query);
 }
 
-// 🧠 Advanced AI Logic: Oracle Brain
+// 🧠 Advanced AI Logic: Oracle Brain (Delegated to Logic Thread)
 async function oracleBrain(query) {
-    const q = query.toLowerCase();
+    const q = (query || '').toLowerCase();
 
-    // 1. Behavior Training: Track if the user is searching for a specific tag
+    // Side effect tracking (keep on main thread for DOM/Storage consistency)
     if (q.startsWith('#')) {
         const tag = q.replace('#', '');
         updateUserIntel({ last_searched_tag: tag });
     }
 
-    // 2. Content Awareness: Search in Posts
-    const results = posts.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.content.toLowerCase().includes(q) ||
-        (p.category && p.category.toLowerCase().includes(q))
-    );
+    // Heavy computation offloaded to worker
+    const response = await LogicWorker.execute('ORACLE_BRAIN', { query, posts });
 
-    // 3. Media Awareness: Search for Images
-    const imagePosts = results.filter(p => p.image_url && p.image_url.trim() !== '');
-
-    // 4. Intelligence Logic (Response Generation)
-    if (q.includes('이미지') || q.includes('사진') || q.includes('그림')) {
-        if (imagePosts.length > 0) {
-            const top = imagePosts[0];
-            return {
-                text: `이미지가 포함된 '${top.title}' 포스트를 찾았습니다.`,
-                image: top.image_url,
-                link: { action: `showDetail(${top.id})` }
-            };
-        }
+    if (response && response.link && response.link.id) {
+        updateUserIntel({ last_recommended_post: response.link.id });
     }
 
-    if (results.length > 0) {
-        const top = results[0];
-        updateUserIntel({ last_recommended_post: top.id });
-        return {
-            text: `'${top.title}' 포스트가 질문과 관련이 있어 보입니다.`,
-            image: top.image_url || null,
-            link: { action: `showDetail(${top.id})` }
-        };
-    }
+    return response;
+}
 
-    // 5. Default Context-Aware Responses
-    if (q.includes('글') || q.includes('작성') || q.includes('포스트')) return "글을 쓰려면 상단 'FEEDS' 섹션의 '글쓰기' 버튼을 누르세요. (현재 어드민 권한이 필요합니다.)";
-    if (q.includes('로그인') || q.includes('접속')) return "우측 상단 'ACCESS' 버튼을 눌러 로그인하거나 회원가입할 수 있습니다.";
-    if (q.includes('삭제') || q.includes('수정')) return "자신이 쓴 글 상단의 ⋮ 아이콘을 눌러 수정 또는 삭제가 가능합니다.";
-    if (q.includes('로또') || q.includes('예측')) return "CONNECT 섹션 아래의 'LOTTO ORACLE' 메뉴를 이용해 보세요.";
-    if (q.includes('도움') || q.includes('기능')) return "저는 블로그 콘텐츠와 이미지, 태그를 분석하는 Oracle AI입니다. 질문을 주시면 관련 내용을 찾아드릴게요.";
-
-    return "그 질문의 맥락을 분석 중입니다. 아직 블로그에서 관련 포스트를 찾지 못했지만, 기록을 남겨 곧 학습하도록 하겠습니다.";
+return "그 질문의 맥락을 분석 중입니다. 아직 블로그에서 관련 포스트를 찾지 못했지만, 기록을 남겨 곧 학습하도록 하겠습니다.";
 }
 
 // 📊 User Intelligence: Behavior Tracking
@@ -1760,14 +1771,24 @@ async function loadComments(postId) {
 function renderComments() {
     if (!commentList) return;
 
-    // Organise comments into threads
-    const roots = comments.filter(c => !c.parent_id);
-    const children = comments.filter(c => c.parent_id);
+    // O(N) Optimization: Pre-map children by parent_id
+    const childMap = new Map();
+    const roots = [];
+
+    comments.forEach(c => {
+        if (!c.parent_id) {
+            roots.push(c);
+        } else {
+            if (!childMap.has(c.parent_id)) childMap.set(c.parent_id, []);
+            childMap.get(c.parent_id).push(c);
+        }
+    });
 
     if (roots.length === 0) {
         commentList.innerHTML = '<p style="text-align:center; opacity:0.5; padding:20px;">첫 댓글을 남겨보세요!</p>';
     } else {
-        commentList.innerHTML = roots.map(c => renderCommentItem(c, children)).join('');
+        // Render using the map for efficient lookups
+        commentList.innerHTML = roots.map(c => renderCommentItem(c, childMap)).join('');
     }
 
     const formArea = document.getElementById('comment-form-area');
@@ -1778,9 +1799,9 @@ function renderComments() {
     }
 }
 
-function renderCommentItem(c, allChildren, depth = 0) {
+function renderCommentItem(c, childMap, depth = 0) {
     const isOwner = currentUser && (currentUser.username === c.user_id);
-    const myChildren = allChildren.filter(child => child.parent_id == c.id);
+    const myChildren = childMap.get(c.id) || [];
 
     return `
         <div class="comment-item" style="margin-left: calc(var(--comment-indent) * ${depth}); ${depth > 0 ? 'border-left: 2px solid var(--futuristic-accent);' : ''}">
@@ -1808,7 +1829,7 @@ function renderCommentItem(c, allChildren, depth = 0) {
                     <button class="action-btn-sm primary" onclick="submitComment(${c.id})">등록</button>
                 </div>
             </div>
-            ${myChildren.map(child => renderCommentItem(child, allChildren, depth + 1)).join('')}
+            ${myChildren.map(child => renderCommentItem(child, childMap, depth + 1)).join('')}
         </div>
     `;
 }

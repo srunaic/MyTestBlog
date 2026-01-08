@@ -30,6 +30,42 @@ const formatDistanceToNow = (date) => {
     return '오래 전';
 };
 
+// 🧵 Web Worker (Logic Thread) Manager
+const LogicWorker = {
+    worker: null,
+    callbacks: new Map(),
+    idCounter: 0,
+
+    init() {
+        if (this.worker) return;
+        try {
+            this.worker = new Worker('./worker.js');
+            this.worker.onmessage = (e) => {
+                const { id, result, error } = e.data;
+                const callback = this.callbacks.get(id);
+                if (callback) {
+                    this.callbacks.delete(id);
+                    if (error) callback.reject(new Error(error));
+                    else callback.resolve(result);
+                }
+            };
+            this.worker.onerror = (err) => console.error('LogicWorker Error:', err);
+            console.log('LogicWorker (Logic Thread) ready.');
+        } catch (e) {
+            console.warn('LogicWorker init failed:', e);
+        }
+    },
+
+    execute(type, payload) {
+        if (!this.worker) return Promise.reject('Worker not initialized');
+        return new Promise((resolve, reject) => {
+            const id = this.idCounter++;
+            this.callbacks.set(id, { resolve, reject });
+            this.worker.postMessage({ type, payload, id });
+        });
+    }
+};
+
 // ==========================================
 // 2. CHANNEL CLASS (OO Design)
 // ==========================================
@@ -1247,6 +1283,7 @@ class AntiCodeApp {
         this.sentMessageCache = new Set();
         this.messageQueue = [];
         this.isProcessingQueue = false;
+        this._panelDebounceTimer = null;
     }
 
     async compressImageFile(file, maxDim = 1280, quality = 0.78) {
@@ -1283,92 +1320,6 @@ class AntiCodeApp {
             .replace(/'/g, '&#39;');
     }
 
-    extractYouTubeId(url) {
-        try {
-            const u = new URL(url);
-            const host = u.hostname.replace(/^www\./, '');
-            // youtu.be/<id>
-            if (host === 'youtu.be') {
-                const id = u.pathname.split('/').filter(Boolean)[0] || '';
-                return /^[\w-]{11}$/.test(id) ? id : null;
-            }
-            if (host.endsWith('youtube.com')) {
-                // watch?v=<id>
-                const v = u.searchParams.get('v');
-                if (v && /^[\w-]{11}$/.test(v)) return v;
-                // /shorts/<id>, /embed/<id>
-                const parts = u.pathname.split('/').filter(Boolean);
-                const idx = parts.findIndex(p => p === 'shorts' || p === 'embed');
-                if (idx !== -1 && parts[idx + 1] && /^[\w-]{11}$/.test(parts[idx + 1])) return parts[idx + 1];
-            }
-            return null;
-        } catch (_) {
-            return null;
-        }
-    }
-
-    linkify(escapedText) {
-        // escapedText must already be HTML-escaped.
-        const text = String(escapedText ?? '');
-        const urlRe = /(https?:\/\/[^\s<]+[^\s<\.)\],!?])/g;
-        return text.replace(urlRe, (rawUrl) => {
-            const url = rawUrl;
-            const lower = url.toLowerCase();
-            const isYouTube = lower.includes('youtube.com') || lower.includes('youtu.be');
-            if (isYouTube) {
-                const vid = this.extractYouTubeId(url);
-                const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : null;
-                const link = `<a href="${url}" target="_blank" rel="noopener noreferrer">🎬 YouTube 링크</a>`;
-                const preview = thumb
-                    ? `<div class="yt-preview"><a href="${url}" target="_blank" rel="noopener noreferrer"><img class="yt-thumb" src="${thumb}" alt="YouTube thumbnail" loading="lazy"></a></div>`
-                    : '';
-                return `${link}${preview}`;
-            }
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-        });
-    }
-
-    filterProfanity(text) {
-        const input = String(text ?? '');
-        if (!input) return { text: input, flagged: false };
-
-        // NOTE: This is a best-effort filter (client-side). Expand list as needed.
-        const patterns = [
-            // Korean profanity (common variants)
-            /씨\s*발/gi,
-            /시\s*발/gi,
-            /ㅅ\s*ㅂ/gi,
-            /ㅆ\s*ㅂ/gi,
-            /병\s*신/gi,
-            /븅\s*신/gi,
-            /좆/gi,
-            /존\s*나/gi,
-            /개\s*새\s*끼/gi,
-            /새\s*끼/gi,
-            /미\s*친/gi,
-            // English profanity
-            /\bfuck(?:ing|er|ers|ed)?\b/gi,
-            /\bshit(?:ty|ting|ter|ters)?\b/gi,
-            /\bbitch(?:es|y)?\b/gi,
-            /\basshole\b/gi,
-            /\bcunt\b/gi,
-            /\bdick\b/gi,
-            /\bpussy\b/gi,
-            /\bmotherfucker\b/gi,
-            /\bbastard\b/gi,
-            /\bnigg(?:er|a)\b/gi
-        ];
-
-        let out = input;
-        let flagged = false;
-        for (const re of patterns) {
-            if (re.test(out)) {
-                flagged = true;
-                out = out.replace(re, '***');
-            }
-        }
-        return { text: out, flagged };
-    }
 
     async ensureCurrentUserChannelMembership(channelId) {
         // Record that current user has joined/visited this channel so they appear in member list.
@@ -1739,14 +1690,19 @@ class AntiCodeApp {
         });
 
         this.channelPresenceChannel
-            .on('presence', { event: 'sync' }, async () => {
+            .on('presence', { event: 'sync' }, () => {
                 const state = this.channelPresenceChannel.presenceState();
-                await this.updateChannelMemberPanel(state);
-                await this._enforceActiveChannelAccess();
-                // If voice is enabled, opportunistically connect to peers in this channel
-                if (this.voiceEnabled) {
-                    await this._reconcileVoicePeersFromPresence(state);
-                }
+                // O(N) Optimization: Debounce panel updates to prevent DOM thrashing with many users
+                if (this._panelDebounceTimer) clearTimeout(this._panelDebounceTimer);
+                this._panelDebounceTimer = setTimeout(async () => {
+                    await this.updateChannelMemberPanel(state);
+                    await this._enforceActiveChannelAccess();
+                    // If voice is enabled, opportunistically connect to peers in this channel
+                    if (this.voiceEnabled) {
+                        await this._reconcileVoicePeersFromPresence(state);
+                    }
+                    this._panelDebounceTimer = null;
+                }, 500);
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
@@ -2508,6 +2464,7 @@ class AntiCodeApp {
 
     async init() {
         console.log('AntiCode Feature App initializing...');
+        LogicWorker.init(); // [MULTI-THREAD] Start the Logic Thread
 
         // 0. Beta Access Check (Restrict browser access, allow only APK/App context)
         const BETA_KEY = 'ANTICODE_BETA_2026';
@@ -3392,7 +3349,6 @@ class AntiCodeApp {
         const container = document.getElementById('message-container');
         if (!container) return;
 
-        // Clear and show loading
         container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">메시지를 불러오는 중...</div>';
 
         const { data, error } = await this.supabase
@@ -3410,28 +3366,26 @@ class AntiCodeApp {
         }
 
         const rows = (data || []).slice().reverse();
-
-        // 1. Preload all user info in ONE batch query
         const usernames = rows.map(m => m.user_id);
         await this.preloadUsers(usernames);
 
-        // 2. Render all messages synchronously using DocumentFragment (Now super fast)
+        // [MULTI-THREAD] Process all messages in parallel via LogicWorker
+        const elementPromises = rows.map(msg => {
+            const info = this.userCache[msg.user_id] || { nickname: msg.author || '?', avatar_url: null };
+            return this.createMessageElementAsync(msg, info, false);
+        });
+
+        const elements = await Promise.all(elementPromises);
+
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
-
-        for (const msg of rows) {
-            // Get user info synchronously from cache (since we preloaded)
-            const info = this.userCache[msg.user_id] || { nickname: msg.author || '?', avatar_url: null };
-            const msgEl = this.createMessageElementSync(msg, info, false);
-            if (msgEl) fragment.appendChild(msgEl);
-        }
+        elements.forEach(el => { if (el) fragment.appendChild(el); });
 
         container.appendChild(fragment);
         container.scrollTop = container.scrollHeight;
     }
 
-    // New synchronous version for fast batch rendering
-    createMessageElementSync(msg, info, isOptimistic = false) {
+    async createMessageElementAsync(msg, info, isOptimistic = false) {
         try {
             const msgEl = document.createElement('div');
             msgEl.className = 'message-item';
@@ -3451,7 +3405,8 @@ class AntiCodeApp {
             </div>
         `;
 
-            const filtered = this.filterProfanity(msg.content || '');
+            // Offload profanity and linkify to the Logic Thread
+            const { contentHtml, flagged } = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
             const isMyMessage = msg.user_id === this.currentUser.username;
             const canDelete = isMyMessage || this.isAdminMode;
 
@@ -3464,14 +3419,14 @@ class AntiCodeApp {
                         ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
                     </div>
                     <div class="message-text">
-                        ${this.linkify(this.escapeHtml(filtered.text))}
+                        ${contentHtml}
                         ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
                     </div>
                 </div>
             `;
             return msgEl;
         } catch (e) {
-            console.error('Failed to create message element:', e);
+            console.error('Failed to create message element async:', e);
             return null;
         }
     }
@@ -3643,9 +3598,9 @@ class AntiCodeApp {
             return;
         }
 
-        // Profanity filter
-        const filtered = this.filterProfanity(content);
-        content = filtered.text;
+        // Profanity filter (Offloaded to Logic Thread)
+        const { text: filteredText } = await LogicWorker.execute('FILTER_PROFANITY', { text: content });
+        content = filteredText;
 
         const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
         const newMessage = {
@@ -3721,46 +3676,63 @@ class AntiCodeApp {
         return false;
     }
 
-    async createMessageElement(msg, isOptimistic = false) {
-        const info = await this.getUserInfo(msg.user_id);
-        return this.createMessageElementSync(msg, info, isOptimistic);
-    }
-
     async appendMessage(msg, isOptimistic = false) {
+        const container = document.getElementById('message-container');
+        if (!container) return;
+
         try {
-            const container = document.getElementById('message-container');
-            if (!container) return;
-
-            // Dedup & Optimistic Matching
-            if (!isOptimistic) {
-                if (msg.id && this.processedMessageIds.has(msg.id)) return;
-                const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${msg.id}"]`);
-                if (opt) { this.finalizeOptimistic(opt, msg.id); return; }
-
-                if (this._isRecentDuplicate(msg)) return;
-            }
-
-            const msgEl = await this.createMessageElement(msg, isOptimistic);
-            if (!msgEl) return;
-
-            container.appendChild(msgEl);
+            // Deduplicate
+            if (msg.id && this.processedMessageIds.has(msg.id)) return;
             if (msg.id) this.processedMessageIds.add(msg.id);
 
-            while (container.children.length > (MESSAGE_RETENTION_PER_CHANNEL + 20)) {
-                container.removeChild(container.firstElementChild);
+            // Match Optimistic
+            if (!isOptimistic) {
+                const existing = container.querySelector(msg.tempId ? `[data-temp-id="${msg.tempId}"]` : `div[data-optimistic="true"]`);
+                if (existing) {
+                    await this.finalizeOptimistic(existing, msg);
+                    return;
+                }
             }
-            container.scrollTop = container.scrollHeight;
+
+            const info = this.userCache[msg.user_id] || await this.getUserInfo(msg.user_id);
+            const msgEl = await this.createMessageElementAsync(msg, info, isOptimistic);
+            if (msgEl) {
+                container.appendChild(msgEl);
+                this._scrollToBottom();
+            }
         } catch (e) {
-            console.error('Failed to append message:', e, msg);
+            console.error('appendMessage error:', e);
         }
     }
 
-    finalizeOptimistic(opt, realId) {
-        opt.style.opacity = '1';
-        opt.removeAttribute('data-optimistic');
-        const statusText = opt.querySelector('.sending-status');
-        if (statusText) statusText.remove();
-        if (realId) this.processedMessageIds.add(realId);
+    async finalizeOptimistic(el, realMsg) {
+        el.id = `msg-${realMsg.id}`;
+        el.style.opacity = '1';
+        el.removeAttribute('data-optimistic');
+        el.removeAttribute('data-temp-id');
+
+        const status = el.querySelector('.sending-status');
+        if (status) status.innerText = '';
+
+        const meta = el.querySelector('.message-meta');
+        if (meta && this.isAdminMode) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-msg-btn';
+            delBtn.title = '삭제';
+            delBtn.onclick = () => this.deleteMessage(realMsg.id);
+            delBtn.innerText = '🗑️';
+            meta.appendChild(delBtn);
+        }
+
+        // [MULTI-THREAD] Update content with the processed version from worker
+        const textEl = el.querySelector('.message-text');
+        if (textEl) {
+            const { contentHtml } = await LogicWorker.execute('PROCESS_MESSAGE', { text: realMsg.content || '' });
+            textEl.innerHTML = `
+                ${contentHtml}
+                ${realMsg.image_url ? `<div class="message-image-content"><img src="${realMsg.image_url}" class="chat-img" onclick="window.open('${realMsg.image_url}')"></div>` : ''}
+            `;
+        }
     }
 
     _markOptimisticFailed(tempId, reason = '') {
@@ -3778,7 +3750,7 @@ class AntiCodeApp {
         if (!messageId) return;
         if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
 
-        // Instant UI: Remove from DOM immediately (No half-measures)
+        // Instant UI: Remove from DOM immediately
         const el = document.getElementById(`msg-${messageId}`);
         const parent = el?.parentElement;
         const nextSibling = el?.nextSibling;
@@ -3793,7 +3765,6 @@ class AntiCodeApp {
             if (error) {
                 console.error('Delete error:', error);
                 alert('삭제 실패: ' + error.message);
-                // Revert UI if server failed
                 if (el && parent) parent.insertBefore(el, nextSibling);
                 return;
             }
@@ -3810,17 +3781,17 @@ class AntiCodeApp {
         if (!info) return;
         const avatarHtml = this.currentUser.avatar_url ? `<img src="${this.currentUser.avatar_url}" class="avatar-img">` : `<div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>`;
         info.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                ${avatarHtml}
-                <div class="user-info-text">
-                    <div class="member-name" style="font-size:0.8rem;">${this.currentUser.nickname}</div>
-                    <div class="uid-row" style="display:flex; align-items:center; gap:4px;">
-                        <div class="uid-badge">UID: ${this.currentUser.uid}</div>
-                        <button class="uid-copy-btn" title="UID 복사" data-uid="${this.currentUser.uid}">📋</button>
-                    </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            ${avatarHtml}
+            <div class="user-info-text">
+                <div class="member-name" style="font-size:0.8rem;">${this.currentUser.nickname}</div>
+                <div class="uid-row" style="display:flex; align-items:center; gap:4px;">
+                    <div class="uid-badge">UID: ${this.currentUser.uid}</div>
+                    <button class="uid-copy-btn" title="UID 복사" data-uid="${this.currentUser.uid}">📋</button>
                 </div>
             </div>
-        `;
+        </div>
+    `;
 
         const copyBtn = info.querySelector('.uid-copy-btn');
         if (copyBtn) {
@@ -4370,7 +4341,6 @@ class AntiCodeApp {
         }
     }
 }
-
 const app = new AntiCodeApp();
 window.app = app;
 app.init();
