@@ -60,32 +60,33 @@
     padding: 12px 8px;
 }
 
-.channel-page-bar{
-    display:flex;
-    gap:8px;
+.channel-page-bar {
+    display: flex;
+    gap: 8px;
     padding: 6px 8px 10px 8px;
-    align-items:center;
+    align-items: center;
 }
 
-.channel-page-select{
-    flex:1;
-    min-width:0;
-    background:#1e1f22;
+.channel-page-select {
+    flex: 1;
+    min-width: 0;
+    background: #1e1f22;
     color: var(--text-primary);
-    border:1px solid rgba(255,255,255,0.10);
-    border-radius:6px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
     padding: 8px 10px;
     font-size: 0.78rem;
 }
 
-.draggable-item{
+.draggable-item {
     cursor: grab;
 }
-.draggable-item.dragging{
+
+.draggable-item.dragging {
     opacity: 0.5;
 }
 
-.drag-handle{
+.drag-handle {
     color: var(--text-muted);
     margin-right: 8px;
     user-select: none;
@@ -237,7 +238,7 @@
 }
 
 /* Settings modal readability: add spacing + divider between groups */
-.setting-item-group + .setting-item-group {
+.setting-item-group+.setting-item-group {
     margin-top: 14px;
     padding-top: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -837,26 +838,34 @@
 }
 
 .delete-msg-btn {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 77, 77, 0.2);
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.95rem;
+    /* Slightly larger */
     cursor: pointer;
     opacity: 0;
-    transition: 0.2s;
-    padding: 2px 6px;
+    transition: all 0.2s ease;
+    padding: 2px 8px;
     border-radius: 4px;
-    margin-left: 4px;
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .message-item:hover .delete-msg-btn {
-    opacity: 0.6;
+    opacity: 0.5;
+    /* More visible than 0.4 */
 }
 
 .delete-msg-btn:hover {
     opacity: 1 !important;
-    color: #ff4d4d;
-    background: rgba(255, 77, 77, 0.1);
+    color: #fff !important;
+    background: #ff4d4d !important;
+    border-color: #ff4d4d !important;
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
+    transform: scale(1.1);
 }
 
 .member-name {

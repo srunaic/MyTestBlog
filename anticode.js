@@ -3421,11 +3421,13 @@ class AntiCodeApp {
 
             // Offload profanity and linkify to the Logic Thread (with fallback)
             let contentHtml = msg.content || '';
-            try {
-                const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
-                contentHtml = res.contentHtml;
-            } catch (e) {
-                console.warn('LogicWorker fallback in createMessageElementAsync:', e);
+            if (!isOptimistic) {
+                try {
+                    const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
+                    contentHtml = res.contentHtml;
+                } catch (e) {
+                    console.warn('LogicWorker fallback in createMessageElementAsync:', e);
+                }
             }
             const isMyMessage = msg.user_id === this.currentUser.username;
             const canDelete = isMyMessage || this.isAdminMode;
