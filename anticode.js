@@ -2429,22 +2429,28 @@ class AntiCodeApp {
         }
 
         // Prefer Cloudflare R2 (via Worker) to avoid Supabase Storage limits/cost
+        // Prefer Cloudflare R2 (via Worker) to avoid Supabase Storage limits/cost
         if (R2_UPLOAD_BASE_URL && !String(R2_UPLOAD_BASE_URL).startsWith('VITE_')) {
-            const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
-            const url = `${base}/upload?folder=${encodeURIComponent('chat')}`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': file.type || 'application/octet-stream',
-                    'X-Filename': encodeURIComponent(file.name || 'upload.bin')
-                },
-                body: file
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || !data?.ok) {
-                throw new Error(data?.error || `upload_failed (${res.status})`);
+            try {
+                const base = String(R2_UPLOAD_BASE_URL).replace(/\/+$/, '');
+                const url = `${base}/upload?folder=${encodeURIComponent('chat')}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': file.type || 'application/octet-stream',
+                        'X-Filename': encodeURIComponent(file.name || 'upload.bin')
+                    },
+                    body: file
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data?.ok) {
+                    throw new Error(data?.error || `upload_failed (${res.status})`);
+                }
+                return data.url;
+            } catch (r2Error) {
+                console.warn('[AntiCode Upload] R2 Upload failed, falling back to Supabase:', r2Error);
+                // Fallthrough to Supabase logic below
             }
-            return data.url;
         }
 
         // Fallback: Supabase Storage
@@ -3612,6 +3618,23 @@ class AntiCodeApp {
             return;
         }
 
+        // 1. Optimistic Rendering: Display immediately (Before blocking filter)
+        const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
+        const rawContent = content; // Store raw for optimistic
+        const newMessage = {
+            id: tempId,
+            channel_id: this.activeChannel.id,
+            user_id: this.currentUser.username,
+            author: this.currentUser.nickname,
+            content: rawContent,
+            created_at: new Date().toISOString()
+        };
+
+        input.value = '';
+        input.style.height = 'auto';
+        this.sentMessageCache.add(tempId);
+        this.queueMessage({ ...newMessage }, true);
+
         // Profanity filter (Offloaded to Logic Thread) (with fallback)
         try {
             const { text: filteredText } = await LogicWorker.execute('FILTER_PROFANITY', { text: content });
@@ -3620,21 +3643,8 @@ class AntiCodeApp {
             console.warn('LogicWorker fallback in sendMessage:', e);
         }
 
-        const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
-        const newMessage = {
-            id: tempId,
-            channel_id: this.activeChannel.id,
-            user_id: this.currentUser.username,
-            author: this.currentUser.nickname,
-            content: content,
-            created_at: new Date().toISOString()
-        };
-
-        // 1. Optimistic Rendering: Display immediately
-        input.value = '';
-        input.style.height = 'auto';
-        this.sentMessageCache.add(tempId); // Track by ID for precision
-        this.queueMessage({ ...newMessage }, true);
+        // Update content for persistence/broadcast to be the filtered version
+        newMessage.content = content;
 
         // 2. Broadcast: Instant Fast-track to others
         if (this.messageSubscription) {
