@@ -3682,7 +3682,9 @@ class AntiCodeApp {
         // ✅ Finalize immediately on insert success (don't wait for realtime)
         try {
             const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
-            if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
+            if (opt && typeof this.finalizeOptimistic === 'function') {
+                this.finalizeOptimistic(opt, { ...newMessage, id: data?.id });
+            }
         } catch (_) { }
 
         // Offline push notification to other devices/users (requires Edge Function + push subscriptions)
