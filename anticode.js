@@ -3711,6 +3711,9 @@ class AntiCodeApp {
         if (!container) return;
 
         try {
+            // Defensive: ensure Set exists
+            if (!this.processedMessageIds) this.processedMessageIds = new Set();
+
             // Deduplicate
             if (msg.id && this.processedMessageIds.has(msg.id)) return;
             if (msg.id) this.processedMessageIds.add(msg.id);
@@ -3718,17 +3721,21 @@ class AntiCodeApp {
             // Match Optimistic
             if (!isOptimistic) {
                 const existing = container.querySelector(msg.tempId ? `[data-temp-id="${msg.tempId}"]` : `div[data-optimistic="true"]`);
-                if (existing) {
+                if (existing && typeof this.finalizeOptimistic === 'function') {
                     await this.finalizeOptimistic(existing, msg);
                     return;
                 }
             }
 
             const info = this.userCache[msg.user_id] || await this.getUserInfo(msg.user_id);
+            if (typeof this.createMessageElementAsync !== 'function') return;
+
             const msgEl = await this.createMessageElementAsync(msg, info, isOptimistic);
             if (msgEl) {
                 container.appendChild(msgEl);
-                this._scrollToBottom();
+                if (typeof this._scrollToBottom === 'function') {
+                    this._scrollToBottom();
+                }
             }
         } catch (e) {
             console.error('appendMessage error:', e);
