@@ -3735,6 +3735,13 @@ class AntiCodeApp {
         }
     }
 
+    _scrollToBottom() {
+        const container = document.getElementById('message-container');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
     async finalizeOptimistic(el, realMsg) {
         el.id = `msg-${realMsg.id}`;
         el.style.opacity = '1';
