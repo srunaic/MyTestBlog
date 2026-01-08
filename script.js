@@ -50,11 +50,19 @@ const LogicWorker = {
         }
     },
 
-    execute(type, payload) {
+    execute(type, payload, timeoutMs = 2000) {
         if (!this.worker) return Promise.reject('Worker not initialized');
         return new Promise((resolve, reject) => {
             const id = this.idCounter++;
-            this.callbacks.set(id, { resolve, reject });
+            const timeout = setTimeout(() => {
+                this.callbacks.delete(id);
+                reject(new Error('LogicWorker timeout'));
+            }, timeoutMs);
+
+            this.callbacks.set(id, {
+                resolve: (res) => { clearTimeout(timeout); resolve(res); },
+                reject: (err) => { clearTimeout(timeout); reject(err); }
+            });
             this.worker.postMessage({ type, payload, id });
         });
     }
@@ -1631,8 +1639,14 @@ async function oracleBrain(query) {
         updateUserIntel({ last_searched_tag: tag });
     }
 
-    // Heavy computation offloaded to worker
-    const response = await LogicWorker.execute('ORACLE_BRAIN', { query, posts });
+    // Heavy computation offloaded to worker (with fallback)
+    let response = null;
+    try {
+        response = await LogicWorker.execute('ORACLE_BRAIN', { query, posts });
+    } catch (e) {
+        console.warn('LogicWorker fallback in oracleBrain:', e);
+        return "그 질문의 맥락을 분석 중입니다. 아직 블로그에서 관련 포스트를 찾지 못했지만, 기록을 남겨 곧 학습하도록 하겠습니다.";
+    }
 
     if (response && response.link && response.link.id) {
         updateUserIntel({ last_recommended_post: response.link.id });

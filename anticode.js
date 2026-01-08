@@ -56,11 +56,19 @@ const LogicWorker = {
         }
     },
 
-    execute(type, payload) {
+    execute(type, payload, timeoutMs = 2000) {
         if (!this.worker) return Promise.reject('Worker not initialized');
         return new Promise((resolve, reject) => {
             const id = this.idCounter++;
-            this.callbacks.set(id, { resolve, reject });
+            const timeout = setTimeout(() => {
+                this.callbacks.delete(id);
+                reject(new Error('LogicWorker timeout'));
+            }, timeoutMs);
+
+            this.callbacks.set(id, {
+                resolve: (res) => { clearTimeout(timeout); resolve(res); },
+                reject: (err) => { clearTimeout(timeout); reject(err); }
+            });
             this.worker.postMessage({ type, payload, id });
         });
     }
@@ -3405,8 +3413,14 @@ class AntiCodeApp {
             </div>
         `;
 
-            // Offload profanity and linkify to the Logic Thread
-            const { contentHtml, flagged } = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
+            // Offload profanity and linkify to the Logic Thread (with fallback)
+            let contentHtml = msg.content || '';
+            try {
+                const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
+                contentHtml = res.contentHtml;
+            } catch (e) {
+                console.warn('LogicWorker fallback in createMessageElementAsync:', e);
+            }
             const isMyMessage = msg.user_id === this.currentUser.username;
             const canDelete = isMyMessage || this.isAdminMode;
 
@@ -3598,9 +3612,13 @@ class AntiCodeApp {
             return;
         }
 
-        // Profanity filter (Offloaded to Logic Thread)
-        const { text: filteredText } = await LogicWorker.execute('FILTER_PROFANITY', { text: content });
-        content = filteredText;
+        // Profanity filter (Offloaded to Logic Thread) (with fallback)
+        try {
+            const { text: filteredText } = await LogicWorker.execute('FILTER_PROFANITY', { text: content });
+            content = filteredText;
+        } catch (e) {
+            console.warn('LogicWorker fallback in sendMessage:', e);
+        }
 
         const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
         const newMessage = {
@@ -3724,10 +3742,16 @@ class AntiCodeApp {
             meta.appendChild(delBtn);
         }
 
-        // [MULTI-THREAD] Update content with the processed version from worker
+        // [MULTI-THREAD] Update content with the processed version from worker (with fallback)
         const textEl = el.querySelector('.message-text');
         if (textEl) {
-            const { contentHtml } = await LogicWorker.execute('PROCESS_MESSAGE', { text: realMsg.content || '' });
+            let contentHtml = realMsg.content || '';
+            try {
+                const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: realMsg.content || '' });
+                contentHtml = res.contentHtml;
+            } catch (e) {
+                console.warn('LogicWorker fallback in finalizeOptimistic:', e);
+            }
             textEl.innerHTML = `
                 ${contentHtml}
                 ${realMsg.image_url ? `<div class="message-image-content"><img src="${realMsg.image_url}" class="chat-img" onclick="window.open('${realMsg.image_url}')"></div>` : ''}

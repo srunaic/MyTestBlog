@@ -44,14 +44,28 @@ self.addEventListener('activate', event => {
     self.clients.claim();
 });
 
-// Fetch Event: [PERFORMANCE] Stale-While-Revalidate Strategy
+// Fetch Event Handler: Reliability & Performance
 self.addEventListener('fetch', event => {
-    if (event.request.method !== 'GET') return;
     const url = new URL(event.request.url);
 
-    // Skip Supabase Realtime/Auth (Always network)
-    if (url.hostname.includes('supabase.co')) return;
+    // 1. Critical bypass for non-GET (Supabase POST/Auth/Realtime)
+    if (event.request.method !== 'GET' || url.hostname.includes('supabase.co')) return;
 
+    // 2. Navigation Strategy: Network-First (Avoids redirect mismatch errors)
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
+    // 3. Asset Strategy: Stale-While-Revalidate (Static files)
     event.respondWith(
         caches.open(CACHE_NAME).then(cache => {
             return cache.match(event.request).then(response => {
@@ -62,7 +76,6 @@ self.addEventListener('fetch', event => {
                     return networkResponse;
                 }).catch(() => null);
 
-                // Return cached response immediately if available, else wait for network
                 return response || fetchPromise;
             });
         })
