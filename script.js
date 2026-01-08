@@ -1641,9 +1641,6 @@ async function oracleBrain(query) {
     return response;
 }
 
-return "그 질문의 맥락을 분석 중입니다. 아직 블로그에서 관련 포스트를 찾지 못했지만, 기록을 남겨 곧 학습하도록 하겠습니다.";
-}
-
 // 📊 User Intelligence: Behavior Tracking
 async function updateUserIntel(data) {
     if (!currentUser) return;
