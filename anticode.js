@@ -509,6 +509,13 @@ class AntiCodeApp {
         this.channelPageItems = new Map(); // pageId -> [{channel_id, position}]
         this.activeChannelPageId = 'all';
         this._friendModalTargetChannelId = null; // optional invite target from directory/pages
+
+        // Bind critical methods to ensure 'this' context in obfuscated environments
+        this.appendMessage = this.appendMessage.bind(this);
+        this.createMessageElementAsync = this.createMessageElementAsync.bind(this);
+        this.finalizeOptimistic = this.finalizeOptimistic.bind(this);
+        this.getUserInfo = this.getUserInfo.bind(this);
+        this._scrollToBottom = this._scrollToBottom.bind(this);
     }
 
     async refreshEntitlements() {
@@ -3727,8 +3734,20 @@ class AntiCodeApp {
                 }
             }
 
-            const info = this.userCache[msg.user_id] || await this.getUserInfo(msg.user_id);
-            if (typeof this.createMessageElementAsync !== 'function') return;
+            let info = this.userCache ? this.userCache[msg.user_id] : null;
+            if (!info && typeof this.getUserInfo === 'function') {
+                try {
+                    info = await this.getUserInfo(msg.user_id);
+                } catch (e) {
+                    console.warn('getUserInfo failed in appendMessage:', e);
+                }
+            }
+            if (!info) info = { nickname: msg.author || '알 수 없음', avatar_url: null };
+
+            if (typeof this.createMessageElementAsync !== 'function') {
+                console.error('Critical: createMessageElementAsync not found');
+                return;
+            }
 
             const msgEl = await this.createMessageElementAsync(msg, info, isOptimistic);
             if (msgEl) {
