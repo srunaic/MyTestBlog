@@ -1,5 +1,7 @@
 # [🚀 Anticode: 실시간 채팅 접속하기](https://mytestblog-d85.pages.dev/anticode.html)
 
+<a herf>https://mytestblog-d85.pages.dev/</a>
+
 --채팅앱 일반 웹 접속 차단 게시판은 그대로 사용 가능합니다--
 
 ## 📱 Anticode 안드로이드 앱 설치 (Android APK)
