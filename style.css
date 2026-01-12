@@ -2036,3 +2036,14 @@ body.is-pc-forced .layout-switcher {
     font-weight: bold;
     border-radius: 10px;
 }
+/* Delete Button Tactile Feedback */
+.cat-del-btn:active,
+.inline-action-btn.delete:active,
+.danger-btn-sm:active,
+.action-btn:active {
+    background-color: #ff0000 !important;
+    color: #ffffff !important;
+    border-color: #ff0000 !important;
+    transform: scale(0.95);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+}
