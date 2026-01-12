@@ -16,7 +16,7 @@ on:
       delete_limit:
         description: 'Max deployments to DELETE in this run (Default: 50)'
         required: true
-        default: '50'
+        default: '100'
         type: number
 
 permissions:
@@ -49,8 +49,7 @@ jobs:
                     owner,
                     repo,
                     per_page: 100,
-                    page: page,
-                    environment: 'github-pages'
+                    page: page
                 });
                 if (data.length === 0) break;
                 allDeployments = allDeployments.concat(data);
