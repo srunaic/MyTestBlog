@@ -8,6 +8,16 @@ on:
         required: true
         default: 'false'
         type: boolean
+      keep_count:
+        description: 'Number of recent deployments to KEEP (Default: 5)'
+        required: true
+        default: '5'
+        type: number
+      delete_limit:
+        description: 'Max deployments to DELETE in this run (Default: 50)'
+        required: true
+        default: '50'
+        type: number
 
 permissions:
   deployments: write
@@ -25,8 +35,11 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const dryRun = ${{ inputs.dry_run }};
+            const keepCount = ${{ inputs.keep_count }};
+            const deleteLimit = ${{ inputs.delete_limit }};
 
-            console.log(`Starting cleanup for ${owner}/${repo} (Dry Run: ${dryRun})`);
+            console.log(`Starting cleanup for ${owner}/${repo}`);
+            console.log(`Config: Dry Run=${dryRun}, Keep=${keepCount}, Delete Limit=${deleteLimit}`);
 
             // Fetch all deployments
             let allDeployments = [];
@@ -37,43 +50,44 @@ jobs:
                     repo,
                     per_page: 100,
                     page: page,
-                    environment: 'github-pages' // Optional filter, but safe to fetch all
+                    environment: 'github-pages'
                 });
                 if (data.length === 0) break;
                 allDeployments = allDeployments.concat(data);
                 page++;
+                // Safety break
+                if (page > 50) break; 
             }
 
             console.log(`Found total ${allDeployments.length} deployments.`);
 
-            if (allDeployments.length < 2) {
-                console.log("Less than 2 deployments found. Nothing to clean.");
+            if (allDeployments.length <= keepCount) {
+                console.log(`Total deployments (${allDeployments.length}) is less than or equal to keep count (${keepCount}). Intentionally skipping.`);
                 return;
             }
 
             // Sort by ID descending (newest first)
             allDeployments.sort((a, b) => b.id - a.id);
 
-            const latest = allDeployments[0];
-            const toDelete = allDeployments.slice(1);
+            // Determine targets
+            const keptDeployments = allDeployments.slice(0, keepCount);
+            const candidates = allDeployments.slice(keepCount);
+            const toDelete = candidates.slice(0, deleteLimit);
 
-            console.log(`Keeping LATEST deployment: ID ${latest.id} (Created: ${latest.created_at})`);
-            console.log(`Preparing to delete ${toDelete.length} old deployments...`);
+            console.log(`- Keeping newest ${keptDeployments.length} deployments.`);
+            console.log(`- Candidates for deletion: ${candidates.length}`);
+            console.log(`- Targeting first ${toDelete.length} of those candidates (due to limit ${deleteLimit}).`);
 
             let deletedCount = 0;
             let errorCount = 0;
 
             for (const dep of toDelete) {
-                // Inactivate first if active? (Usually deleting works, but let's try direct delete)
                 if (dryRun) {
-                    console.log(`[DRY-RUN] Would delete deployment ID ${dep.id}`);
+                    console.log(`[DRY-RUN] Would delete deployment ID ${dep.id} (${dep.created_at})`);
                     continue;
                 }
 
                 try {
-                    // Make it inactive first (best practice to avoid errors if it's considered active)
-                    // But 'deleteDeployment' usually handles it or returns error.
-                    // Let's just try delete.
                     await github.rest.repos.deleteDeployment({
                         owner,
                         repo,
@@ -81,16 +95,15 @@ jobs:
                     });
                     console.log(`[DELETED] Deployment ID ${dep.id}`);
                     deletedCount++;
-                    
-                    // Small delay to be nice to API
-                    await new Promise(r => setTimeout(r, 100));
+                    // Rate limit friendly pause
+                    await new Promise(r => setTimeout(r, 100)); // 100ms
                 } catch (err) {
-                    console.error(`[ERROR] Failed to delete deployment ID ${dep.id}: ${err.message}`);
+                    console.error(`[ERROR] Failed to delete ID ${dep.id}: ${err.message}`);
                     errorCount++;
                     
-                    // If error is "Deployment is active", we might need to set status to inactive
+                    // Handle "Deployment is active" by inactivating first
                      if (err.status === 409 || err.message.includes('active')) {
-                         console.log(`Attempting to mark ID ${dep.id} as inactive...`);
+                         console.log(`Attempting to inactivate ID ${dep.id}...`);
                          try {
                               await github.rest.repos.createDeploymentStatus({
                                   owner,
@@ -98,7 +111,6 @@ jobs:
                                   deployment_id: dep.id,
                                   state: 'inactive'
                               });
-                              // Retry delete
                               await github.rest.repos.deleteDeployment({
                                   owner,
                                   repo,
@@ -113,4 +125,4 @@ jobs:
                 }
             }
 
-            console.log(`Cleanup Summary: Deleted ${deletedCount}, Errors ${errorCount}, Kept 1.`);
+            console.log(`Job Complete. Deleted: ${deletedCount}, Errors: ${errorCount}, Remaining Total: ${allDeployments.length - deletedCount}`);
