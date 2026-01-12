@@ -1830,7 +1830,7 @@ function renderCommentItem(c, childMap, depth = 0) {
                 <button onclick="openReplyForm(${c.id})">답글 달기</button>
                 ${isOwner ? `
                     <button onclick="requestEditComment(${c.id}, '${c.content.replace(/'/g, "\\'")}')">수정</button>
-                    <button onclick="deleteComment(${c.id})">삭제</button>
+                    <button onclick="deleteComment(${c.id})" class="delete-btn">삭제</button>
                 ` : ''}
             </div>
             <div id="reply-form-${c.id}" class="reply-form-container" style="display:none; margin-top:10px;">
