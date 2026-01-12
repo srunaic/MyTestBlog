@@ -1,0 +1,116 @@
+name: Cleanup Deployments
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry Run (Check logs without deleting)'
+        required: true
+        default: 'false'
+        type: boolean
+
+permissions:
+  deployments: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup Old Deployments
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const dryRun = ${{ inputs.dry_run }};
+
+            console.log(`Starting cleanup for ${owner}/${repo} (Dry Run: ${dryRun})`);
+
+            // Fetch all deployments
+            let allDeployments = [];
+            let page = 1;
+            while (true) {
+                const { data } = await github.rest.repos.listDeployments({
+                    owner,
+                    repo,
+                    per_page: 100,
+                    page: page,
+                    environment: 'github-pages' // Optional filter, but safe to fetch all
+                });
+                if (data.length === 0) break;
+                allDeployments = allDeployments.concat(data);
+                page++;
+            }
+
+            console.log(`Found total ${allDeployments.length} deployments.`);
+
+            if (allDeployments.length < 2) {
+                console.log("Less than 2 deployments found. Nothing to clean.");
+                return;
+            }
+
+            // Sort by ID descending (newest first)
+            allDeployments.sort((a, b) => b.id - a.id);
+
+            const latest = allDeployments[0];
+            const toDelete = allDeployments.slice(1);
+
+            console.log(`Keeping LATEST deployment: ID ${latest.id} (Created: ${latest.created_at})`);
+            console.log(`Preparing to delete ${toDelete.length} old deployments...`);
+
+            let deletedCount = 0;
+            let errorCount = 0;
+
+            for (const dep of toDelete) {
+                // Inactivate first if active? (Usually deleting works, but let's try direct delete)
+                if (dryRun) {
+                    console.log(`[DRY-RUN] Would delete deployment ID ${dep.id}`);
+                    continue;
+                }
+
+                try {
+                    // Make it inactive first (best practice to avoid errors if it's considered active)
+                    // But 'deleteDeployment' usually handles it or returns error.
+                    // Let's just try delete.
+                    await github.rest.repos.deleteDeployment({
+                        owner,
+                        repo,
+                        deployment_id: dep.id
+                    });
+                    console.log(`[DELETED] Deployment ID ${dep.id}`);
+                    deletedCount++;
+                    
+                    // Small delay to be nice to API
+                    await new Promise(r => setTimeout(r, 100));
+                } catch (err) {
+                    console.error(`[ERROR] Failed to delete deployment ID ${dep.id}: ${err.message}`);
+                    errorCount++;
+                    
+                    // If error is "Deployment is active", we might need to set status to inactive
+                     if (err.status === 409 || err.message.includes('active')) {
+                         console.log(`Attempting to mark ID ${dep.id} as inactive...`);
+                         try {
+                              await github.rest.repos.createDeploymentStatus({
+                                  owner,
+                                  repo,
+                                  deployment_id: dep.id,
+                                  state: 'inactive'
+                              });
+                              // Retry delete
+                              await github.rest.repos.deleteDeployment({
+                                  owner,
+                                  repo,
+                                  deployment_id: dep.id
+                              });
+                              console.log(`[DELETED] Deployment ID ${dep.id} (after inactivating)`);
+                              deletedCount++;
+                         } catch (e2) {
+                             console.error(`[FATAL] Could not force delete ID ${dep.id}: ${e2.message}`);
+                         }
+                     }
+                }
+            }
+
+            console.log(`Cleanup Summary: Deleted ${deletedCount}, Errors ${errorCount}, Kept 1.`);
