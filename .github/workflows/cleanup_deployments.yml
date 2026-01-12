@@ -6,7 +6,7 @@ on:
       dry_run:
         description: 'Dry Run (Check logs without deleting)'
         required: true
-        default: 'false'
+        default: false
         type: boolean
       keep_count:
         description: 'Number of recent deployments to KEEP (Default: 5)'
@@ -88,6 +88,20 @@ jobs:
                 }
 
                 try {
+                    // 1. Mark as inactive first (Required for active deployments)
+                    try {
+                        await github.rest.repos.createDeploymentStatus({
+                            owner,
+                            repo,
+                            deployment_id: dep.id,
+                            state: 'inactive'
+                        });
+                        // console.log(`[STATUS] Marked ID ${dep.id} as inactive`);
+                    } catch (statErr) {
+                        // Ignore if it fails (e.g. already inactive)
+                    }
+
+                    // 2. Delete
                     await github.rest.repos.deleteDeployment({
                         owner,
                         repo,
@@ -95,33 +109,12 @@ jobs:
                     });
                     console.log(`[DELETED] Deployment ID ${dep.id}`);
                     deletedCount++;
+                    
                     // Rate limit friendly pause
-                    await new Promise(r => setTimeout(r, 100)); // 100ms
+                    await new Promise(r => setTimeout(r, 200));
                 } catch (err) {
                     console.error(`[ERROR] Failed to delete ID ${dep.id}: ${err.message}`);
                     errorCount++;
-                    
-                    // Handle "Deployment is active" by inactivating first
-                     if (err.status === 409 || err.message.includes('active')) {
-                         console.log(`Attempting to inactivate ID ${dep.id}...`);
-                         try {
-                              await github.rest.repos.createDeploymentStatus({
-                                  owner,
-                                  repo,
-                                  deployment_id: dep.id,
-                                  state: 'inactive'
-                              });
-                              await github.rest.repos.deleteDeployment({
-                                  owner,
-                                  repo,
-                                  deployment_id: dep.id
-                              });
-                              console.log(`[DELETED] Deployment ID ${dep.id} (after inactivating)`);
-                              deletedCount++;
-                         } catch (e2) {
-                             console.error(`[FATAL] Could not force delete ID ${dep.id}: ${e2.message}`);
-                         }
-                     }
                 }
             }
 
