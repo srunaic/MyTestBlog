@@ -84,7 +84,7 @@ const SessionManager = {
         const sessionData = {
             ...user,
             loginTime: Date.now(),
-            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours expiry
+            expiresAt: Date.now() + (365 * 24 * 60 * 60 * 1000) // 365 days expiry (Persistent)
         };
         localStorage.setItem(this.KEYS.AUTH, JSON.stringify(sessionData));
     },
