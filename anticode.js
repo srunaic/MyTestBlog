@@ -480,7 +480,7 @@ class AntiCodeApp {
         this.peerConnections = new Map(); // username -> RTCPeerConnection
         this.remoteAudioEls = new Map(); // username -> HTMLAudioElement
         this.voiceDeviceId = null; // preferred microphone deviceId (per user)
-        this.micGain = 1.0; // 0.0 ~ 2.0
+        this.micGain = 1.3; // 1.0 -> 1.3 (Default volume boost)
         // Shared mic pipeline (used by voice + mic test)
         this._micUsers = { voice: false, test: false };
         this._micDeviceIdInUse = null;
@@ -1819,9 +1819,9 @@ class AntiCodeApp {
             this._micCompressor = this._micAudioCtx.createDynamicsCompressor();
             // Reasonable speech-friendly defaults
             try {
-                this._micCompressor.threshold.value = -24;
+                this._micCompressor.threshold.value = -18; // -24 -> -18 (Less aggressive compression)
                 this._micCompressor.knee.value = 30;
-                this._micCompressor.ratio.value = 12;
+                this._micCompressor.ratio.value = 6;    // 12 -> 6 (Natural voice, less distortion)
                 this._micCompressor.attack.value = 0.003;
                 this._micCompressor.release.value = 0.25;
             } catch (_) { }
