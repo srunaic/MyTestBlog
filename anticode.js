@@ -1932,7 +1932,7 @@ class AntiCodeApp {
             this._micUsers.test = false;
             this._setMicMonitor(false);
             this._stopMicMeter();
-            if (btn) btn.textContent = '테스트 시작';
+            if (btn) btn.textContent = '마이크 OFF';
             await this._teardownMicPipeline({ force: false });
             return;
         }
@@ -1947,14 +1947,14 @@ class AntiCodeApp {
             this._micUsers.test = true;
             await this._ensureMicPipeline({ requireMonitor: true });
             this._startMicMeter();
-            if (btn) btn.textContent = '테스트 중지';
+            if (btn) btn.textContent = '마이크 ON';
         } catch (e) {
             console.error('Mic test error:', e);
             alert('마이크 테스트 실패: ' + (e?.message || e));
             this._micUsers.test = false;
             this._setMicMonitor(false);
             this._stopMicMeter();
-            if (btn) btn.textContent = '테스트 시작';
+            if (btn) btn.textContent = '마이크 OFF';
             await this._teardownMicPipeline({ force: true });
         }
     }
