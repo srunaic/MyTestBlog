@@ -3965,6 +3965,9 @@ class AntiCodeApp {
         };
 
         _safeBind('mobile-menu-toggle', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(); });
+        document.querySelectorAll('.sidebar-close-btn').forEach(btn => {
+            btn.onclick = (e) => { e.stopPropagation(); toggleSidebar(false); };
+        });
         _safeBind('mobile-members-toggle', 'onclick', (e) => { e.stopPropagation(); toggleMembers(); });
 
         _safeBind('mobile-more-btn', 'onclick', (e) => {
