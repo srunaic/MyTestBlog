@@ -3972,7 +3972,7 @@ class AntiCodeApp {
 
         _safeBind('mobile-more-btn', 'onclick', (e) => {
             e.stopPropagation();
-            if (dropdown) dropdown.style.display = dropdown.style.display === 'none' ? 'flex' : 'none';
+            if (dropdown) dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'flex' : 'none';
         });
 
         _safeBind('menu-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
