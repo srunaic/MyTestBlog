@@ -1210,6 +1210,14 @@ class AntiCodeApp {
         const isFriend = this.friends?.some(f => f.username === friendUsername);
         if (!isFriend) return alert('친구만 초대할 수 있습니다.');
 
+        // [New] Check Permission: Only owner can invite
+        const channel = this.channels.find(c => String(c.id) === chId);
+        // If "channel" is not found in local list, we fetch from DB or deny. 
+        // For safety, assume strict ownership check. 
+        if (!channel) return alert('채널 정보를 찾을 수 없습니다.');
+        const isOwner = (channel.owner_id === this.currentUser.username) || (this.currentUser.role === 'admin');
+        if (!isOwner) return alert('본인이 생성한 방에만 친구를 초대할 수 있습니다.');
+
         // Block check (per-channel)
         try {
             const { data } = await this.supabase
@@ -3207,7 +3215,10 @@ class AntiCodeApp {
         const targetChannelId = this._friendModalTargetChannelId || this.activeChannel?.id || '';
         const targetChannel = targetChannelId ? this.channels.find(c => String(c.id) === String(targetChannelId)) : null;
         const activeChannelName = targetChannel?.name || this.activeChannel?.name || '';
-        const canInvite = !!targetChannelId;
+
+        // [New] Permission: Only owner can invite
+        const isOwner = targetChannel && (targetChannel.owner_id === this.currentUser.username || this.currentUser.role === 'admin');
+        const canInvite = !!(targetChannelId && isOwner);
 
         if (!this.friends || this.friends.length === 0) {
             container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">친구가 없습니다.</div>`;
