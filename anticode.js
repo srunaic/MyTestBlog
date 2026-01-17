@@ -86,6 +86,7 @@ class Channel {
         this.password = data.password || null;
         this.owner_id = data.owner_id || null;
         this.order = data.order || 0;
+        this.is_public = data.is_public !== undefined ? data.is_public : true;
     }
 
     renderHeader() {
@@ -746,7 +747,9 @@ class AntiCodeApp {
             return true;
         });
 
-        if (this.activeChannelPageId === 'all') return visibleChannels.slice();
+        if (this.activeChannelPageId === 'all') {
+            return visibleChannels.filter(ch => ch.is_public === true);
+        }
         const items = this.channelPageItems.get(this.activeChannelPageId) || [];
         const order = new Map(items.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
         const filtered = visibleChannels
@@ -3505,9 +3508,13 @@ class AntiCodeApp {
             alert(`채널 생성 제한에 도달했습니다. (내 채널 최대 ${limit}개)\n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
             return false;
         }
+        // If in 'all' view, it's public (admins only). If in a page, it's private to that page/owner.
+        const isPublic = (this.activeChannelPageId === 'all');
+
         const { data, error } = await this.supabase.from('anticode_channels').insert([{
             name, type, category, password: type === 'secret' ? password : null,
-            owner_id: this.currentUser.username, order: this.channels.length
+            owner_id: this.currentUser.username, order: this.channels.length,
+            is_public: isPublic
         }]).select();
         if (error) {
             const msg = String(error.message || '');
