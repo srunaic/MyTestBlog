@@ -473,8 +473,8 @@ const MESSAGE_RETENTION_PER_CHANNEL = 100; // Optimized: reduced from 300 to 100
 const FREE_VOICE_DAILY_SECONDS = 10 * 60;  // free tier voice time per day (seconds)
 const FREE_MAX_PERSONAL_PAGES = 1;
 const FREE_MAX_CHANNELS_PER_PAGE = 20;
-const DEFAULT_CHANNEL_LIMIT_FREE = 3;
-const DEFAULT_CHANNEL_LIMIT_PRO = 23; // free(3) + 20 (hard cap for stability)
+const DEFAULT_CHANNEL_LIMIT_FREE = 10;
+const DEFAULT_CHANNEL_LIMIT_PRO = 50; // free(10) + 40 (hard cap for stability)
 
 class AntiCodeApp {
     constructor() {
@@ -3519,6 +3519,12 @@ class AntiCodeApp {
         if (!error && data) {
             const newChan = new Channel(data[0]);
             this.channels.push(newChan);
+
+            // [NEW] If an active page is selected, automatically add this channel to it
+            if (this.activeChannelPageId && this.activeChannelPageId !== 'all') {
+                await this.addChannelToPage(this.activeChannelPageId, newChan.id);
+            }
+
             this.renderChannels();
             this.switchChannel(newChan.id);
             return true;
