@@ -1605,10 +1605,23 @@ class AntiCodeApp {
         } catch (_) { }
     }
 
-    showUserProfile(username) {
+    async showUserProfile(username) {
         if (!username) return;
-        // In this system, username IS the UID
-        alert(`👤 유저 프로필\n\nUID (Username): ${username}`);
+
+        let displayUid = null;
+        if (this.supabase) {
+            try {
+                const { data } = await this.supabase
+                    .from('anticode_users')
+                    .select('uid')
+                    .eq('username', username)
+                    .maybeSingle();
+                if (data && data.uid) displayUid = data.uid;
+            } catch (e) { console.warn('UID fetch failed:', e); }
+        }
+
+        const uidStr = displayUid ? `UID: ${displayUid}` : 'UID: (Not Found)';
+        alert(`👤 유저 프로필\n\n${uidStr}\nUsername: ${username}`);
     }
 
     async updateChannelMemberPanel(state) {
