@@ -261,7 +261,33 @@ const NotificationManager = {
         supabase.channel('chat-notif-ac')
             .on('postgres_changes', { event: 'INSERT', table: 'anticode_messages' }, payload => {
                 this.notify('chat', payload.new);
-            }).subscribe();
+            })
+            // [NEW] Real-time Invite listener
+            .on('postgres_changes', { event: 'INSERT', table: 'anticode_channel_members' }, async (payload) => {
+                // Check if this invite is for ME
+                const me = window.app?.currentUser?.username;
+                if (!me || payload.new.username !== me) return;
+
+                console.log('Real-time invite received:', payload.new);
+
+                // 1. Reload memberships to pick up the new channel
+                await window.app.loadMyChannelMemberships();
+
+                // 2. Render channels to show the new item
+                window.app.renderChannels();
+
+                // 3. Visual cue (blink/highlight new channel)
+                const chId = payload.new.channel_id;
+                setTimeout(() => {
+                    // Try to find the element
+                    // The element usually has an ID like `channel-item-${ch.id}` or we find it by data attribute
+                    // In renderChannels, we don't strictly set IDs, so we might need to rely on the "blink" logic inside render or post-render check
+                    // For now, let's play a notification sound
+                    if (window.NotificationManager) window.NotificationManager.playSound();
+                    window.app.showInAppToast?.(`새로운 채널에 초대되었습니다!`);
+                }, 500);
+            })
+            .subscribe();
     },
 
     notify(type, data) {
@@ -1578,6 +1604,16 @@ class AntiCodeApp {
             } catch (_) { }
             await this.loadChannelMembers(this.activeChannel.id);
             try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+
+            // [NEW] Real-time Kick Signal
+            try {
+                this.voiceChannel?.send({
+                    type: 'broadcast',
+                    event: 'kick',
+                    payload: { target: target, channel_id: this.activeChannel.id }
+                });
+            } catch (_) { }
+
             alert('강퇴 완료!');
         } catch (e) {
             console.error('kick member failed:', e);
@@ -2220,6 +2256,30 @@ class AntiCodeApp {
             if (msg.type === 'answer') await this._onAnswer(msg.from, msg.sdp);
             if (msg.type === 'ice') await this._onIce(msg.from, msg.candidate);
             if (msg.type === 'leave') await this._onPeerLeave(msg.from);
+        }).on('broadcast', { event: 'kick' }, async (payload) => {
+            // [NEW] Real-time Kick handling
+            const data = payload?.payload; // { target: '...', channel_id: '...' }
+            if (!data) return;
+            // 1. If I am the target, I must leave
+            if (data.target === this.currentUser?.username) {
+                alert('이 방에서 강퇴되었습니다.');
+                // Switch to default channel
+                const fallback = this.channels.find(c => c.type === 'general') || this.channels[0];
+                if (fallback) await this.switchChannel(fallback.id);
+                else window.location.reload();
+                return;
+            }
+
+            // 2. If I am an observer, remove target's messages
+            // Remove from DOM
+            const msgs = document.querySelectorAll(`[data-author="${data.target}"]`);
+            msgs.forEach(el => el.remove());
+            // Remove from local presence/member list
+            try {
+                // Force refresh member list (it might take a moment for presence to sync, so we can optimistically remove)
+                // But presence sync handles this eventually.
+            } catch (_) { }
+
         }).subscribe();
     }
 
