@@ -499,6 +499,9 @@ class AntiCodeApp {
         // Plan / gating (free vs pro)
         this.planTier = 'free'; // resolved after syncUserMetadata()
 
+        // Hidden Open Chat
+        this.myJoinedChannelIds = new Set(); // Channels I have been invited to/joined
+
         // Free tier voice usage (local enforcement)
         this._voiceLimitTimer = null;
         this._voiceSessionStartedAtMs = 0;
@@ -600,6 +603,22 @@ class AntiCodeApp {
         return String(this.currentUser?.role || '') === 'admin';
     }
 
+    async loadMyChannelMemberships() {
+        if (!this.supabase || !this.currentUser?.username) return;
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_channel_members')
+                .select('channel_id')
+                .eq('username', this.currentUser.username);
+
+            if (!error && data) {
+                this.myJoinedChannelIds = new Set(data.map(r => String(r.channel_id)));
+            }
+        } catch (e) {
+            console.warn('loadMyChannelMemberships failed:', e);
+        }
+    }
+
     _canCreateMorePersonalPages() {
         if (this._isAdmin() || this._isProUser()) return true;
         return (this.channelPages?.length || 0) < FREE_MAX_PERSONAL_PAGES;
@@ -683,10 +702,22 @@ class AntiCodeApp {
 
     _getVisibleChannelsByActivePage() {
         // Filter channels for sidebar based on selected page
-        if (this.activeChannelPageId === 'all') return this.channels.slice();
+        // [MOD] Also filter out hidden open chats if not owner/invited
+        const me = this.currentUser?.username;
+        const visibleChannels = this.channels.filter(ch => {
+            if (ch.type === 'open_hidden') {
+                if (!me) return false;
+                const isOwner = String(ch.owner_id) === String(me);
+                // "myJoinedChannelIds" tracks channels I am a member of (invited/joined)
+                return isOwner || this.myJoinedChannelIds.has(String(ch.id));
+            }
+            return true;
+        });
+
+        if (this.activeChannelPageId === 'all') return visibleChannels.slice();
         const items = this.channelPageItems.get(this.activeChannelPageId) || [];
         const order = new Map(items.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
-        const filtered = this.channels
+        const filtered = visibleChannels
             .filter(ch => order.has(String(ch.id)))
             .sort((a, b) => (order.get(String(a.id)) ?? 0) - (order.get(String(b.id)) ?? 0));
         return filtered;
@@ -975,8 +1006,25 @@ class AntiCodeApp {
 
         const base = this.channels.slice();
         const filtered = q
-            ? base.filter(ch => (ch.name || '').toLowerCase().includes(q) || (ch.category || '').toLowerCase().includes(q) || (ch.type || '').toLowerCase().includes(q))
-            : base;
+            ? base.filter(ch => {
+                if (ch.type === 'open_hidden') {
+                    const me = this.currentUser?.username;
+                    if (!me) return false;
+                    const isOwner = String(ch.owner_id) === String(me);
+                    // "myJoinedChannelIds" tracks channels I am a member of (invited/joined)
+                    if (!isOwner && !this.myJoinedChannelIds.has(String(ch.id))) return false;
+                }
+                return (ch.name || '').toLowerCase().includes(q) || (ch.category || '').toLowerCase().includes(q) || (ch.type || '').toLowerCase().includes(q);
+            })
+            : base.filter(ch => {
+                if (ch.type === 'open_hidden') {
+                    const me = this.currentUser?.username;
+                    if (!me) return false;
+                    const isOwner = String(ch.owner_id) === String(me);
+                    if (!isOwner && !this.myJoinedChannelIds.has(String(ch.id))) return false;
+                }
+                return true;
+            });
 
         const limited = filtered.slice(0, 30);
         if (limited.length === 0) {
@@ -1557,6 +1605,12 @@ class AntiCodeApp {
         } catch (_) { }
     }
 
+    showUserProfile(username) {
+        if (!username) return;
+        // In this system, username IS the UID
+        alert(`👤 유저 프로필\n\nUID (Username): ${username}`);
+    }
+
     async updateChannelMemberPanel(state) {
         const memberList = document.getElementById('member-list');
         const onlineCountText = document.getElementById('online-count');
@@ -1625,9 +1679,9 @@ class AntiCodeApp {
                         <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${this.escapeHtml(String(nick || uname || '?')[0] || '?')}</div>
                         <span class="online-dot"></span>
                     </div>
-                    <div class="member-info">
+                    <div class="member-info" onclick="if(window.app && window.app.showUserProfile) { window.app.showUserProfile('${uname}'); event.stopPropagation(); }" style="cursor:pointer;">
                         <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isAdmin ? '<span class="friend-badge">[관리자]</span>' : (isFriend ? '<span class="friend-badge">[친구]</span>' : '')}</span>
-                        <span class="member-status-sub">온라인</span>
+                        <span class="member-status-sub">온라인 (클릭하여 UID 확인)</span>
                     </div>
                     <div class="member-actions">
                         ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
@@ -1674,9 +1728,9 @@ class AntiCodeApp {
                         ${avatar ? `<img src="${avatar}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                         <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${this.escapeHtml(String(nick || uname || '?')[0] || '?')}</div>
                     </div>
-                    <div class="member-info">
+                    <div class="member-info" onclick="if(window.app && window.app.showUserProfile) { window.app.showUserProfile('${uname}'); event.stopPropagation(); }" style="cursor:pointer;">
                         <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
-                        <span class="member-status-sub">${this.escapeHtml(lastSeen)}</span>
+                        <span class="member-status-sub">${this.escapeHtml(lastSeen)} (클릭하여 UID 확인)</span>
                     </div>
                     <div class="member-actions">
                         ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
@@ -3021,6 +3075,9 @@ class AntiCodeApp {
             });
         }
         else this.channels = [new Channel({ id: 'general', name: '일상-채팅', type: 'general', category: 'chat' })];
+        this.channels = [new Channel({ id: 'general', name: '일상-채팅', type: 'general', category: 'chat' })];
+
+        await this.loadMyChannelMemberships(); // Load my invites for hidden chats
         this.renderChannels();
     }
 
@@ -3063,9 +3120,14 @@ class AntiCodeApp {
                     ${(catId === 'chat' && this.isAdminMode) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
                 </div>
                 <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">
-                    ${chans.map(c => {
+            ${chans.map(c => {
                 const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
                 const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
+                // [MOD] Add visual indicator for hidden chat
+                if (c.type === 'open_hidden') {
+                    // Maybe render a special icon or style, but requirement says "hidden" processing only.
+                    // The sidebar item render handles basic display.
+                }
                 return c.renderSidebarItem(isActive, this.isAdminMode, voiceState);
             }).join('')}
                 </div>
@@ -3223,11 +3285,39 @@ class AntiCodeApp {
         if (channel.type === 'secret' && !this._isAllowedInChannel(channel.id) && this._directJoinId !== String(channel.id)) {
             alert('이 비밀 채팅방은 초대된 멤버만 입장할 수 있습니다.');
             // Attempt to fall back to a non-secret channel
-            const fallback = this.channels.find(c => c.type !== 'secret') || this.channels[0];
+            const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
             if (fallback && fallback.id !== channel.id) {
                 await this.switchChannel(fallback.id);
             }
             return;
+        }
+
+        // [MOD] Hidden Open Chat Gate
+        if (channel.type === 'open_hidden') {
+            const me = this.currentUser?.username;
+            const isOwner = String(channel.owner_id) === String(me);
+            const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
+
+            if (!isMember) {
+                alert('이 오픈 채팅방은 비공개(초대 전용)입니다.');
+                const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
+                await this.switchChannel(fallback.id);
+                return;
+            }
+        }
+
+        // [MOD] Hidden Open Chat Gate
+        if (channel.type === 'open_hidden') {
+            const me = this.currentUser?.username;
+            const isOwner = String(channel.owner_id) === String(me);
+            const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
+
+            if (!isMember) {
+                alert('이 오픈 채팅방은 비공개(초대 전용)입니다.');
+                const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
+                await this.switchChannel(fallback.id);
+                return;
+            }
         }
 
         // Clear direct join flag after passing the gate
