@@ -3074,462 +3074,462 @@ class AntiCodeApp {
                 return new Channel(d);
             });
         }
+    }
         else this.channels = [new Channel({ id: 'general', name: '일상-채팅', type: 'general', category: 'chat' })];
-        this.channels = [new Channel({ id: 'general', name: '일상-채팅', type: 'general', category: 'chat' })];
 
-        await this.loadMyChannelMemberships(); // Load my invites for hidden chats
-        this.renderChannels();
+await this.loadMyChannelMemberships(); // Load my invites for hidden chats
+this.renderChannels();
     }
 
-    renderChannels() {
-        const container = document.getElementById('categorized-channels');
-        if (!container) return;
+renderChannels() {
+    const container = document.getElementById('categorized-channels');
+    if (!container) return;
 
-        const categories = {};
-        const visible = this._getVisibleChannelsByActivePage();
-        visible.forEach(ch => {
-            if (!categories[ch.category]) categories[ch.category] = [];
-            categories[ch.category].push(ch);
-        });
+    const categories = {};
+    const visible = this._getVisibleChannelsByActivePage();
+    visible.forEach(ch => {
+        if (!categories[ch.category]) categories[ch.category] = [];
+        categories[ch.category].push(ch);
+    });
 
-        const known = Object.keys(CATEGORY_NAMES);
-        const extras = Object.keys(categories).filter(k => !known.includes(k));
-        const orderedCats = [...known, ...extras];
+    const known = Object.keys(CATEGORY_NAMES);
+    const extras = Object.keys(categories).filter(k => !known.includes(k));
+    const orderedCats = [...known, ...extras];
 
-        const collapseKey = (() => {
-            const u = this.currentUser?.username || 'anonymous';
-            return `anticode_channel_groups_collapsed::${u}`;
-        })();
-        const collapsed = (() => {
-            try { return JSON.parse(localStorage.getItem(collapseKey) || '{}') || {}; } catch (_) { return {}; }
-        })();
+    const collapseKey = (() => {
+        const u = this.currentUser?.username || 'anonymous';
+        return `anticode_channel_groups_collapsed::${u}`;
+    })();
+    const collapsed = (() => {
+        try { return JSON.parse(localStorage.getItem(collapseKey) || '{}') || {}; } catch (_) { return {}; }
+    })();
 
-        // Use DocumentFragment for faster rendering
-        const fragment = document.createDocumentFragment();
+    // Use DocumentFragment for faster rendering
+    const fragment = document.createDocumentFragment();
 
-        orderedCats.forEach(catId => {
-            const chans = categories[catId] || [];
-            if (chans.length === 0 && catId !== 'chat') return;
-            const isCollapsed = !!collapsed?.[catId];
+    orderedCats.forEach(catId => {
+        const chans = categories[catId] || [];
+        if (chans.length === 0 && catId !== 'chat') return;
+        const isCollapsed = !!collapsed?.[catId];
 
-            const group = document.createElement('div');
-            group.className = 'channel-group' + (isCollapsed ? ' collapsed' : '');
-            group.innerHTML = `
+        const group = document.createElement('div');
+        group.className = 'channel-group' + (isCollapsed ? ' collapsed' : '');
+        group.innerHTML = `
                 <div class="group-header" data-cat="${catId}" style="cursor:pointer;">
                     <span class="group-label">${isCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}</span>
                     ${(catId === 'chat' && this.isAdminMode) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
                 </div>
                 <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">
             ${chans.map(c => {
-                const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
-                const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
-                // [MOD] Add visual indicator for hidden chat
-                if (c.type === 'open_hidden') {
-                    // Maybe render a special icon or style, but requirement says "hidden" processing only.
-                    // The sidebar item render handles basic display.
-                }
-                return c.renderSidebarItem(isActive, this.isAdminMode, voiceState);
-            }).join('')}
+            const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
+            const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
+            // [MOD] Add visual indicator for hidden chat
+            if (c.type === 'open_hidden') {
+                // Maybe render a special icon or style, but requirement says "hidden" processing only.
+                // The sidebar item render handles basic display.
+            }
+            return c.renderSidebarItem(isActive, this.isAdminMode, voiceState);
+        }).join('')}
                 </div>
             `;
 
-            // Event binding for collapse
-            const header = group.querySelector('.group-header');
-            header.onclick = (e) => {
-                if (e?.target?.id === 'open-create-channel-cat') return;
-                const list = group.querySelector('.sidebar-list');
-                const nowCollapsed = !group.classList.contains('collapsed');
-                if (nowCollapsed) { group.classList.add('collapsed'); if (list) list.style.display = 'none'; }
-                else { group.classList.remove('collapsed'); if (list) list.style.display = ''; }
+        // Event binding for collapse
+        const header = group.querySelector('.group-header');
+        header.onclick = (e) => {
+            if (e?.target?.id === 'open-create-channel-cat') return;
+            const list = group.querySelector('.sidebar-list');
+            const nowCollapsed = !group.classList.contains('collapsed');
+            if (nowCollapsed) { group.classList.add('collapsed'); if (list) list.style.display = 'none'; }
+            else { group.classList.remove('collapsed'); if (list) list.style.display = ''; }
 
-                try {
-                    const prev = JSON.parse(localStorage.getItem(collapseKey) || '{}');
-                    prev[catId] = nowCollapsed;
-                    localStorage.setItem(collapseKey, JSON.stringify(prev));
-                } catch (_) { }
+            try {
+                const prev = JSON.parse(localStorage.getItem(collapseKey) || '{}');
+                prev[catId] = nowCollapsed;
+                localStorage.setItem(collapseKey, JSON.stringify(prev));
+            } catch (_) { }
 
-                const label = header.querySelector('.group-label');
-                if (label) label.textContent = `${nowCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}`;
-            };
+            const label = header.querySelector('.group-label');
+            if (label) label.textContent = `${nowCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}`;
+        };
 
-            const createBtnInCat = group.querySelector('#open-create-channel-cat');
-            if (createBtnInCat) createBtnInCat.onclick = () => document.getElementById('create-channel-modal').style.display = 'flex';
+        const createBtnInCat = group.querySelector('#open-create-channel-cat');
+        if (createBtnInCat) createBtnInCat.onclick = () => document.getElementById('create-channel-modal').style.display = 'flex';
 
-            fragment.appendChild(group);
-        });
+        fragment.appendChild(group);
+    });
 
-        container.innerHTML = '';
-        container.appendChild(fragment);
+    container.innerHTML = '';
+    container.appendChild(fragment);
 
-        // Bind channel clicks
-        container.querySelectorAll('.channel-sub-link').forEach(item => {
-            item.onclick = () => this.handleChannelSwitch(item.dataset.id);
-        });
-    }
+    // Bind channel clicks
+    container.querySelectorAll('.channel-sub-link').forEach(item => {
+        item.onclick = () => this.handleChannelSwitch(item.dataset.id);
+    });
+}
 
     async handleChannelSwitch(channelId) {
-        const channel = this.channels.find(c => c.id === channelId);
-        if (!channel) return;
+    const channel = this.channels.find(c => c.id === channelId);
+    if (!channel) return;
 
-        // Remember last visited channel for this user
-        try {
-            const u = this.currentUser?.username || 'anonymous';
-            localStorage.setItem(`anticode_last_channel::${u}`, channelId);
-        } catch (_) { }
+    // Remember last visited channel for this user
+    try {
+        const u = this.currentUser?.username || 'anonymous';
+        localStorage.setItem(`anticode_last_channel::${u}`, channelId);
+    } catch (_) { }
 
-        // If user clicks the already-active channel, do nothing (prevents reloading/clearing messages)
-        if (this.activeChannel && this.activeChannel.id === channelId) {
-            // Close sidebar on mobile
-            document.querySelector('.anticode-sidebar')?.classList.remove('open');
-            document.querySelector('.anticode-members')?.classList.remove('open');
-            return;
-        }
-
-        // Password modal gate:
-        // - If invited/member (or owner), allow entry without password.
-        // - Otherwise, require password for password-protected channels.
-        const isOwner = channel.owner_id && channel.owner_id === this.currentUser?.username;
-        const isMember = isOwner ? true : await this._hasChannelMembership(channelId, this.currentUser?.username);
-        // Important: if you're not a member (e.g. after kick), you MUST re-enter password (even if previously unlocked on this device).
-        if (channel.password && !isMember) {
-            this.pendingChannelId = channelId;
-            document.getElementById('password-entry-modal').style.display = 'flex';
-            document.getElementById('entry-password-input').focus();
-            return;
-        }
-
-        // Close sidebar on mobile after switch
-        document.querySelector('.anticode-sidebar').classList.remove('open');
-        document.querySelector('.anticode-members').classList.remove('open');
-
-        await this.switchChannel(channelId);
+    // If user clicks the already-active channel, do nothing (prevents reloading/clearing messages)
+    if (this.activeChannel && this.activeChannel.id === channelId) {
+        // Close sidebar on mobile
+        document.querySelector('.anticode-sidebar')?.classList.remove('open');
+        document.querySelector('.anticode-members')?.classList.remove('open');
+        return;
     }
 
-    copyInviteLink() {
-        if (!this.activeChannel) return;
+    // Password modal gate:
+    // - If invited/member (or owner), allow entry without password.
+    // - Otherwise, require password for password-protected channels.
+    const isOwner = channel.owner_id && channel.owner_id === this.currentUser?.username;
+    const isMember = isOwner ? true : await this._hasChannelMembership(channelId, this.currentUser?.username);
+    // Important: if you're not a member (e.g. after kick), you MUST re-enter password (even if previously unlocked on this device).
+    if (channel.password && !isMember) {
+        this.pendingChannelId = channelId;
+        document.getElementById('password-entry-modal').style.display = 'flex';
+        document.getElementById('entry-password-input').focus();
+        return;
+    }
 
-        const url = new URL(window.location.href);
-        url.searchParams.set('channel', this.activeChannel.id);
-        const inviteUrl = url.toString();
+    // Close sidebar on mobile after switch
+    document.querySelector('.anticode-sidebar').classList.remove('open');
+    document.querySelector('.anticode-members').classList.remove('open');
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(inviteUrl).then(() => {
-                alert('초대 링크가 복사되었습니다!\n\n' + inviteUrl);
-            }).catch(err => {
-                this._fallbackCopyText(inviteUrl);
-            });
-        } else {
+    await this.switchChannel(channelId);
+}
+
+copyInviteLink() {
+    if (!this.activeChannel) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('channel', this.activeChannel.id);
+    const inviteUrl = url.toString();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(inviteUrl).then(() => {
+            alert('초대 링크가 복사되었습니다!\n\n' + inviteUrl);
+        }).catch(err => {
             this._fallbackCopyText(inviteUrl);
-        }
+        });
+    } else {
+        this._fallbackCopyText(inviteUrl);
     }
+}
 
-    _fallbackCopyText(text) {
-        const input = document.createElement('textarea');
-        input.value = text;
-        input.style.position = 'fixed';
-        input.style.opacity = '0';
-        document.body.appendChild(input);
-        input.select();
-        try {
-            document.execCommand('copy');
-            alert('초대 링크가 복사되었습니다!\n\n' + text);
-        } catch (err) {
-            alert('링크 복사 실패. 아래 주소를 직접 복사해주세요:\n\n' + text);
-        }
-        document.body.removeChild(input);
+_fallbackCopyText(text) {
+    const input = document.createElement('textarea');
+    input.value = text;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    try {
+        document.execCommand('copy');
+        alert('초대 링크가 복사되었습니다!\n\n' + text);
+    } catch (err) {
+        alert('링크 복사 실패. 아래 주소를 직접 복사해주세요:\n\n' + text);
     }
+    document.body.removeChild(input);
+}
 
     async switchChannel(channelId) {
-        const channel = this.channels.find(c => c.id === channelId);
-        if (!channel) return;
-        // Voice is per-channel; stop when switching channels
-        if (this.voiceEnabled) await this.stopVoice({ playFx: false });
-        this.activeChannel = channel;
-        this._resetMessageDedupeState();
-        this.renderChannels();
+    const channel = this.channels.find(c => c.id === channelId);
+    if (!channel) return;
+    // Voice is per-channel; stop when switching channels
+    if (this.voiceEnabled) await this.stopVoice({ playFx: false });
+    this.activeChannel = channel;
+    this._resetMessageDedupeState();
+    this.renderChannels();
 
-        // Update header info safely
-        const headerLeft = document.querySelector('.header-left');
-        if (headerLeft) {
-            headerLeft.outerHTML = channel.renderHeader();
+    // Update header info safely
+    const headerLeft = document.querySelector('.header-left');
+    if (headerLeft) {
+        headerLeft.outerHTML = channel.renderHeader();
+    }
+
+    // Handle delete button in the "More Options" dropdown
+    const dropdown = document.getElementById('mobile-dropdown-menu');
+    let delBtn = document.getElementById('menu-delete-channel');
+
+    if (channel.owner_id === this.currentUser.username) {
+        if (!delBtn && dropdown) {
+            const btn = document.createElement('button');
+            btn.id = 'menu-delete-channel';
+            btn.className = 'menu-item-danger';
+            btn.textContent = '❌ 채널 삭제';
+            dropdown.appendChild(btn);
+            delBtn = btn;
         }
+        if (delBtn) delBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (dropdown) dropdown.style.display = 'none';
+            this.deleteChannel(channel.id);
+        };
+    } else if (delBtn) {
+        delBtn.remove();
+    }
 
-        // Handle delete button in the "More Options" dropdown
-        const dropdown = document.getElementById('mobile-dropdown-menu');
-        let delBtn = document.getElementById('menu-delete-channel');
+    // Load channel members first (needed for secret-channel access checks)
+    await this.loadChannelMembers(channel.id);
+    await this.loadChannelBlocks(channel.id);
 
-        if (channel.owner_id === this.currentUser.username) {
-            if (!delBtn && dropdown) {
-                const btn = document.createElement('button');
-                btn.id = 'menu-delete-channel';
-                btn.className = 'menu-item-danger';
-                btn.textContent = '❌ 채널 삭제';
-                dropdown.appendChild(btn);
-                delBtn = btn;
-            }
-            if (delBtn) delBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (dropdown) dropdown.style.display = 'none';
-                this.deleteChannel(channel.id);
-            };
-        } else if (delBtn) {
-            delBtn.remove();
+    // Secret channel gate: invited-only (or owner)
+    // [MOD] Allow access if they have a direct invite link (the link itself is the invitation)
+    if (channel.type === 'secret' && !this._isAllowedInChannel(channel.id) && this._directJoinId !== String(channel.id)) {
+        alert('이 비밀 채팅방은 초대된 멤버만 입장할 수 있습니다.');
+        // Attempt to fall back to a non-secret channel
+        const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
+        if (fallback && fallback.id !== channel.id) {
+            await this.switchChannel(fallback.id);
         }
+        return;
+    }
 
-        // Load channel members first (needed for secret-channel access checks)
-        await this.loadChannelMembers(channel.id);
-        await this.loadChannelBlocks(channel.id);
+    // [MOD] Hidden Open Chat Gate
+    if (channel.type === 'open_hidden') {
+        const me = this.currentUser?.username;
+        const isOwner = String(channel.owner_id) === String(me);
+        const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
 
-        // Secret channel gate: invited-only (or owner)
-        // [MOD] Allow access if they have a direct invite link (the link itself is the invitation)
-        if (channel.type === 'secret' && !this._isAllowedInChannel(channel.id) && this._directJoinId !== String(channel.id)) {
-            alert('이 비밀 채팅방은 초대된 멤버만 입장할 수 있습니다.');
-            // Attempt to fall back to a non-secret channel
+        if (!isMember) {
+            alert('이 오픈 채팅방은 비공개(초대 전용)입니다.');
             const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
-            if (fallback && fallback.id !== channel.id) {
-                await this.switchChannel(fallback.id);
-            }
+            await this.switchChannel(fallback.id);
             return;
         }
-
-        // [MOD] Hidden Open Chat Gate
-        if (channel.type === 'open_hidden') {
-            const me = this.currentUser?.username;
-            const isOwner = String(channel.owner_id) === String(me);
-            const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
-
-            if (!isMember) {
-                alert('이 오픈 채팅방은 비공개(초대 전용)입니다.');
-                const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
-                await this.switchChannel(fallback.id);
-                return;
-            }
-        }
-
-        // [MOD] Hidden Open Chat Gate
-        if (channel.type === 'open_hidden') {
-            const me = this.currentUser?.username;
-            const isOwner = String(channel.owner_id) === String(me);
-            const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
-
-            if (!isMember) {
-                alert('이 오픈 채팅방은 비공개(초대 전용)입니다.');
-                const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
-                await this.switchChannel(fallback.id);
-                return;
-            }
-        }
-
-        // Clear direct join flag after passing the gate
-        if (this._directJoinId === String(channel.id)) {
-            this._directJoinId = null;
-        }
-
-        // After access is granted (secret or not), mark myself as a member so I show up (and invitations persist).
-        await this.ensureCurrentUserChannelMembership(channel.id);
-        await this.loadChannelMembers(channel.id);
-        await this.loadChannelBlocks(channel.id);
-
-        document.getElementById('chat-input').placeholder = channel.getPlaceholder();
-        await this.loadMessages(channel.id);
-        this.setupMessageSubscription(channel.id);
-
-        // Per-channel online panel
-        await this.loadChannelParticipants(channel.id);
-        this.setupChannelPresence(channel.id);
-        try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
     }
+
+    // [MOD] Hidden Open Chat Gate
+    if (channel.type === 'open_hidden') {
+        const me = this.currentUser?.username;
+        const isOwner = String(channel.owner_id) === String(me);
+        const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
+
+        if (!isMember) {
+            alert('이 오픈 채팅방은 비공개(초대 전용)입니다.');
+            const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden') || this.channels[0];
+            await this.switchChannel(fallback.id);
+            return;
+        }
+    }
+
+    // Clear direct join flag after passing the gate
+    if (this._directJoinId === String(channel.id)) {
+        this._directJoinId = null;
+    }
+
+    // After access is granted (secret or not), mark myself as a member so I show up (and invitations persist).
+    await this.ensureCurrentUserChannelMembership(channel.id);
+    await this.loadChannelMembers(channel.id);
+    await this.loadChannelBlocks(channel.id);
+
+    document.getElementById('chat-input').placeholder = channel.getPlaceholder();
+    await this.loadMessages(channel.id);
+    this.setupMessageSubscription(channel.id);
+
+    // Per-channel online panel
+    await this.loadChannelParticipants(channel.id);
+    this.setupChannelPresence(channel.id);
+    try { await this.updateChannelMemberPanel(this.channelPresenceChannel.presenceState()); } catch (_) { }
+}
 
     async editChannelPrompt(channelId) {
-        if (!this.isAdminMode) return alert('관리자만 수정할 수 있습니다.');
-        const ch = this.channels.find(c => c.id === channelId);
-        if (!ch) return;
+    if (!this.isAdminMode) return alert('관리자만 수정할 수 있습니다.');
+    const ch = this.channels.find(c => c.id === channelId);
+    if (!ch) return;
 
-        const newName = prompt('채널 이름', ch.name);
-        if (newName == null) return;
-        const newCategory = prompt('카테고리 ID (예: chat / notice / voice / karaoke / game 또는 임의 문자열)', ch.category || 'chat');
-        if (newCategory == null) return;
-        const newType = prompt('채널 타입 (general / secret / notice)', ch.type || 'general');
-        if (newType == null) return;
-        let newPassword = ch.password || '';
-        if (String(newType).trim() === 'secret') {
-            const p = prompt('비밀번호 (비우면 비밀번호 없음)', newPassword);
-            if (p == null) return;
-            newPassword = p;
-        } else {
-            newPassword = '';
-        }
-
-        try {
-            const payload = {
-                name: String(newName).trim(),
-                category: String(newCategory).trim(),
-                type: String(newType).trim(),
-                password: (String(newType).trim() === 'secret') ? (String(newPassword || '').trim() || null) : null
-            };
-            const { error } = await this.supabase.from('anticode_channels').update(payload).eq('id', channelId);
-            if (error) throw error;
-            await this.loadChannels();
-            // Refresh active channel object if needed
-            if (this.activeChannel?.id === channelId) {
-                this.activeChannel = this.channels.find(c => c.id === channelId) || this.activeChannel;
-                this.renderChannels();
-            }
-            alert('채널 수정 완료!');
-        } catch (e) {
-            console.error('editChannel failed:', e);
-            alert('채널 수정 실패: ' + (e?.message || e));
-        }
+    const newName = prompt('채널 이름', ch.name);
+    if (newName == null) return;
+    const newCategory = prompt('카테고리 ID (예: chat / notice / voice / karaoke / game 또는 임의 문자열)', ch.category || 'chat');
+    if (newCategory == null) return;
+    const newType = prompt('채널 타입 (general / secret / notice)', ch.type || 'general');
+    if (newType == null) return;
+    let newPassword = ch.password || '';
+    if (String(newType).trim() === 'secret') {
+        const p = prompt('비밀번호 (비우면 비밀번호 없음)', newPassword);
+        if (p == null) return;
+        newPassword = p;
+    } else {
+        newPassword = '';
     }
+
+    try {
+        const payload = {
+            name: String(newName).trim(),
+            category: String(newCategory).trim(),
+            type: String(newType).trim(),
+            password: (String(newType).trim() === 'secret') ? (String(newPassword || '').trim() || null) : null
+        };
+        const { error } = await this.supabase.from('anticode_channels').update(payload).eq('id', channelId);
+        if (error) throw error;
+        await this.loadChannels();
+        // Refresh active channel object if needed
+        if (this.activeChannel?.id === channelId) {
+            this.activeChannel = this.channels.find(c => c.id === channelId) || this.activeChannel;
+            this.renderChannels();
+        }
+        alert('채널 수정 완료!');
+    } catch (e) {
+        console.error('editChannel failed:', e);
+        alert('채널 수정 실패: ' + (e?.message || e));
+    }
+}
 
     async deleteChannel(channelId) {
-        if (!confirm('정말로 이 채널을 삭제하시겠습니까? 채널의 모든 메시지 기록이 영구적으로 삭제됩니다.')) return;
+    if (!confirm('정말로 이 채널을 삭제하시겠습니까? 채널의 모든 메시지 기록이 영구적으로 삭제됩니다.')) return;
 
-        // 1. Delete associated messages
-        await this.supabase.from('anticode_messages').delete().eq('channel_id', channelId);
+    // 1. Delete associated messages
+    await this.supabase.from('anticode_messages').delete().eq('channel_id', channelId);
 
-        // 2. Delete the channel itself
-        const { error } = await this.supabase.from('anticode_channels').delete().eq('id', channelId);
-        if (!error) {
-            this.channels = this.channels.filter(c => c.id !== channelId);
-            this.renderChannels();
+    // 2. Delete the channel itself
+    const { error } = await this.supabase.from('anticode_channels').delete().eq('id', channelId);
+    if (!error) {
+        this.channels = this.channels.filter(c => c.id !== channelId);
+        this.renderChannels();
 
-            if (this.channels.length > 0) {
-                await this.switchChannel(this.channels[0].id);
-            } else {
-                location.reload();
-            }
+        if (this.channels.length > 0) {
+            await this.switchChannel(this.channels[0].id);
         } else {
-            alert('삭제에 실패했습니다: ' + error.message);
+            location.reload();
         }
+    } else {
+        alert('삭제에 실패했습니다: ' + error.message);
     }
+}
 
     async createChannel(name, type, category, password) {
-        if (!this.isAdminMode) {
-            alert('방장만 채널을 생성할 수 있습니다.');
-            return false;
-        }
-        const limit = this._isProUser() ? DEFAULT_CHANNEL_LIMIT_PRO : DEFAULT_CHANNEL_LIMIT_FREE;
-        const owned = (this.channels || []).filter(c => String(c.owner_id || '') === String(this.currentUser.username || '')).length;
-        if (owned >= limit) {
-            alert(`채널 생성 제한에 도달했습니다. (내 채널 최대 ${limit}개)\n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
-            return false;
-        }
-        const { data, error } = await this.supabase.from('anticode_channels').insert([{
-            name, type, category, password: type === 'secret' ? password : null,
-            owner_id: this.currentUser.username, order: this.channels.length
-        }]).select();
-        if (error) {
-            const msg = String(error.message || '');
-            if (msg.includes('channel_limit_reached')) {
-                alert('채널 생성 제한에 도달했습니다. (DB 제한)\n\n기존 채널을 삭제하거나 제한값을 늘려야 합니다.');
-                return false;
-            }
-        }
-        if (!error && data) {
-            const newChan = new Channel(data[0]);
-            this.channels.push(newChan);
-            this.renderChannels();
-            this.switchChannel(newChan.id);
-            return true;
-        }
+    if (!this.isAdminMode) {
+        alert('방장만 채널을 생성할 수 있습니다.');
         return false;
     }
+    const limit = this._isProUser() ? DEFAULT_CHANNEL_LIMIT_PRO : DEFAULT_CHANNEL_LIMIT_FREE;
+    const owned = (this.channels || []).filter(c => String(c.owner_id || '') === String(this.currentUser.username || '')).length;
+    if (owned >= limit) {
+        alert(`채널 생성 제한에 도달했습니다. (내 채널 최대 ${limit}개)\n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
+        return false;
+    }
+    const { data, error } = await this.supabase.from('anticode_channels').insert([{
+        name, type, category, password: type === 'secret' ? password : null,
+        owner_id: this.currentUser.username, order: this.channels.length
+    }]).select();
+    if (error) {
+        const msg = String(error.message || '');
+        if (msg.includes('channel_limit_reached')) {
+            alert('채널 생성 제한에 도달했습니다. (DB 제한)\n\n기존 채널을 삭제하거나 제한값을 늘려야 합니다.');
+            return false;
+        }
+    }
+    if (!error && data) {
+        const newChan = new Channel(data[0]);
+        this.channels.push(newChan);
+        this.renderChannels();
+        this.switchChannel(newChan.id);
+        return true;
+    }
+    return false;
+}
 
     async preloadUsers(usernames) {
-        const uniqueNames = [...new Set(usernames)].filter(u => u && !this.userCache[u] && !this.userRequestCache[u]);
-        if (uniqueNames.length === 0) return;
+    const uniqueNames = [...new Set(usernames)].filter(u => u && !this.userCache[u] && !this.userRequestCache[u]);
+    if (uniqueNames.length === 0) return;
 
-        try {
-            const { data, error } = await this.supabase
-                .from('anticode_users')
-                .select('username, nickname, avatar_url')
-                .in('username', uniqueNames);
+    try {
+        const { data, error } = await this.supabase
+            .from('anticode_users')
+            .select('username, nickname, avatar_url')
+            .in('username', uniqueNames);
 
-            if (!error && data) {
-                data.forEach(user => {
-                    this.userCache[user.username] = { nickname: user.nickname, avatar_url: user.avatar_url };
-                });
-            }
-        } catch (e) {
-            console.warn('preloadUsers error:', e);
+        if (!error && data) {
+            data.forEach(user => {
+                this.userCache[user.username] = { nickname: user.nickname, avatar_url: user.avatar_url };
+            });
         }
+    } catch (e) {
+        console.warn('preloadUsers error:', e);
     }
+}
 
     async loadMessages(channelId) {
-        const container = document.getElementById('message-container');
-        if (!container) return;
+    const container = document.getElementById('message-container');
+    if (!container) return;
 
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">메시지를 불러오는 중...</div>';
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">메시지를 불러오는 중...</div>';
 
-        const { data, error } = await this.supabase
-            .from('anticode_messages')
-            .select('*')
-            .eq('channel_id', channelId)
-            .order('created_at', { ascending: false })
-            .order('id', { ascending: false })
-            .limit(MESSAGE_RETENTION_PER_CHANNEL);
+    const { data, error } = await this.supabase
+        .from('anticode_messages')
+        .select('*')
+        .eq('channel_id', channelId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(MESSAGE_RETENTION_PER_CHANNEL);
 
-        if (error) {
-            console.error('Failed to load messages:', error);
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:#ff4d4d;">메시지 로드 실패</div>';
-            return;
-        }
-
-        const rows = (data || []).slice().reverse();
-        const usernames = rows.map(m => m.user_id);
-        await this.preloadUsers(usernames);
-
-        // [MULTI-THREAD] Process all messages in parallel via LogicWorker
-        const elementPromises = rows.map(msg => {
-            const info = this.userCache[msg.user_id] || { nickname: msg.author || '?', avatar_url: null };
-            return this.createMessageElementAsync(msg, info, false);
-        });
-
-        const elements = await Promise.all(elementPromises);
-
-        container.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-        elements.forEach(el => { if (el) fragment.appendChild(el); });
-
-        container.appendChild(fragment);
-        container.scrollTop = container.scrollHeight;
+    if (error) {
+        console.error('Failed to load messages:', error);
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#ff4d4d;">메시지 로드 실패</div>';
+        return;
     }
 
-    async createMessageElementAsync(msg, info, isOptimistic = false) {
-        try {
-            const msgEl = document.createElement('div');
-            msgEl.className = 'message-item';
-            if (msg.id) msgEl.id = `msg-${msg.id}`;
-            if (isOptimistic) {
-                msgEl.style.opacity = '0.7';
-                msgEl.setAttribute('data-optimistic', 'true');
-                if (msg.id) msgEl.dataset.tempId = msg.id;
-            }
+    const rows = (data || []).slice().reverse();
+    const usernames = rows.map(m => m.user_id);
+    await this.preloadUsers(usernames);
 
-            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const initial = (info.nickname || msg.author || '?')[0];
-            const avatarHtml = `
+    // [MULTI-THREAD] Process all messages in parallel via LogicWorker
+    const elementPromises = rows.map(msg => {
+        const info = this.userCache[msg.user_id] || { nickname: msg.author || '?', avatar_url: null };
+        return this.createMessageElementAsync(msg, info, false);
+    });
+
+    const elements = await Promise.all(elementPromises);
+
+    container.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    elements.forEach(el => { if (el) fragment.appendChild(el); });
+
+    container.appendChild(fragment);
+    container.scrollTop = container.scrollHeight;
+}
+
+    async createMessageElementAsync(msg, info, isOptimistic = false) {
+    try {
+        const msgEl = document.createElement('div');
+        msgEl.className = 'message-item';
+        if (msg.id) msgEl.id = `msg-${msg.id}`;
+        if (isOptimistic) {
+            msgEl.style.opacity = '0.7';
+            msgEl.setAttribute('data-optimistic', 'true');
+            if (msg.id) msgEl.dataset.tempId = msg.id;
+        }
+
+        const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const initial = (info.nickname || msg.author || '?')[0];
+        const avatarHtml = `
             <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0;">
                 ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                 <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
             </div>
         `;
 
-            // Offload profanity and linkify to the Logic Thread (with fallback)
-            let contentHtml = msg.content || '';
-            if (!isOptimistic) {
-                try {
-                    const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
-                    contentHtml = res.contentHtml;
-                } catch (e) {
-                    console.warn('LogicWorker fallback in createMessageElementAsync:', e);
-                }
+        // Offload profanity and linkify to the Logic Thread (with fallback)
+        let contentHtml = msg.content || '';
+        if (!isOptimistic) {
+            try {
+                const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
+                contentHtml = res.contentHtml;
+            } catch (e) {
+                console.warn('LogicWorker fallback in createMessageElementAsync:', e);
             }
-            const isMyMessage = msg.user_id === this.currentUser.username;
-            const canDelete = isMyMessage || this.isAdminMode;
+        }
+        const isMyMessage = msg.user_id === this.currentUser.username;
+        const canDelete = isMyMessage || this.isAdminMode;
 
-            msgEl.innerHTML = `
+        msgEl.innerHTML = `
                 ${avatarHtml}
                 <div class="message-content-wrapper">
                     <div class="message-meta">
@@ -3543,132 +3543,132 @@ class AntiCodeApp {
                     </div>
                 </div>
             `;
-            return msgEl;
-        } catch (e) {
-            console.error('Failed to create message element async:', e);
-            return null;
-        }
+        return msgEl;
+    } catch (e) {
+        console.error('Failed to create message element async:', e);
+        return null;
     }
+}
 
-    setupMessageSubscription(channelId) {
-        if (this.messageSubscription) this.supabase.removeChannel(this.messageSubscription);
+setupMessageSubscription(channelId) {
+    if (this.messageSubscription) this.supabase.removeChannel(this.messageSubscription);
 
-        console.log(`Subscribing to real-time messages for channel: ${channelId}`);
-        this.messageSubscription = this.supabase
-            .channel(`channel_${channelId}`, {
-                config: {
-                    broadcast: { self: false }
-                }
-            })
-            .on('broadcast', { event: 'chat' }, payload => {
-                this.queueMessage(payload.payload);
-            })
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'anticode_messages',
-                filter: `channel_id=eq.${channelId}`
-            }, payload => {
-                this.queueMessage(payload.new);
-            })
-            .on('postgres_changes', {
-                event: 'DELETE',
-                schema: 'public',
-                table: 'anticode_messages'
-                // Note: filter on channel_id may not work for DELETE if not in PK, 
-                // but we can filter in the callback or trust Supabase if it works.
-            }, payload => {
-                const id = payload.old?.id;
-                if (!id) return;
-                const el = document.getElementById(`msg-${id}`);
-                if (el) {
-                    el.style.opacity = '0';
-                    setTimeout(() => el.remove(), 300);
-                }
-            })
-            .subscribe((status) => {
-                console.log(`Subscription status for ${channelId}:`, status);
-            });
-    }
+    console.log(`Subscribing to real-time messages for channel: ${channelId}`);
+    this.messageSubscription = this.supabase
+        .channel(`channel_${channelId}`, {
+            config: {
+                broadcast: { self: false }
+            }
+        })
+        .on('broadcast', { event: 'chat' }, payload => {
+            this.queueMessage(payload.payload);
+        })
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'anticode_messages',
+            filter: `channel_id=eq.${channelId}`
+        }, payload => {
+            this.queueMessage(payload.new);
+        })
+        .on('postgres_changes', {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'anticode_messages'
+            // Note: filter on channel_id may not work for DELETE if not in PK, 
+            // but we can filter in the callback or trust Supabase if it works.
+        }, payload => {
+            const id = payload.old?.id;
+            if (!id) return;
+            const el = document.getElementById(`msg-${id}`);
+            if (el) {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }
+        })
+        .subscribe((status) => {
+            console.log(`Subscription status for ${channelId}:`, status);
+        });
+}
 
-    queueMessage(msg, isOptimistic = false) {
-        this.messageQueue.push({ msg, isOptimistic });
-        this.processQueue();
-    }
+queueMessage(msg, isOptimistic = false) {
+    this.messageQueue.push({ msg, isOptimistic });
+    this.processQueue();
+}
 
     async processQueue() {
-        if (this.isProcessingQueue || this.messageQueue.length === 0) return;
-        this.isProcessingQueue = true;
+    if (this.isProcessingQueue || this.messageQueue.length === 0) return;
+    this.isProcessingQueue = true;
 
-        while (this.messageQueue.length > 0) {
-            const { msg, isOptimistic } = this.messageQueue.shift();
-            try {
-                await this.appendMessage(msg, isOptimistic);
-            } catch (e) {
-                console.error('Error processing message in queue:', e, msg);
-            }
+    while (this.messageQueue.length > 0) {
+        const { msg, isOptimistic } = this.messageQueue.shift();
+        try {
+            await this.appendMessage(msg, isOptimistic);
+        } catch (e) {
+            console.error('Error processing message in queue:', e, msg);
         }
-
-        this.isProcessingQueue = false;
     }
 
-    setupPresence() {
-        if (this.presenceChannel) this.supabase.removeChannel(this.presenceChannel);
-        if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
+    this.isProcessingQueue = false;
+}
 
-        this.presenceChannel = this.supabase.channel('online-users');
-        this.presenceChannel
-            .on('presence', { event: 'sync' }, () => {
-                const state = this.presenceChannel.presenceState();
-                this.syncFriendStatus(state);
-            })
-            .subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    const trackData = {
-                        username: this.currentUser.username,
-                        nickname: this.currentUser.nickname,
-                        uid: this.currentUser.uid,
-                        avatar_url: this.currentUser.avatar_url,
-                        online_at: new Date().toISOString(),
-                    };
-                    await this.presenceChannel.track(trackData);
+setupPresence() {
+    if (this.presenceChannel) this.supabase.removeChannel(this.presenceChannel);
+    if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
 
-                    // Periodic last_seen update in DB
-                    this.updateLastSeen();
-                    this.lastSeenInterval = setInterval(() => this.updateLastSeen(), 60000);
-                }
-            });
-    }
+    this.presenceChannel = this.supabase.channel('online-users');
+    this.presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+            const state = this.presenceChannel.presenceState();
+            this.syncFriendStatus(state);
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                const trackData = {
+                    username: this.currentUser.username,
+                    nickname: this.currentUser.nickname,
+                    uid: this.currentUser.uid,
+                    avatar_url: this.currentUser.avatar_url,
+                    online_at: new Date().toISOString(),
+                };
+                await this.presenceChannel.track(trackData);
+
+                // Periodic last_seen update in DB
+                this.updateLastSeen();
+                this.lastSeenInterval = setInterval(() => this.updateLastSeen(), 60000);
+            }
+        });
+}
 
     async updateLastSeen() {
-        if (!this.currentUser) return;
-        try {
-            await this.supabase
-                .from('anticode_users')
-                .update({ last_seen: new Date().toISOString() })
-                .eq('username', this.currentUser.username);
-        } catch (e) {
-            console.error('Failed to update last_seen:', e);
-        }
+    if (!this.currentUser) return;
+    try {
+        await this.supabase
+            .from('anticode_users')
+            .update({ last_seen: new Date().toISOString() })
+            .eq('username', this.currentUser.username);
+    } catch (e) {
+        console.error('Failed to update last_seen:', e);
     }
+}
 
     async updateOnlineUsers(state) {
-        const memberList = document.getElementById('member-list');
-        const onlineCountText = document.getElementById('online-count');
-        if (!memberList) return;
+    const memberList = document.getElementById('member-list');
+    const onlineCountText = document.getElementById('online-count');
+    if (!memberList) return;
 
-        const onlineUsers = [];
-        for (const id in state) onlineUsers.push(state[id][0]);
-        if (onlineCountText) onlineCountText.innerText = onlineUsers.length;
+    const onlineUsers = [];
+    for (const id in state) onlineUsers.push(state[id][0]);
+    if (onlineCountText) onlineCountText.innerText = onlineUsers.length;
 
-        const friendUsernames = new Set(this.friends.map(f => f.username));
+    const friendUsernames = new Set(this.friends.map(f => f.username));
 
-        // Members list will show online users first, then offline friends
-        const offlineFriends = this.friends.filter(f => !f.online);
+    // Members list will show online users first, then offline friends
+    const offlineFriends = this.friends.filter(f => !f.online);
 
-        let html = onlineUsers.map(user => {
-            const isFriend = friendUsernames.has(user.username);
-            return `
+    let html = onlineUsers.map(user => {
+        const isFriend = friendUsernames.has(user.username);
+        return `
                 <div class="member-card online">
                     <div class="avatar-wrapper">
                         ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
@@ -3681,9 +3681,9 @@ class AntiCodeApp {
                     </div>
                 </div>
             `;
-        }).join('');
+    }).join('');
 
-        html += offlineFriends.map(f => `
+    html += offlineFriends.map(f => `
             <div class="member-card offline">
                 <div class="avatar-wrapper">
                     ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
@@ -3696,252 +3696,252 @@ class AntiCodeApp {
             </div>
         `).join('');
 
-        memberList.innerHTML = html;
-    }
+    memberList.innerHTML = html;
+}
 
-    syncFriendStatus(state) {
-        const onlineUsernames = [];
-        for (const id in state) onlineUsernames.push(state[id][0].username);
-        this.friends.forEach(f => { f.online = onlineUsernames.includes(f.username); });
-        this.renderFriends();
-    }
+syncFriendStatus(state) {
+    const onlineUsernames = [];
+    for (const id in state) onlineUsernames.push(state[id][0].username);
+    this.friends.forEach(f => { f.online = onlineUsernames.includes(f.username); });
+    this.renderFriends();
+}
 
     async sendMessage() {
-        const input = document.getElementById('chat-input');
-        let content = input.value.trim();
-        if (!content || !this.activeChannel) return;
+    const input = document.getElementById('chat-input');
+    let content = input.value.trim();
+    if (!content || !this.activeChannel) return;
 
-        // Secret channels: invited-only write
-        if (this.activeChannel.type === 'secret' && !this._isAllowedInChannel(this.activeChannel.id)) {
-            alert('초대된 멤버만 이 비밀 채팅방에 글을 쓸 수 있습니다.');
-            return;
-        }
-
-        // 1. Optimistic Rendering: Display immediately (Before blocking filter)
-        const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
-        const rawContent = content; // Store raw for optimistic
-        const newMessage = {
-            id: tempId,
-            channel_id: this.activeChannel.id,
-            user_id: this.currentUser.username,
-            author: this.currentUser.nickname,
-            content: rawContent,
-            created_at: new Date().toISOString()
-        };
-
-        input.value = '';
-        input.style.height = 'auto';
-        this.sentMessageCache.add(tempId);
-        this.queueMessage({ ...newMessage }, true);
-
-        // Profanity filter (Offloaded to Logic Thread) (with fallback)
-        try {
-            const { text: filteredText } = await LogicWorker.execute('FILTER_PROFANITY', { text: content });
-            content = filteredText;
-        } catch (e) {
-            console.warn('LogicWorker fallback in sendMessage:', e);
-        }
-
-        // Update content for persistence/broadcast to be the filtered version
-        newMessage.content = content;
-
-        // 2. Broadcast: Instant Fast-track to others
-        if (this.messageSubscription) {
-            this.messageSubscription.send({
-                type: 'broadcast',
-                event: 'chat',
-                payload: newMessage
-            });
-        }
-
-        // 3. Persistent Storage
-        const { data, error } = await this.supabase.from('anticode_messages').insert([{
-            channel_id: this.activeChannel.id,
-            user_id: this.currentUser.username,
-            author: this.currentUser.nickname,
-            content: content,
-            image_url: newMessage.image_url || null
-        }]).select('id, created_at').single();
-
-        if (error) {
-            console.error('Failed to send message:', error);
-            this._markOptimisticFailed(tempId, error?.message || String(error));
-            return;
-        }
-
-        // ✅ Finalize immediately on insert success (don't wait for realtime)
-        try {
-            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
-            if (opt && typeof this.finalizeOptimistic === 'function') {
-                this.finalizeOptimistic(opt, { ...newMessage, id: data?.id });
-            }
-        } catch (_) { }
-
-        // Offline push notification to other devices/users (requires Edge Function + push subscriptions)
-        this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content });
+    // Secret channels: invited-only write
+    if (this.activeChannel.type === 'secret' && !this._isAllowedInChannel(this.activeChannel.id)) {
+        alert('초대된 멤버만 이 비밀 채팅방에 글을 쓸 수 있습니다.');
+        return;
     }
 
-    _fingerprintMessage(msg) {
-        const safe = (v) => (v == null ? '' : String(v).trim());
-        return [
-            safe(msg.channel_id),
-            safe(msg.user_id),
-            safe(msg.author),
-            safe(msg.content),
-            safe(msg.image_url)
-        ].join('|');
+    // 1. Optimistic Rendering: Display immediately (Before blocking filter)
+    const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
+    const rawContent = content; // Store raw for optimistic
+    const newMessage = {
+        id: tempId,
+        channel_id: this.activeChannel.id,
+        user_id: this.currentUser.username,
+        author: this.currentUser.nickname,
+        content: rawContent,
+        created_at: new Date().toISOString()
+    };
+
+    input.value = '';
+    input.style.height = 'auto';
+    this.sentMessageCache.add(tempId);
+    this.queueMessage({ ...newMessage }, true);
+
+    // Profanity filter (Offloaded to Logic Thread) (with fallback)
+    try {
+        const { text: filteredText } = await LogicWorker.execute('FILTER_PROFANITY', { text: content });
+        content = filteredText;
+    } catch (e) {
+        console.warn('LogicWorker fallback in sendMessage:', e);
     }
 
-    _isRecentDuplicate(msg, windowMs = 5000) {
-        const key = this._fingerprintMessage(msg);
-        const now = Date.now();
-        const prev = this.recentMessageFingerprints.get(key);
-        // prune old entries opportunistically
-        for (const [k, t] of this.recentMessageFingerprints.entries()) {
-            if (now - t > 30000) this.recentMessageFingerprints.delete(k);
-        }
-        if (prev && (now - prev) < windowMs) return true;
-        this.recentMessageFingerprints.set(key, now);
-        return false;
+    // Update content for persistence/broadcast to be the filtered version
+    newMessage.content = content;
+
+    // 2. Broadcast: Instant Fast-track to others
+    if (this.messageSubscription) {
+        this.messageSubscription.send({
+            type: 'broadcast',
+            event: 'chat',
+            payload: newMessage
+        });
     }
+
+    // 3. Persistent Storage
+    const { data, error } = await this.supabase.from('anticode_messages').insert([{
+        channel_id: this.activeChannel.id,
+        user_id: this.currentUser.username,
+        author: this.currentUser.nickname,
+        content: content,
+        image_url: newMessage.image_url || null
+    }]).select('id, created_at').single();
+
+    if (error) {
+        console.error('Failed to send message:', error);
+        this._markOptimisticFailed(tempId, error?.message || String(error));
+        return;
+    }
+
+    // ✅ Finalize immediately on insert success (don't wait for realtime)
+    try {
+        const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+        if (opt && typeof this.finalizeOptimistic === 'function') {
+            this.finalizeOptimistic(opt, { ...newMessage, id: data?.id });
+        }
+    } catch (_) { }
+
+    // Offline push notification to other devices/users (requires Edge Function + push subscriptions)
+    this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content });
+}
+
+_fingerprintMessage(msg) {
+    const safe = (v) => (v == null ? '' : String(v).trim());
+    return [
+        safe(msg.channel_id),
+        safe(msg.user_id),
+        safe(msg.author),
+        safe(msg.content),
+        safe(msg.image_url)
+    ].join('|');
+}
+
+_isRecentDuplicate(msg, windowMs = 5000) {
+    const key = this._fingerprintMessage(msg);
+    const now = Date.now();
+    const prev = this.recentMessageFingerprints.get(key);
+    // prune old entries opportunistically
+    for (const [k, t] of this.recentMessageFingerprints.entries()) {
+        if (now - t > 30000) this.recentMessageFingerprints.delete(k);
+    }
+    if (prev && (now - prev) < windowMs) return true;
+    this.recentMessageFingerprints.set(key, now);
+    return false;
+}
 
     async appendMessage(msg, isOptimistic = false) {
-        const container = document.getElementById('message-container');
-        if (!container) return;
+    const container = document.getElementById('message-container');
+    if (!container) return;
 
-        try {
-            // Defensive: ensure Set exists
-            if (!this.processedMessageIds) this.processedMessageIds = new Set();
+    try {
+        // Defensive: ensure Set exists
+        if (!this.processedMessageIds) this.processedMessageIds = new Set();
 
-            // Deduplicate
-            if (msg.id && this.processedMessageIds.has(msg.id)) return;
-            if (msg.id) this.processedMessageIds.add(msg.id);
+        // Deduplicate
+        if (msg.id && this.processedMessageIds.has(msg.id)) return;
+        if (msg.id) this.processedMessageIds.add(msg.id);
 
-            // Match Optimistic
-            if (!isOptimistic) {
-                const existing = container.querySelector(msg.tempId ? `[data-temp-id="${msg.tempId}"]` : `div[data-optimistic="true"]`);
-                if (existing && typeof this.finalizeOptimistic === 'function') {
-                    await this.finalizeOptimistic(existing, msg);
-                    return;
-                }
-            }
-
-            let info = this.userCache ? this.userCache[msg.user_id] : null;
-            if (!info && typeof this.getUserInfo === 'function') {
-                try {
-                    info = await this.getUserInfo(msg.user_id);
-                } catch (e) {
-                    console.warn('getUserInfo failed in appendMessage:', e);
-                }
-            }
-            if (!info) info = { nickname: msg.author || '알 수 없음', avatar_url: null };
-
-            if (typeof this.createMessageElementAsync !== 'function') {
-                console.error('Critical: createMessageElementAsync not found');
+        // Match Optimistic
+        if (!isOptimistic) {
+            const existing = container.querySelector(msg.tempId ? `[data-temp-id="${msg.tempId}"]` : `div[data-optimistic="true"]`);
+            if (existing && typeof this.finalizeOptimistic === 'function') {
+                await this.finalizeOptimistic(existing, msg);
                 return;
             }
+        }
 
-            const msgEl = await this.createMessageElementAsync(msg, info, isOptimistic);
-            if (msgEl) {
-                container.appendChild(msgEl);
-                if (typeof this._scrollToBottom === 'function') {
-                    this._scrollToBottom();
-                }
+        let info = this.userCache ? this.userCache[msg.user_id] : null;
+        if (!info && typeof this.getUserInfo === 'function') {
+            try {
+                info = await this.getUserInfo(msg.user_id);
+            } catch (e) {
+                console.warn('getUserInfo failed in appendMessage:', e);
             }
-        } catch (e) {
-            console.error('appendMessage error:', e);
         }
-    }
+        if (!info) info = { nickname: msg.author || '알 수 없음', avatar_url: null };
 
-    _scrollToBottom() {
-        const container = document.getElementById('message-container');
-        if (container) {
-            container.scrollTop = container.scrollHeight;
+        if (typeof this.createMessageElementAsync !== 'function') {
+            console.error('Critical: createMessageElementAsync not found');
+            return;
         }
+
+        const msgEl = await this.createMessageElementAsync(msg, info, isOptimistic);
+        if (msgEl) {
+            container.appendChild(msgEl);
+            if (typeof this._scrollToBottom === 'function') {
+                this._scrollToBottom();
+            }
+        }
+    } catch (e) {
+        console.error('appendMessage error:', e);
     }
+}
+
+_scrollToBottom() {
+    const container = document.getElementById('message-container');
+    if (container) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
 
     async finalizeOptimistic(el, realMsg) {
-        el.id = `msg-${realMsg.id}`;
-        el.style.opacity = '1';
-        el.removeAttribute('data-optimistic');
-        el.removeAttribute('data-temp-id');
+    el.id = `msg-${realMsg.id}`;
+    el.style.opacity = '1';
+    el.removeAttribute('data-optimistic');
+    el.removeAttribute('data-temp-id');
 
-        const status = el.querySelector('.sending-status');
-        if (status) status.innerText = '';
+    const status = el.querySelector('.sending-status');
+    if (status) status.innerText = '';
 
-        const meta = el.querySelector('.message-meta');
-        if (meta && this.isAdminMode) {
-            const delBtn = document.createElement('button');
-            delBtn.className = 'delete-msg-btn';
-            delBtn.title = '삭제';
-            delBtn.onclick = () => this.deleteMessage(realMsg.id);
-            delBtn.innerText = '🗑️';
-            meta.appendChild(delBtn);
+    const meta = el.querySelector('.message-meta');
+    if (meta && this.isAdminMode) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-msg-btn';
+        delBtn.title = '삭제';
+        delBtn.onclick = () => this.deleteMessage(realMsg.id);
+        delBtn.innerText = '🗑️';
+        meta.appendChild(delBtn);
+    }
+
+    // [MULTI-THREAD] Update content with the processed version from worker (with fallback)
+    const textEl = el.querySelector('.message-text');
+    if (textEl) {
+        let contentHtml = realMsg.content || '';
+        try {
+            const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: realMsg.content || '' });
+            contentHtml = res.contentHtml;
+        } catch (e) {
+            console.warn('LogicWorker fallback in finalizeOptimistic:', e);
         }
-
-        // [MULTI-THREAD] Update content with the processed version from worker (with fallback)
-        const textEl = el.querySelector('.message-text');
-        if (textEl) {
-            let contentHtml = realMsg.content || '';
-            try {
-                const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: realMsg.content || '' });
-                contentHtml = res.contentHtml;
-            } catch (e) {
-                console.warn('LogicWorker fallback in finalizeOptimistic:', e);
-            }
-            textEl.innerHTML = `
+        textEl.innerHTML = `
                 ${contentHtml}
                 ${realMsg.image_url ? `<div class="message-image-content"><img src="${realMsg.image_url}" class="chat-img" onclick="window.open('${realMsg.image_url}')"></div>` : ''}
             `;
-        }
     }
+}
 
-    _markOptimisticFailed(tempId, reason = '') {
-        try {
-            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
-            if (!opt) return;
-            opt.setAttribute('data-send-failed', 'true');
-            const statusText = opt.querySelector('.sending-status');
-            if (statusText) statusText.textContent = '(전송 실패)';
-            if (reason) console.warn('Message send failed:', reason);
-        } catch (_) { }
-    }
+_markOptimisticFailed(tempId, reason = '') {
+    try {
+        const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+        if (!opt) return;
+        opt.setAttribute('data-send-failed', 'true');
+        const statusText = opt.querySelector('.sending-status');
+        if (statusText) statusText.textContent = '(전송 실패)';
+        if (reason) console.warn('Message send failed:', reason);
+    } catch (_) { }
+}
 
     async deleteMessage(messageId) {
-        if (!messageId) return;
-        if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
+    if (!messageId) return;
+    if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
 
-        // Instant UI: Remove from DOM immediately
-        const el = document.getElementById(`msg-${messageId}`);
-        const parent = el?.parentElement;
-        const nextSibling = el?.nextSibling;
-        if (el) el.remove();
+    // Instant UI: Remove from DOM immediately
+    const el = document.getElementById(`msg-${messageId}`);
+    const parent = el?.parentElement;
+    const nextSibling = el?.nextSibling;
+    if (el) el.remove();
 
-        try {
-            const { error } = await this.supabase
-                .from('anticode_messages')
-                .delete()
-                .eq('id', messageId);
+    try {
+        const { error } = await this.supabase
+            .from('anticode_messages')
+            .delete()
+            .eq('id', messageId);
 
-            if (error) {
-                console.error('Delete error:', error);
-                alert('삭제 실패: ' + error.message);
-                if (el && parent) parent.insertBefore(el, nextSibling);
-                return;
-            }
-        } catch (e) {
-            console.error('Delete exception:', e);
-            alert('삭제 중 오류가 발생했습니다.');
+        if (error) {
+            console.error('Delete error:', error);
+            alert('삭제 실패: ' + error.message);
             if (el && parent) parent.insertBefore(el, nextSibling);
+            return;
         }
+    } catch (e) {
+        console.error('Delete exception:', e);
+        alert('삭제 중 오류가 발생했습니다.');
+        if (el && parent) parent.insertBefore(el, nextSibling);
     }
+}
 
 
-    renderUserInfo() {
-        const info = document.getElementById('current-user-info');
-        if (!info) return;
-        const avatarHtml = this.currentUser.avatar_url ? `<img src="${this.currentUser.avatar_url}" class="avatar-img">` : `<div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>`;
-        info.innerHTML = `
+renderUserInfo() {
+    const info = document.getElementById('current-user-info');
+    if (!info) return;
+    const avatarHtml = this.currentUser.avatar_url ? `<img src="${this.currentUser.avatar_url}" class="avatar-img">` : `<div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>`;
+    info.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px;">
             ${avatarHtml}
             <div class="user-info-text">
@@ -3954,556 +3954,556 @@ class AntiCodeApp {
         </div>
     `;
 
-        const copyBtn = info.querySelector('.uid-copy-btn');
-        if (copyBtn) {
-            copyBtn.onclick = (e) => {
-                e.stopPropagation();
-                const uid = copyBtn.dataset.uid;
-                navigator.clipboard.writeText(uid).then(() => {
-                    const originalText = copyBtn.innerText;
-                    copyBtn.innerText = '✅';
-                    setTimeout(() => copyBtn.innerText = originalText, 1500);
-                });
-            };
-        }
+    const copyBtn = info.querySelector('.uid-copy-btn');
+    if (copyBtn) {
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            const uid = copyBtn.dataset.uid;
+            navigator.clipboard.writeText(uid).then(() => {
+                const originalText = copyBtn.innerText;
+                copyBtn.innerText = '✅';
+                setTimeout(() => copyBtn.innerText = originalText, 1500);
+            });
+        };
+    }
+}
+
+setupEventListeners() {
+    const _safeBind = (id, event, fn) => {
+        const el = typeof id === 'string' ? document.getElementById(id) : id;
+        if (el) el[event] = fn;
+    };
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-msg-btn');
+    _safeBind('send-msg-btn', 'onclick', () => this.sendMessage());
+    if (input) {
+        input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendMessage(); } };
+        input.oninput = () => {
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+        };
     }
 
-    setupEventListeners() {
-        const _safeBind = (id, event, fn) => {
-            const el = typeof id === 'string' ? document.getElementById(id) : id;
-            if (el) el[event] = fn;
-        };
-        const input = document.getElementById('chat-input');
-        const sendBtn = document.getElementById('send-msg-btn');
-        _safeBind('send-msg-btn', 'onclick', () => this.sendMessage());
-        if (input) {
-            input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendMessage(); } };
-            input.oninput = () => {
-                input.style.height = 'auto';
-                input.style.height = input.scrollHeight + 'px';
-            };
+    // Profile Management
+    _safeBind('current-user-info', 'onclick', () => {
+        const nick = document.getElementById('edit-nickname');
+        const av = document.getElementById('edit-avatar-url');
+        if (nick) nick.value = this.currentUser.nickname;
+        if (av) av.value = this.currentUser.avatar_url || '';
+        const mod = document.getElementById('profile-modal');
+        if (mod) mod.style.display = 'flex';
+    });
+
+    _safeBind('close-profile-modal', 'onclick', () => {
+        const mod = document.getElementById('profile-modal');
+        if (mod) mod.style.display = 'none';
+    });
+    document.getElementById('profile-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const nickname = document.getElementById('edit-nickname').value;
+        const avatarUrl = document.getElementById('edit-avatar-url').value;
+        if (await this.updateProfile(nickname, avatarUrl)) {
+            document.getElementById('profile-modal').style.display = 'none';
+            location.reload(); // Refresh to update all instances
         }
+    };
 
-        // Profile Management
-        _safeBind('current-user-info', 'onclick', () => {
-            const nick = document.getElementById('edit-nickname');
-            const av = document.getElementById('edit-avatar-url');
-            if (nick) nick.value = this.currentUser.nickname;
-            if (av) av.value = this.currentUser.avatar_url || '';
-            const mod = document.getElementById('profile-modal');
-            if (mod) mod.style.display = 'flex';
-        });
-
-        _safeBind('close-profile-modal', 'onclick', () => {
-            const mod = document.getElementById('profile-modal');
-            if (mod) mod.style.display = 'none';
-        });
-        document.getElementById('profile-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const nickname = document.getElementById('edit-nickname').value;
-            const avatarUrl = document.getElementById('edit-avatar-url').value;
-            if (await this.updateProfile(nickname, avatarUrl)) {
-                document.getElementById('profile-modal').style.display = 'none';
-                location.reload(); // Refresh to update all instances
-            }
+    // Emoji Picker
+    const emojiBtn = document.getElementById('emoji-btn');
+    const emojiPicker = document.getElementById('emoji-picker');
+    emojiBtn.onclick = (e) => { e.stopPropagation(); emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'grid' : 'none'; };
+    document.addEventListener('click', () => { emojiPicker.style.display = 'none'; });
+    emojiPicker.querySelectorAll('.emoji-item').forEach(em => {
+        em.onclick = (e) => {
+            input.value += em.innerText;
+            input.focus();
         };
+    });
 
-        // Emoji Picker
-        const emojiBtn = document.getElementById('emoji-btn');
-        const emojiPicker = document.getElementById('emoji-picker');
-        emojiBtn.onclick = (e) => { e.stopPropagation(); emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'grid' : 'none'; };
-        document.addEventListener('click', () => { emojiPicker.style.display = 'none'; });
-        emojiPicker.querySelectorAll('.emoji-item').forEach(em => {
-            em.onclick = (e) => {
-                input.value += em.innerText;
-                input.focus();
+    // Voice toggle (mic)
+    _safeBind('voice-toggle-btn', 'onclick', async (e) => {
+        try {
+            e?.stopPropagation?.();
+            await this.toggleVoice();
+        } catch (err) {
+            console.error('toggleVoice error:', err);
+            alert('보이스 톡 오류: ' + (err?.message || err));
+        }
+    });
+
+    // Mobile Toggles & Nav
+    const sidebar = document.querySelector('.anticode-sidebar');
+    const membersSide = document.querySelector('.anticode-members');
+    const chatArea = document.querySelector('.anticode-chat-area');
+    const dropdown = document.getElementById('mobile-dropdown-menu');
+
+    const toggleSidebar = (open) => {
+        if (sidebar) {
+            if (typeof open === 'boolean') sidebar.classList.toggle('open', open);
+            else sidebar.classList.toggle('open');
+        }
+        if (membersSide) membersSide.classList.remove('open');
+        if (dropdown) dropdown.style.display = 'none';
+    };
+    const toggleMembers = (open) => {
+        if (membersSide) {
+            if (typeof open === 'boolean') membersSide.classList.toggle('open', open);
+            else membersSide.classList.toggle('open');
+        }
+        if (sidebar) sidebar.classList.remove('open');
+        if (dropdown) dropdown.style.display = 'none';
+    };
+
+    _safeBind('mobile-menu-toggle', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(); });
+    document.querySelectorAll('.sidebar-close-btn').forEach(btn => {
+        btn.onclick = (e) => { e.stopPropagation(); toggleSidebar(false); };
+    });
+    _safeBind('mobile-members-toggle', 'onclick', (e) => { e.stopPropagation(); toggleMembers(); });
+
+    _safeBind('mobile-more-btn', 'onclick', (e) => {
+        e.stopPropagation();
+        if (dropdown) dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'flex' : 'none';
+    });
+
+    _safeBind('menu-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
+    _safeBind('menu-friends', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
+    _safeBind('menu-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
+    const menuAdd = document.getElementById('menu-add');
+    if (menuAdd) {
+        if (this.isAdminMode) {
+            menuAdd.onclick = (e) => {
+                e.stopPropagation();
+                if (dropdown) dropdown.style.display = 'none';
+                const m = document.getElementById('create-channel-modal');
+                if (m) m.style.display = 'flex';
             };
-        });
+        } else {
+            menuAdd.style.display = 'none';
+        }
+    }
+    _safeBind('menu-profile', 'onclick', (e) => {
+        e.stopPropagation();
+        if (dropdown) dropdown.style.display = 'none';
+        const mod = document.getElementById('profile-modal');
+        if (mod) mod.style.display = 'flex';
+    });
 
-        // Voice toggle (mic)
-        _safeBind('voice-toggle-btn', 'onclick', async (e) => {
-            try {
-                e?.stopPropagation?.();
-                await this.toggleVoice();
-            } catch (err) {
-                console.error('toggleVoice error:', err);
-                alert('보이스 톡 오류: ' + (err?.message || err));
-            }
-        });
+    document.addEventListener('click', () => {
+        if (dropdown) dropdown.style.display = 'none';
+    });
 
-        // Mobile Toggles & Nav
-        const sidebar = document.querySelector('.anticode-sidebar');
-        const membersSide = document.querySelector('.anticode-members');
-        const chatArea = document.querySelector('.anticode-chat-area');
-        const dropdown = document.getElementById('mobile-dropdown-menu');
-
-        const toggleSidebar = (open) => {
-            if (sidebar) {
-                if (typeof open === 'boolean') sidebar.classList.toggle('open', open);
-                else sidebar.classList.toggle('open');
-            }
+    if (chatArea) {
+        chatArea.onclick = () => {
+            if (sidebar) sidebar.classList.remove('open');
             if (membersSide) membersSide.classList.remove('open');
             if (dropdown) dropdown.style.display = 'none';
         };
-        const toggleMembers = (open) => {
-            if (membersSide) {
-                if (typeof open === 'boolean') membersSide.classList.toggle('open', open);
-                else membersSide.classList.toggle('open');
-            }
-            if (sidebar) sidebar.classList.remove('open');
-            if (dropdown) dropdown.style.display = 'none';
+    }
+    // Channel Modal
+    // Channel Modal
+    const cModal = document.getElementById('create-channel-modal');
+    const typeSelect = document.getElementById('new-channel-type');
+    const passGroup = document.getElementById('password-field-group');
+    const cForm = document.getElementById('create-channel-form');
+
+    const openCreateBtn = document.getElementById('open-create-channel');
+    if (openCreateBtn) {
+        if (this.isAdminMode) {
+            openCreateBtn.onclick = () => cModal && (cModal.style.display = 'flex');
+        } else {
+            openCreateBtn.style.display = 'none';
+        }
+    }
+    _safeBind('close-channel-modal', 'onclick', () => cModal && (cModal.style.display = 'none'));
+    if (typeSelect && passGroup) typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
+    if (cForm) {
+        cForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const success = await this.createChannel(document.getElementById('new-channel-name').value, typeSelect.value, document.getElementById('new-channel-category').value, document.getElementById('new-channel-password').value);
+            if (success) { cModal.style.display = 'none'; cForm.reset(); }
         };
+    }
 
-        _safeBind('mobile-menu-toggle', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(); });
-        document.querySelectorAll('.sidebar-close-btn').forEach(btn => {
-            btn.onclick = (e) => { e.stopPropagation(); toggleSidebar(false); };
-        });
-        _safeBind('mobile-members-toggle', 'onclick', (e) => { e.stopPropagation(); toggleMembers(); });
-
-        _safeBind('mobile-more-btn', 'onclick', (e) => {
-            e.stopPropagation();
-            if (dropdown) dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'flex' : 'none';
-        });
-
-        _safeBind('menu-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
-        _safeBind('menu-friends', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
-        _safeBind('menu-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
-        const menuAdd = document.getElementById('menu-add');
-        if (menuAdd) {
-            if (this.isAdminMode) {
-                menuAdd.onclick = (e) => {
-                    e.stopPropagation();
-                    if (dropdown) dropdown.style.display = 'none';
-                    const m = document.getElementById('create-channel-modal');
-                    if (m) m.style.display = 'flex';
-                };
-            } else {
-                menuAdd.style.display = 'none';
-            }
-        }
-        _safeBind('menu-profile', 'onclick', (e) => {
-            e.stopPropagation();
-            if (dropdown) dropdown.style.display = 'none';
-            const mod = document.getElementById('profile-modal');
-            if (mod) mod.style.display = 'flex';
-        });
-
-        document.addEventListener('click', () => {
-            if (dropdown) dropdown.style.display = 'none';
-        });
-
-        if (chatArea) {
-            chatArea.onclick = () => {
-                if (sidebar) sidebar.classList.remove('open');
-                if (membersSide) membersSide.classList.remove('open');
-                if (dropdown) dropdown.style.display = 'none';
-            };
-        }
-        // Channel Modal
-        // Channel Modal
-        const cModal = document.getElementById('create-channel-modal');
-        const typeSelect = document.getElementById('new-channel-type');
-        const passGroup = document.getElementById('password-field-group');
-        const cForm = document.getElementById('create-channel-form');
-
-        const openCreateBtn = document.getElementById('open-create-channel');
-        if (openCreateBtn) {
-            if (this.isAdminMode) {
-                openCreateBtn.onclick = () => cModal && (cModal.style.display = 'flex');
-            } else {
-                openCreateBtn.style.display = 'none';
-            }
-        }
-        _safeBind('close-channel-modal', 'onclick', () => cModal && (cModal.style.display = 'none'));
-        if (typeSelect && passGroup) typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
-        if (cForm) {
-            cForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const success = await this.createChannel(document.getElementById('new-channel-name').value, typeSelect.value, document.getElementById('new-channel-category').value, document.getElementById('new-channel-password').value);
-                if (success) { cModal.style.display = 'none'; cForm.reset(); }
-            };
-        }
-
-        // Friend Modal
-        const fModal = document.getElementById('add-friend-modal');
-        const fForm = document.getElementById('add-friend-form');
-        _safeBind('open-add-friend', 'onclick', () => fModal && (fModal.style.display = 'flex'));
-        _safeBind('close-friend-modal', 'onclick', () => fModal && (fModal.style.display = 'none'));
-        if (fForm) {
-            fForm.onsubmit = async (e) => {
-                e.preventDefault();
-                if (await this.addFriendByUID(document.getElementById('friend-uid-input').value)) { fModal.style.display = 'none'; fForm.reset(); }
-            };
-        }
-
-        // Friend List Modal (view all + invite)
-        const friendModal = document.getElementById('friend-modal');
-        _safeBind('close-friend-list-modal', 'onclick', () => friendModal && (friendModal.style.display = 'none'));
-
-        // Channel Pages / Directory Modal
-        const pagesModal = document.getElementById('channel-pages-modal');
-        _safeBind('open-channel-pages', 'onclick', () => this.openChannelPagesModal());
-        _safeBind('close-channel-pages-modal', 'onclick', () => this.closeChannelPagesModal());
-        _safeBind('menu-pages', 'onclick', (e) => {
-            e.stopPropagation();
-            if (dropdown) dropdown.style.display = 'none';
-            this.openChannelPagesModal();
-        });
-        _safeBind('pages-modal-create', 'onclick', async () => {
-            const name = document.getElementById('pages-modal-new-name')?.value || '';
-            const ok = await this.createChannelPage(name);
-            if (ok) {
-                const inp = document.getElementById('pages-modal-new-name');
-                if (inp) inp.value = '';
-                // switch to newly created page by name
-                const created = this.channelPages.find(p => p.name === String(name || '').trim());
-                if (created) this._setActiveChannelPageId(created.id);
-                this.renderChannelPageSelector();
-                this.renderChannelPagesModal();
-            }
-        });
-        _safeBind('pages-modal-rename-btn', 'onclick', async () => {
-            const sel = document.getElementById('pages-modal-select');
-            const pid = sel ? String(sel.value || '') : '';
-            if (!pid || pid === 'all') return alert('이름을 바꿀 페이지를 선택하세요.');
-            const name = document.getElementById('pages-modal-rename')?.value || '';
-            const ok = await this.renameChannelPage(pid, name);
-            if (ok) {
-                const inp = document.getElementById('pages-modal-rename');
-                if (inp) inp.value = '';
-                this.renderChannelPagesModal();
-            }
-        });
-        _safeBind('pages-modal-delete', 'onclick', async () => {
-            const sel = document.getElementById('pages-modal-select');
-            const pid = sel ? String(sel.value || '') : '';
-            if (!pid || pid === 'all') return alert('삭제할 페이지를 선택하세요.');
-            if (!confirm('이 페이지를 삭제할까요? (포함된 채널 매핑도 함께 삭제됩니다)')) return;
-            const ok = await this.deleteChannelPage(pid);
-            if (ok) this.renderChannelPagesModal();
-        });
-        const pagesSel = document.getElementById('pages-modal-select');
-        if (pagesSel) pagesSel.onchange = () => this.renderChannelPagesModal();
-
-        // (Guild/server pages removed for performance)
-
-        // Settings Modal
-        const sModal = document.getElementById('app-settings-modal');
-        _safeBind('open-settings-btn', 'onclick', () => {
-            if (sModal) {
-                sModal.style.display = 'flex';
-                this.updateButtons();
-            }
-            // Admin-only chat cleanup controls
-            const cleanupGroup = document.getElementById('chat-cleanup-setting');
-            if (cleanupGroup) cleanupGroup.style.display = this.isAdminMode ? 'flex' : 'none';
-            if (this.isAdminMode) {
-                const settings = this._loadCleanupSettings();
-                const toggleBtn = document.getElementById('chat-cleanup-toggle');
-                const lastRun = document.getElementById('chat-cleanup-last-run');
-                if (toggleBtn) {
-                    toggleBtn.classList.toggle('on', settings.enabled);
-                    toggleBtn.textContent = settings.enabled ? '🔔 ON' : '🔕 OFF';
-                }
-                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
-            }
-
-            // Voice mic selector: populate list and restore saved selection
-            const micSel = document.getElementById('voice-mic-select');
-            if (micSel) {
-                // If labels are blank, user can hit "새로고침" to request permission.
-                this.refreshMicDeviceList({ requestPermissionIfNeeded: false });
-            }
-
-            // Init mic gain UI from stored value
-            try {
-                const gainEl = document.getElementById('voice-mic-gain');
-                const gainValEl = document.getElementById('voice-mic-gain-value');
-                if (gainEl) {
-                    const pct = Math.round((this.micGain || 1) * 100);
-                    gainEl.value = String(pct);
-                    if (gainValEl) gainValEl.textContent = `${pct}%`;
-                }
-            } catch (_) { }
-
-            // Init notif volume + permission UI
-            try {
-                NotificationManager.updateOsPermissionButton();
-                const nEl = document.getElementById('notif-volume');
-                const nValEl = document.getElementById('notif-volume-value');
-                if (nEl) {
-                    const pct = Math.round((NotificationManager.volume ?? 0.8) * 100);
-                    nEl.value = String(pct);
-                    if (nValEl) nValEl.textContent = `${pct}%`;
-                }
-            } catch (_) { }
-
-            // Init push status (offline push)
-            try { this.refreshPushStatus(); } catch (_) { }
-        });
-        _safeBind('close-settings-modal', 'onclick', () => {
-            if (sModal) sModal.style.display = 'none';
-        });
-
-        // Voice mic selector actions
-        _safeBind('voice-mic-refresh', 'onclick', async () => {
-            const sel = document.getElementById('voice-mic-select');
-            const needsPerm = !!sel && [...sel.options].slice(1).every(o => !o.textContent || /^마이크\s+\d+$/.test(o.textContent));
-            const askPerm = !this.voiceEnabled && needsPerm
-                ? confirm('마이크 장치 이름(USB 마이크)을 정확히 보려면 권한이 필요할 수 있어요. 지금 권한을 요청할까요?')
-                : false;
-            await this.refreshMicDeviceList({ requestPermissionIfNeeded: askPerm });
-        });
-        _safeBind('voice-mic-apply', 'onclick', async () => {
-            const sel = document.getElementById('voice-mic-select');
-            const deviceId = sel ? sel.value : '';
-            this.saveVoiceDevicePreference(deviceId || null);
-            alert('마이크 설정이 저장되었습니다.' + (this.voiceEnabled ? ' (보이스 톡을 재시작합니다)' : ''));
-            if (this.voiceEnabled) {
-                // Restart voice to apply device change
-                await this.stopVoice();
-                await this.startVoice();
-            }
-            // If mic test is running, restart pipeline so it uses the new device
-            if (this._micUsers.test) {
-                await this._ensureMicPipeline({ requireMonitor: true });
-            }
-        });
-
-        // Mic test + gain controls
-        _safeBind('voice-mic-test-toggle', 'onclick', async () => {
-            await this.toggleMicTest();
-        });
-
-        // Notification controls
-        _safeBind('notif-os-permission', 'onclick', async () => {
-            await NotificationManager.requestOsPermission();
-        });
-        _safeBind('notif-test-btn', 'onclick', async () => {
-            NotificationManager.showInAppToast('[테스트] 알림 소리/표시 테스트');
-            NotificationManager.playSound();
-            try {
-                await NotificationManager.showOsNotification('Nanodoroshi / Anticode', {
-                    body: '[테스트] OS 알림이 정상 동작합니다.',
-                    tag: 'nano_test',
-                    silent: false
-                });
-            } catch (_) { }
-        });
-
-        // Web Push (offline push)
-        _safeBind('push-enable-btn', 'onclick', async () => {
-            await this.enablePush();
-        });
-        _safeBind('push-disable-btn', 'onclick', async () => {
-            await this.disablePush();
-        });
-        _safeBind('push-test-btn', 'onclick', async () => {
-            await this.sendPushTest();
-        });
-        const nVolEl = document.getElementById('notif-volume');
-        const nVolValEl = document.getElementById('notif-volume-value');
-        if (nVolEl) {
-            const setUi = (pct) => { if (nVolValEl) nVolValEl.textContent = `${pct}%`; };
-            nVolEl.oninput = () => {
-                const pct = Number(nVolEl.value);
-                setUi(pct);
-                NotificationManager.setVolume01(Math.max(0, Math.min(1, pct / 100)));
-            };
-        }
-
-        const gainEl = document.getElementById('voice-mic-gain');
-        const gainValEl = document.getElementById('voice-mic-gain-value');
-        const updateGainUi = (pct) => {
-            if (gainValEl) gainValEl.textContent = `${pct}%`;
+    // Friend Modal
+    const fModal = document.getElementById('add-friend-modal');
+    const fForm = document.getElementById('add-friend-form');
+    _safeBind('open-add-friend', 'onclick', () => fModal && (fModal.style.display = 'flex'));
+    _safeBind('close-friend-modal', 'onclick', () => fModal && (fModal.style.display = 'none'));
+    if (fForm) {
+        fForm.onsubmit = async (e) => {
+            e.preventDefault();
+            if (await this.addFriendByUID(document.getElementById('friend-uid-input').value)) { fModal.style.display = 'none'; fForm.reset(); }
         };
-        if (gainEl) {
-            // init from stored preference
-            const pct = Math.round((this.micGain || 1) * 100);
-            gainEl.value = String(pct);
-            updateGainUi(pct);
+    }
 
-            gainEl.oninput = async () => {
-                const pct2 = Number(gainEl.value);
-                updateGainUi(pct2);
-                const g = Math.min(2, Math.max(0, pct2 / 100));
-                this.saveMicGainPreference(g);
-                // apply live if pipeline exists
-                if (this._micGainNode) this._micGainNode.gain.value = this.micGain;
-            };
+    // Friend List Modal (view all + invite)
+    const friendModal = document.getElementById('friend-modal');
+    _safeBind('close-friend-list-modal', 'onclick', () => friendModal && (friendModal.style.display = 'none'));
+
+    // Channel Pages / Directory Modal
+    const pagesModal = document.getElementById('channel-pages-modal');
+    _safeBind('open-channel-pages', 'onclick', () => this.openChannelPagesModal());
+    _safeBind('close-channel-pages-modal', 'onclick', () => this.closeChannelPagesModal());
+    _safeBind('menu-pages', 'onclick', (e) => {
+        e.stopPropagation();
+        if (dropdown) dropdown.style.display = 'none';
+        this.openChannelPagesModal();
+    });
+    _safeBind('pages-modal-create', 'onclick', async () => {
+        const name = document.getElementById('pages-modal-new-name')?.value || '';
+        const ok = await this.createChannelPage(name);
+        if (ok) {
+            const inp = document.getElementById('pages-modal-new-name');
+            if (inp) inp.value = '';
+            // switch to newly created page by name
+            const created = this.channelPages.find(p => p.name === String(name || '').trim());
+            if (created) this._setActiveChannelPageId(created.id);
+            this.renderChannelPageSelector();
+            this.renderChannelPagesModal();
         }
+    });
+    _safeBind('pages-modal-rename-btn', 'onclick', async () => {
+        const sel = document.getElementById('pages-modal-select');
+        const pid = sel ? String(sel.value || '') : '';
+        if (!pid || pid === 'all') return alert('이름을 바꿀 페이지를 선택하세요.');
+        const name = document.getElementById('pages-modal-rename')?.value || '';
+        const ok = await this.renameChannelPage(pid, name);
+        if (ok) {
+            const inp = document.getElementById('pages-modal-rename');
+            if (inp) inp.value = '';
+            this.renderChannelPagesModal();
+        }
+    });
+    _safeBind('pages-modal-delete', 'onclick', async () => {
+        const sel = document.getElementById('pages-modal-select');
+        const pid = sel ? String(sel.value || '') : '';
+        if (!pid || pid === 'all') return alert('삭제할 페이지를 선택하세요.');
+        if (!confirm('이 페이지를 삭제할까요? (포함된 채널 매핑도 함께 삭제됩니다)')) return;
+        const ok = await this.deleteChannelPage(pid);
+        if (ok) this.renderChannelPagesModal();
+    });
+    const pagesSel = document.getElementById('pages-modal-select');
+    if (pagesSel) pagesSel.onchange = () => this.renderChannelPagesModal();
 
-        _safeBind('chat-cleanup-toggle', 'onclick', () => {
-            if (!this.isAdminMode) return;
-            const current = this._loadCleanupSettings().enabled;
-            const next = !current;
-            this._saveCleanupSettings(next);
-            const btn = document.getElementById('chat-cleanup-toggle');
-            if (btn) {
-                btn.classList.toggle('on', next);
-                btn.textContent = next ? '🔔 ON' : '🔕 OFF';
-            }
-        });
+    // (Guild/server pages removed for performance)
 
-        _safeBind('chat-cleanup-run-now', 'onclick', async () => {
-            if (!this.isAdminMode) return;
-            if (!confirm('90일(3개월)보다 오래된 모든 채팅 메시지를 지금 삭제할까요?')) return;
-            const btn = document.getElementById('chat-cleanup-run-now');
+    // Settings Modal
+    const sModal = document.getElementById('app-settings-modal');
+    _safeBind('open-settings-btn', 'onclick', () => {
+        if (sModal) {
+            sModal.style.display = 'flex';
+            this.updateButtons();
+        }
+        // Admin-only chat cleanup controls
+        const cleanupGroup = document.getElementById('chat-cleanup-setting');
+        if (cleanupGroup) cleanupGroup.style.display = this.isAdminMode ? 'flex' : 'none';
+        if (this.isAdminMode) {
+            const settings = this._loadCleanupSettings();
+            const toggleBtn = document.getElementById('chat-cleanup-toggle');
             const lastRun = document.getElementById('chat-cleanup-last-run');
-            if (btn) { btn.disabled = true; btn.textContent = '실행 중...'; }
-            try {
-                const res = await this.cleanupOldMessages(90);
-                if (!res.ok) alert('정리 실패: ' + (res.error?.message || res.error));
-                else alert('정리 완료!');
-            } catch (e) {
-                alert('정리 실패: ' + (e?.message || e));
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = '지금 실행'; }
-                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
+            if (toggleBtn) {
+                toggleBtn.classList.toggle('on', settings.enabled);
+                toggleBtn.textContent = settings.enabled ? '🔔 ON' : '🔕 OFF';
             }
-        });
-
-        // Password Entry
-        const pModal = document.getElementById('password-entry-modal');
-        const pForm = document.getElementById('password-entry-form');
-        _safeBind('close-password-modal', 'onclick', () => pModal && (pModal.style.display = 'none'));
-        if (pForm) {
-            pForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const channel = this.channels.find(c => c.id === this.pendingChannelId);
-                if (channel && channel.password === document.getElementById('entry-password-input').value) {
-                    pModal.style.display = 'none'; pForm.reset();
-                    // Remember password-unlock for this device/account (UX only)
-                    try {
-                        this.unlockedChannels.add(String(this.pendingChannelId));
-                        this._saveUnlockedChannels();
-                    } catch (_) { }
-                    await this.switchChannel(this.pendingChannelId);
-                } else alert('비밀번호가 틀렸습니다.');
-            };
+            if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
         }
 
-        // --- NEW: Image Upload Handlers ---
-        const chatFileInput = document.getElementById('chat-file-input');
-        const attachBtn = document.getElementById('attach-btn');
-        if (attachBtn && chatFileInput) {
-            attachBtn.onclick = () => chatFileInput.click();
-            chatFileInput.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
+        // Voice mic selector: populate list and restore saved selection
+        const micSel = document.getElementById('voice-mic-select');
+        if (micSel) {
+            // If labels are blank, user can hit "새로고침" to request permission.
+            this.refreshMicDeviceList({ requestPermissionIfNeeded: false });
+        }
 
-                const originalBtnText = attachBtn.textContent;
-                attachBtn.textContent = '...';
+        // Init mic gain UI from stored value
+        try {
+            const gainEl = document.getElementById('voice-mic-gain');
+            const gainValEl = document.getElementById('voice-mic-gain-value');
+            if (gainEl) {
+                const pct = Math.round((this.micGain || 1) * 100);
+                gainEl.value = String(pct);
+                if (gainValEl) gainValEl.textContent = `${pct}%`;
+            }
+        } catch (_) { }
+
+        // Init notif volume + permission UI
+        try {
+            NotificationManager.updateOsPermissionButton();
+            const nEl = document.getElementById('notif-volume');
+            const nValEl = document.getElementById('notif-volume-value');
+            if (nEl) {
+                const pct = Math.round((NotificationManager.volume ?? 0.8) * 100);
+                nEl.value = String(pct);
+                if (nValEl) nValEl.textContent = `${pct}%`;
+            }
+        } catch (_) { }
+
+        // Init push status (offline push)
+        try { this.refreshPushStatus(); } catch (_) { }
+    });
+    _safeBind('close-settings-modal', 'onclick', () => {
+        if (sModal) sModal.style.display = 'none';
+    });
+
+    // Voice mic selector actions
+    _safeBind('voice-mic-refresh', 'onclick', async () => {
+        const sel = document.getElementById('voice-mic-select');
+        const needsPerm = !!sel && [...sel.options].slice(1).every(o => !o.textContent || /^마이크\s+\d+$/.test(o.textContent));
+        const askPerm = !this.voiceEnabled && needsPerm
+            ? confirm('마이크 장치 이름(USB 마이크)을 정확히 보려면 권한이 필요할 수 있어요. 지금 권한을 요청할까요?')
+            : false;
+        await this.refreshMicDeviceList({ requestPermissionIfNeeded: askPerm });
+    });
+    _safeBind('voice-mic-apply', 'onclick', async () => {
+        const sel = document.getElementById('voice-mic-select');
+        const deviceId = sel ? sel.value : '';
+        this.saveVoiceDevicePreference(deviceId || null);
+        alert('마이크 설정이 저장되었습니다.' + (this.voiceEnabled ? ' (보이스 톡을 재시작합니다)' : ''));
+        if (this.voiceEnabled) {
+            // Restart voice to apply device change
+            await this.stopVoice();
+            await this.startVoice();
+        }
+        // If mic test is running, restart pipeline so it uses the new device
+        if (this._micUsers.test) {
+            await this._ensureMicPipeline({ requireMonitor: true });
+        }
+    });
+
+    // Mic test + gain controls
+    _safeBind('voice-mic-test-toggle', 'onclick', async () => {
+        await this.toggleMicTest();
+    });
+
+    // Notification controls
+    _safeBind('notif-os-permission', 'onclick', async () => {
+        await NotificationManager.requestOsPermission();
+    });
+    _safeBind('notif-test-btn', 'onclick', async () => {
+        NotificationManager.showInAppToast('[테스트] 알림 소리/표시 테스트');
+        NotificationManager.playSound();
+        try {
+            await NotificationManager.showOsNotification('Nanodoroshi / Anticode', {
+                body: '[테스트] OS 알림이 정상 동작합니다.',
+                tag: 'nano_test',
+                silent: false
+            });
+        } catch (_) { }
+    });
+
+    // Web Push (offline push)
+    _safeBind('push-enable-btn', 'onclick', async () => {
+        await this.enablePush();
+    });
+    _safeBind('push-disable-btn', 'onclick', async () => {
+        await this.disablePush();
+    });
+    _safeBind('push-test-btn', 'onclick', async () => {
+        await this.sendPushTest();
+    });
+    const nVolEl = document.getElementById('notif-volume');
+    const nVolValEl = document.getElementById('notif-volume-value');
+    if (nVolEl) {
+        const setUi = (pct) => { if (nVolValEl) nVolValEl.textContent = `${pct}%`; };
+        nVolEl.oninput = () => {
+            const pct = Number(nVolEl.value);
+            setUi(pct);
+            NotificationManager.setVolume01(Math.max(0, Math.min(1, pct / 100)));
+        };
+    }
+
+    const gainEl = document.getElementById('voice-mic-gain');
+    const gainValEl = document.getElementById('voice-mic-gain-value');
+    const updateGainUi = (pct) => {
+        if (gainValEl) gainValEl.textContent = `${pct}%`;
+    };
+    if (gainEl) {
+        // init from stored preference
+        const pct = Math.round((this.micGain || 1) * 100);
+        gainEl.value = String(pct);
+        updateGainUi(pct);
+
+        gainEl.oninput = async () => {
+            const pct2 = Number(gainEl.value);
+            updateGainUi(pct2);
+            const g = Math.min(2, Math.max(0, pct2 / 100));
+            this.saveMicGainPreference(g);
+            // apply live if pipeline exists
+            if (this._micGainNode) this._micGainNode.gain.value = this.micGain;
+        };
+    }
+
+    _safeBind('chat-cleanup-toggle', 'onclick', () => {
+        if (!this.isAdminMode) return;
+        const current = this._loadCleanupSettings().enabled;
+        const next = !current;
+        this._saveCleanupSettings(next);
+        const btn = document.getElementById('chat-cleanup-toggle');
+        if (btn) {
+            btn.classList.toggle('on', next);
+            btn.textContent = next ? '🔔 ON' : '🔕 OFF';
+        }
+    });
+
+    _safeBind('chat-cleanup-run-now', 'onclick', async () => {
+        if (!this.isAdminMode) return;
+        if (!confirm('90일(3개월)보다 오래된 모든 채팅 메시지를 지금 삭제할까요?')) return;
+        const btn = document.getElementById('chat-cleanup-run-now');
+        const lastRun = document.getElementById('chat-cleanup-last-run');
+        if (btn) { btn.disabled = true; btn.textContent = '실행 중...'; }
+        try {
+            const res = await this.cleanupOldMessages(90);
+            if (!res.ok) alert('정리 실패: ' + (res.error?.message || res.error));
+            else alert('정리 완료!');
+        } catch (e) {
+            alert('정리 실패: ' + (e?.message || e));
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '지금 실행'; }
+            if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
+        }
+    });
+
+    // Password Entry
+    const pModal = document.getElementById('password-entry-modal');
+    const pForm = document.getElementById('password-entry-form');
+    _safeBind('close-password-modal', 'onclick', () => pModal && (pModal.style.display = 'none'));
+    if (pForm) {
+        pForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const channel = this.channels.find(c => c.id === this.pendingChannelId);
+            if (channel && channel.password === document.getElementById('entry-password-input').value) {
+                pModal.style.display = 'none'; pForm.reset();
+                // Remember password-unlock for this device/account (UX only)
                 try {
-                    const isImage = !!file.type && file.type.startsWith('image/');
-                    const isPro = this._isProUser();
+                    this.unlockedChannels.add(String(this.pendingChannelId));
+                    this._saveUnlockedChannels();
+                } catch (_) { }
+                await this.switchChannel(this.pendingChannelId);
+            } else alert('비밀번호가 틀렸습니다.');
+        };
+    }
 
-                    // ✅ User Request:
-                    // - Free: allow image attachment, but enforce 500KB (after compression)
-                    // - Pro: no limit for images
-                    // - Non-images: keep conservative limits
+    // --- NEW: Image Upload Handlers ---
+    const chatFileInput = document.getElementById('chat-file-input');
+    const attachBtn = document.getElementById('attach-btn');
+    if (attachBtn && chatFileInput) {
+        attachBtn.onclick = () => chatFileInput.click();
+        chatFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-                    let uploadFile = file;
-                    if (isImage) {
-                        // compress first (improves speed + makes 500KB cap workable)
-                        uploadFile = await this.compressImageFile(file);
-                        if (!isPro) {
-                            const maxBytes = 500 * 1024;
-                            if (uploadFile.size > maxBytes) {
-                                alert(`이미지 용량이 너무 큽니다.\\n무료 플랜은 500KB 이하만 업로드할 수 있어요.\\n(유료(Pro)는 제한 없음)`);
-                                return;
-                            }
-                        }
-                    } else {
-                        const maxBytes = isPro ? (50 * 1024 * 1024) : (file.name?.toLowerCase().endsWith('.zip') ? (1 * 1024 * 1024) : (200 * 1024));
-                        if (file.size > maxBytes) {
-                            const limitText = isPro ? "50MB+" : (file.name?.toLowerCase().endsWith('.zip') ? "1MB" : "200KB");
-                            alert(`파일 용량이 너무 큽니다.\\n현재 등급 최대 ${limitText}`);
+            const originalBtnText = attachBtn.textContent;
+            attachBtn.textContent = '...';
+            try {
+                const isImage = !!file.type && file.type.startsWith('image/');
+                const isPro = this._isProUser();
+
+                // ✅ User Request:
+                // - Free: allow image attachment, but enforce 500KB (after compression)
+                // - Pro: no limit for images
+                // - Non-images: keep conservative limits
+
+                let uploadFile = file;
+                if (isImage) {
+                    // compress first (improves speed + makes 500KB cap workable)
+                    uploadFile = await this.compressImageFile(file);
+                    if (!isPro) {
+                        const maxBytes = 500 * 1024;
+                        if (uploadFile.size > maxBytes) {
+                            alert(`이미지 용량이 너무 큽니다.\\n무료 플랜은 500KB 이하만 업로드할 수 있어요.\\n(유료(Pro)는 제한 없음)`);
                             return;
                         }
                     }
-
-                    const url = await this.uploadFile(uploadFile);
-
-                    // Use same optimistic + finalize flow as text messages
-                    const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
-                    const fileLabel = isImage ? '' : `📎 ${file.name}\\n${url}`;
-                    const newMessage = {
-                        id: tempId,
-                        channel_id: this.activeChannel.id,
-                        user_id: this.currentUser.username,
-                        author: this.currentUser.nickname,
-                        content: isImage ? '' : fileLabel,
-                        image_url: isImage ? url : null,
-                        created_at: new Date().toISOString()
-                    };
-
-                    this.sentMessageCache.add(tempId);
-                    this.queueMessage({ ...newMessage }, true);
-
-                    if (this.messageSubscription) {
-                        this.messageSubscription.send({
-                            type: 'broadcast',
-                            event: 'chat',
-                            payload: newMessage
-                        });
-                    }
-
-                    const { data, error } = await this.supabase.from('anticode_messages').insert([{
-                        channel_id: this.activeChannel.id,
-                        user_id: this.currentUser.username,
-                        author: this.currentUser.nickname,
-                        content: isImage ? '' : fileLabel,
-                        image_url: isImage ? url : null
-                    }]).select('id, created_at').single();
-
-                    if (error) {
-                        console.error('Failed to send image message:', error);
-                        this._markOptimisticFailed(tempId, error?.message || String(error));
+                } else {
+                    const maxBytes = isPro ? (50 * 1024 * 1024) : (file.name?.toLowerCase().endsWith('.zip') ? (1 * 1024 * 1024) : (200 * 1024));
+                    if (file.size > maxBytes) {
+                        const limitText = isPro ? "50MB+" : (file.name?.toLowerCase().endsWith('.zip') ? "1MB" : "200KB");
+                        alert(`파일 용량이 너무 큽니다.\\n현재 등급 최대 ${limitText}`);
                         return;
                     }
-
-                    try {
-                        const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
-                        if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
-                    } catch (_) { }
-
-                    // Offline push notification (file/image message)
-                    this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content: isImage ? '[이미지]' : fileLabel });
-                } catch (err) {
-                    const errMsg = err.message || JSON.stringify(err);
-                    alert('이미지 업로드 실패: ' + errMsg);
-                } finally {
-                    attachBtn.textContent = originalBtnText;
-                    chatFileInput.value = '';
                 }
-            };
-        }
 
-        const avatarFileInput = document.getElementById('avatar-file-input');
-        const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
-        if (uploadAvatarBtn && avatarFileInput) {
-            uploadAvatarBtn.onclick = () => avatarFileInput.click();
-            avatarFileInput.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
+                const url = await this.uploadFile(uploadFile);
 
-                uploadAvatarBtn.textContent = '업로드 중...';
+                // Use same optimistic + finalize flow as text messages
+                const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
+                const fileLabel = isImage ? '' : `📎 ${file.name}\\n${url}`;
+                const newMessage = {
+                    id: tempId,
+                    channel_id: this.activeChannel.id,
+                    user_id: this.currentUser.username,
+                    author: this.currentUser.nickname,
+                    content: isImage ? '' : fileLabel,
+                    image_url: isImage ? url : null,
+                    created_at: new Date().toISOString()
+                };
+
+                this.sentMessageCache.add(tempId);
+                this.queueMessage({ ...newMessage }, true);
+
+                if (this.messageSubscription) {
+                    this.messageSubscription.send({
+                        type: 'broadcast',
+                        event: 'chat',
+                        payload: newMessage
+                    });
+                }
+
+                const { data, error } = await this.supabase.from('anticode_messages').insert([{
+                    channel_id: this.activeChannel.id,
+                    user_id: this.currentUser.username,
+                    author: this.currentUser.nickname,
+                    content: isImage ? '' : fileLabel,
+                    image_url: isImage ? url : null
+                }]).select('id, created_at').single();
+
+                if (error) {
+                    console.error('Failed to send image message:', error);
+                    this._markOptimisticFailed(tempId, error?.message || String(error));
+                    return;
+                }
+
                 try {
-                    const optimized = await this.compressImageFile(file);
-                    const url = await this.uploadFile(optimized);
-                    document.getElementById('edit-avatar-url').value = url;
-                    alert('프로필 이미지가 업로드되었습니다. 저장 버튼을 눌러 확정하세요.');
-                } catch (err) {
-                    const errMsg = err.message || JSON.stringify(err);
-                    alert('이미지 업로드 실패: ' + errMsg);
-                } finally {
-                    uploadAvatarBtn.textContent = '파일 선택';
-                    avatarFileInput.value = '';
-                }
-            };
-        }
+                    const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+                    if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
+                } catch (_) { }
+
+                // Offline push notification (file/image message)
+                this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content: isImage ? '[이미지]' : fileLabel });
+            } catch (err) {
+                const errMsg = err.message || JSON.stringify(err);
+                alert('이미지 업로드 실패: ' + errMsg);
+            } finally {
+                attachBtn.textContent = originalBtnText;
+                chatFileInput.value = '';
+            }
+        };
     }
+
+    const avatarFileInput = document.getElementById('avatar-file-input');
+    const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+    if (uploadAvatarBtn && avatarFileInput) {
+        uploadAvatarBtn.onclick = () => avatarFileInput.click();
+        avatarFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadAvatarBtn.textContent = '업로드 중...';
+            try {
+                const optimized = await this.compressImageFile(file);
+                const url = await this.uploadFile(optimized);
+                document.getElementById('edit-avatar-url').value = url;
+                alert('프로필 이미지가 업로드되었습니다. 저장 버튼을 눌러 확정하세요.');
+            } catch (err) {
+                const errMsg = err.message || JSON.stringify(err);
+                alert('이미지 업로드 실패: ' + errMsg);
+            } finally {
+                uploadAvatarBtn.textContent = '파일 선택';
+                avatarFileInput.value = '';
+            }
+        };
+    }
+}
 }
 const app = new AntiCodeApp();
 window.app = app;
