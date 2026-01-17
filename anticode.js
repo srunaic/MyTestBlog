@@ -3573,11 +3573,13 @@ class AntiCodeApp {
         try {
             const msgEl = document.createElement('div');
             msgEl.className = 'message-item';
+            msgEl.setAttribute('data-author-id', msg.user_id);
+            msgEl.setAttribute('data-author', msg.author);
             if (msg.id) msgEl.id = `msg-${msg.id}`;
             if (isOptimistic) {
                 msgEl.style.opacity = '0.7';
                 msgEl.setAttribute('data-optimistic', 'true');
-                if (msg.id) msgEl.dataset.tempId = msg.id;
+                if (msg.id) msgEl.setAttribute('data-temp-id', msg.id);
             }
 
             const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3886,13 +3888,23 @@ class AntiCodeApp {
             // Defensive: ensure Set exists
             if (!this.processedMessageIds) this.processedMessageIds = new Set();
 
-            // Deduplicate
+            // 1. Deduplicate by ID
             if (msg.id && this.processedMessageIds.has(msg.id)) return;
+
+            // 2. Deduplicate by Fingerprint (important for Broadcast vs Postgres events)
+            if (!isOptimistic && this._isRecentDuplicate(msg)) return;
+
             if (msg.id) this.processedMessageIds.add(msg.id);
 
-            // Match Optimistic
+            // 3. Match Optimistic element
             if (!isOptimistic) {
-                const existing = container.querySelector(msg.tempId ? `[data-temp-id="${msg.tempId}"]` : `div[data-optimistic="true"]`);
+                // If tempId is present in message, try to find by temp-id first
+                const tempId = msg.tempId || null;
+                const selector = tempId
+                    ? `.message-item[data-temp-id="${tempId}"]`
+                    : `.message-item[data-optimistic="true"][data-author-id="${msg.user_id}"]`;
+
+                const existing = container.querySelector(selector);
                 if (existing && typeof this.finalizeOptimistic === 'function') {
                     await this.finalizeOptimistic(existing, msg);
                     return;
@@ -3937,7 +3949,9 @@ class AntiCodeApp {
         el.id = `msg-${realMsg.id}`;
         el.style.opacity = '1';
         el.removeAttribute('data-optimistic');
-        el.removeAttribute('data-temp-id');
+        // Keep data-temp-id but mark it as finalized so we don't accidentally match it again 
+        // with another message, but keep it for immediate server confirmation events.
+        el.setAttribute('data-finalized', 'true');
 
         const status = el.querySelector('.sending-status');
         if (status) status.innerText = '';
