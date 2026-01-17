@@ -689,6 +689,16 @@ class AntiCodeApp {
     _setActiveChannelPageId(pageId) {
         const v = pageId ? String(pageId) : 'all';
         this.activeChannelPageId = v;
+
+        // [NEW] Step 3: Mobile Back Button Support for Pages
+        if (window.history.pushState) {
+            const state = { type: 'page', id: v };
+            const current = window.history.state;
+            if (!current || current.id !== v) {
+                window.history.pushState(state, '', `#page-${v}`);
+            }
+        }
+
         try { localStorage.setItem(this._getActiveChannelPageKey(), v); } catch (_) { }
         this.renderChannels();
         // Update UI visibility for creation buttons when page changes
@@ -2720,6 +2730,16 @@ class AntiCodeApp {
 
     async init() {
         console.log('AntiCode Feature App initializing...');
+        // [NEW] Step 3: Handle Popstate for Back Button
+        window.onpopstate = (e) => {
+            if (e.state && e.state.type === 'channel') {
+                this.switchChannel(e.state.id);
+            } else if (e.state && e.state.type === 'page') {
+                this._setActiveChannelPageId(e.state.id);
+                this.renderChannels();
+            }
+        };
+
         LogicWorker.init(); // [MULTI-THREAD] Start the Logic Thread
 
         // 0. Beta Access Check (Restrict browser access, allow only APK/App context)
@@ -3218,11 +3238,14 @@ class AntiCodeApp {
             const blockBtn = canInvite
                 ? (`<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${f.username}')">차단</button>`)
                 : '';
+
+            // Fix: Enforce square avatar even for large source images
+            const avatarStyle = `width:40px; height:40px; border-radius:10px; object-fit:cover; flex-shrink:0;`;
             return `
             <div class="member-card ${f.online ? 'online' : 'offline'}" style="margin-bottom:8px;">
-                <div class="avatar-wrapper">
-                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-                    <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${(f.nickname || f.username)[0]}</div>
+                <div class="avatar-wrapper" style="width:40px; height:40px; position:relative; flex-shrink:0;">
+                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" style="${avatarStyle}" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                    <div class="avatar-sm" style="${avatarStyle} display:${f.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); font-weight:bold;">${(f.nickname || f.username)[0]}</div>
                     ${f.online ? '<span class="online-dot"></span>' : ''}
                 </div>
                 <div class="member-info">
@@ -3432,6 +3455,16 @@ class AntiCodeApp {
         // Voice is per-channel; stop when switching channels
         if (this.voiceEnabled) await this.stopVoice({ playFx: false });
         this.activeChannel = channel;
+
+        // [NEW] Step 3: Mobile Back Button Support
+        if (window.history.pushState) {
+            const state = { type: 'channel', id: channelId };
+            const current = window.history.state;
+            if (!current || current.id !== channelId) {
+                window.history.pushState(state, '', `#channel-${channelId}`);
+            }
+        }
+
         this._resetMessageDedupeState();
         this.renderChannels();
 
@@ -3603,7 +3636,9 @@ class AntiCodeApp {
         }
         const limit = this._isProUser() ? DEFAULT_CHANNEL_LIMIT_PRO : DEFAULT_CHANNEL_LIMIT_FREE;
         const owned = (this.channels || []).filter(c => String(c.owner_id || '') === String(this.currentUser.username || '')).length;
-        if (owned >= limit) {
+
+        // [MOD] Admin bypasses channel limits (ex_1)
+        if (!this._isAdmin() && owned >= limit) {
             alert(`채널 생성 제한에 도달했습니다. (내 채널 최대 ${limit}개)\n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
             return false;
         }
@@ -3739,7 +3774,9 @@ class AntiCodeApp {
                     <div class="message-meta">
                         <span class="member-name">${info.nickname}</span>
                         <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
-                        ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
+                        <div class="message-meta-actions">
+                           ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
+                        </div>
                     </div>
                     <div class="message-text">
                         ${contentHtml}
@@ -3747,6 +3784,28 @@ class AntiCodeApp {
                     </div>
                 </div>
             `;
+
+            // [NEW] Editing capability (Step 1)
+            if (isMyMessage && !isOptimistic) {
+                // PC: Right-click
+                msgEl.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    this.editMessagePrompt(msg.id, msg.content);
+                };
+                // Mobile: Long press
+                let pressTimer;
+                msgEl.ontouchstart = (e) => {
+                    pressTimer = setTimeout(() => {
+                        this.editMessagePrompt(msg.id, msg.content);
+                        msgEl.classList.add('editing-highlight');
+                    }, 700);
+                };
+                msgEl.ontouchend = () => {
+                    clearTimeout(pressTimer);
+                    setTimeout(() => msgEl.classList.remove('editing-highlight'), 1000);
+                };
+            }
+
             return msgEl;
         } catch (e) {
             console.error('Failed to create message element async:', e);

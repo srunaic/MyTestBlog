@@ -1425,3 +1425,47 @@
         color: var(--accent);
     }
 }
+/* [NEW] UX Optimization: Message Editing \u0026 Avatar Fixes */
+.message-item.editing-highlight {
+    border: 2px solid #ff4d4d !important;
+    background: rgba(255, 77, 77, 0.05) !important;
+    transition: border 0.2s ease;
+}
+
+.avatar-sm, .message-avatar {
+    object-fit: cover !important;
+    background: var(--accent-glow);
+}
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.message-meta-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.message-item:hover .message-meta-actions {
+    opacity: 1;
+}
+
+.delete-msg-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px;
+    filter: grayscale(1);
+    transition: filter 0.2s;
+}
+
+.delete-msg-btn:hover {
+    filter: none;
+}
