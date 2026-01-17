@@ -273,23 +273,17 @@ const NotificationManager = {
                 if (!me || payload.new.username !== me) return;
 
                 console.log('Real-time invite received:', payload.new);
-
-                // 1. Reload memberships to pick up the new channel
                 await window.app.loadMyChannelMemberships();
-
-                // 2. Render channels to show the new item
                 window.app.renderChannels();
-
-                // 3. Visual cue (blink/highlight new channel)
-                const chId = payload.new.channel_id;
-                setTimeout(() => {
-                    // Try to find the element
-                    // The element usually has an ID like `channel-item-${ch.id}` or we find it by data attribute
-                    // In renderChannels, we don't strictly set IDs, so we might need to rely on the "blink" logic inside render or post-render check
-                    // For now, let's play a notification sound
-                    if (window.NotificationManager) window.NotificationManager.playSound();
-                    window.app.showInAppToast?.(`새로운 채널에 초대되었습니다!`);
-                }, 500);
+                if (window.NotificationManager) window.NotificationManager.playSound();
+                window.app.showInAppToast?.(`새로운 채널에 초대되었습니다!`);
+            })
+            .on('postgres_changes', { event: 'UPDATE', table: 'anticode_channel_members' }, async (payload) => {
+                const me = window.app?.currentUser?.username;
+                if (!me || payload.new.username !== me) return;
+                // If status changed to 'invited' (re-invite?) or 'joined' (accepted elsewhere)
+                await window.app.loadMyChannelMemberships();
+                window.app.renderChannels();
             })
             .subscribe();
     },
@@ -2834,8 +2828,7 @@ class AntiCodeApp {
             }
         }
 
-        // Initialize Notifications Early
-        NotificationManager.init();
+
         // One-time audio unlock on first user interaction (helps mobile play effects reliably)
         try {
             document.addEventListener('click', () => SoundFX.ensure(), { once: true, capture: true });
@@ -2865,6 +2858,9 @@ class AntiCodeApp {
 
             // Restore secret-channel unlocks for this user (password once per device/account)
             this._loadUnlockedChannels();
+
+            // Initialize Notifications (after Supabase is ready)
+            NotificationManager.init();
             // Restore preferred mic device (USB mic selection)
             this.loadVoiceDevicePreference();
             this.loadMicGainPreference();
