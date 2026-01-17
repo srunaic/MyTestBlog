@@ -3052,16 +3052,21 @@ class AntiCodeApp {
 
     async loadFriends() {
         try {
-            // Step 1: Fetch friend usernames (robust to schema differences)
-            const friendsData = await this._fetchFriendUsernames();
+            // Direct Query based on verified schema: id, user_username, friend_username, created_at
+            const { data: friendsData, error } = await this.supabase
+                .from('anticode_friends')
+                .select('friend_username')
+                .eq('user_username', this.currentUser.username);
+
+            if (error) { throw error; }
+
             if (!friendsData || friendsData.length === 0) {
                 this.friends = [];
                 this.renderFriends();
                 return;
             }
 
-            const friendCol = this.friendsSchema?.friendCol || 'friend_username';
-            const usernames = friendsData.map(f => f[friendCol]).filter(Boolean);
+            const usernames = friendsData.map(f => f.friend_username).filter(Boolean);
 
             // Step 2: Batch fetch user info for all friends to populate cache
             const { data: usersData, error: usersError } = await this.supabase
@@ -3113,16 +3118,9 @@ class AntiCodeApp {
         if (searchError || !target) { alert('사용자를 찾을 수 없습니다.'); return false; }
         if (target.username === this.currentUser.username) { alert('자기 자신은 친구로 추가할 수 없습니다.'); return false; }
 
-        // Ensure we use the right anticode_friends schema for insert
-        if (!this.friendsSchema) {
-            try { await this._fetchFriendUsernames(); } catch (_) { /* ignore */ }
-        }
-        const userCol = this.friendsSchema?.userCol || 'user_username';
-        const friendCol = this.friendsSchema?.friendCol || 'friend_username';
-
         const { error: addError } = await this.supabase
             .from('anticode_friends')
-            .insert([{ [userCol]: this.currentUser.username, [friendCol]: target.username }]);
+            .insert([{ user_username: this.currentUser.username, friend_username: target.username }]);
 
         if (addError) { alert('이미 친구거나 오류가 발생했습니다.'); return false; }
 
@@ -3135,32 +3133,17 @@ class AntiCodeApp {
         if (!target) return false;
         if (!confirm(`${target} 님을 친구에서 삭제할까요?`)) return false;
         try {
-            if (!this.friendsSchema) {
-                try { await this._fetchFriendUsernames(); } catch (_) { /* ignore */ }
-            }
-            const userCol = this.friendsSchema?.userCol || 'user_username';
-            const friendCol = this.friendsSchema?.friendCol || 'friend_username';
-
             await this.supabase
                 .from('anticode_friends')
                 .delete()
-                .eq(userCol, this.currentUser.username)
-                .eq(friendCol, target);
+                .eq('user_username', this.currentUser.username)
+                .eq('friend_username', target);
 
-            // Best-effort reverse delete (if the table stores symmetric rows)
-            try {
-                await this.supabase
-                    .from('anticode_friends')
-                    .delete()
-                    .eq(userCol, target)
-                    .eq(friendCol, this.currentUser.username);
-            } catch (_) { }
-
-            await this.loadFriends();
-            try { this.renderFriendModalList(); } catch (_) { }
+            this.friends = this.friends.filter(f => f.username !== target);
+            this.renderFriends();
             return true;
         } catch (e) {
-            console.error('removeFriend failed:', e);
+            console.error(e);
             alert('친구 삭제 실패: ' + (e?.message || e));
             return false;
         }
