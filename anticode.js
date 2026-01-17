@@ -3173,20 +3173,24 @@ class AntiCodeApp {
         const displayFriends = this.friends.slice(0, 3);
         const hasMore = this.friends.length > 3;
 
-        let html = displayFriends.map(f => `
+        const html = displayFriends.map(f => {
+            // Fix: Enforce square avatar even for large source images
+            const avatarStyle = `width:32px; height:32px; border-radius:8px; object-fit:cover; flex-shrink:0;`;
+            return `
             <li class="friend-item ${f.online ? 'online' : 'offline'}" data-username="${f.username}">
                 <div class="avatar-sm-container">
-                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-                    <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${f.nickname[0]}</div>
+                    ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" style="${avatarStyle}" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                    <div class="avatar-sm" style="${avatarStyle} display:${f.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); font-weight:bold;">${f.nickname[0]}</div>
                     <span class="status-indicator"></span>
                 </div>
                 <div class="friend-info">
-                    <span class="friend-nickname">${f.nickname} <small>#${f.uid}</small></span>
+                    <span class="friend-nickname">${this.escapeHtml(f.nickname)} <small>#${f.uid}</small></span>
                     <span class="friend-status-text">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
                 </div>
                 <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제">&times;</button>
             </li>
-        `).join('');
+        `;
+        }).join('');
 
         if (hasMore) {
             html += `
@@ -4178,6 +4182,74 @@ class AntiCodeApp {
                 ${contentHtml}
                 ${realMsg.image_url ? `<div class="message-image-content"><img src="${realMsg.image_url}" class="chat-img" onclick="window.open('${realMsg.image_url}')"></div>` : ''}
             `;
+        }
+
+        // Ensure editing listeners are attached to the finalized element
+        if (el && this.currentUser.username === realMsg.user_id) {
+            // PC: Right-click
+            el.oncontextmenu = (e) => {
+                e.preventDefault();
+                this.editMessagePrompt(realMsg.id, realMsg.content);
+            };
+            // Mobile: Long press
+            let pressTimer;
+            el.ontouchstart = (e) => {
+                pressTimer = setTimeout(() => {
+                    this.editMessagePrompt(realMsg.id, realMsg.content);
+                    el.classList.add('editing-highlight');
+                }, 700);
+            };
+            el.ontouchend = () => {
+                clearTimeout(pressTimer);
+                setTimeout(() => el.classList.remove('editing-highlight'), 1000);
+            };
+        }
+    }
+
+    async deleteMessage(messageId) {
+        if (!confirm('메시지를 삭제하시겠습니까?')) return;
+        try {
+            const { error } = await this.supabase.from('anticode_messages').delete().eq('id', messageId);
+            if (error) throw error;
+            const el = document.getElementById(`msg-${messageId}`);
+            if (el) el.remove();
+        } catch (e) {
+            alert('삭제 실패: ' + e.message);
+        }
+    }
+
+    // [NEW] Edit Message Prompt
+    editMessagePrompt(messageId, oldContent) {
+        const newContent = prompt('메시지 수정:', oldContent);
+        if (newContent !== null && newContent.trim() !== '' && newContent !== oldContent) {
+            this.saveMessageEdit(messageId, newContent.trim());
+        }
+    }
+
+    async saveMessageEdit(messageId, newContent) {
+        try {
+            const { error } = await this.supabase
+                .from('anticode_messages')
+                .update({ content: newContent, updated_at: new Date().toISOString() })
+                .eq('id', messageId);
+
+            if (error) throw error;
+
+            // Update local DOM immediately
+            const el = document.getElementById(`msg-${messageId}`);
+            if (el) {
+                const textEl = el.querySelector('.message-text');
+                if (textEl) {
+                    try {
+                        const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: newContent });
+                        textEl.innerHTML = res.contentHtml;
+                    } catch (_) {
+                        textEl.textContent = newContent;
+                    }
+                }
+            }
+        } catch (e) {
+            alert('수정 실패: ' + e.message);
         }
     }
 
