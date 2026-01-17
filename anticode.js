@@ -497,6 +497,7 @@ class AntiCodeApp {
         this.recentMessageFingerprints = new Map(); // Dedup Broadcast vs Postgres when IDs differ
         this.friendsSchema = null; // Cache detected anticode_friends column names
         this.channelMembers = []; // usernames invited/joined for current channel
+        this.pendingInvites = []; // [New] List of pending invites
         this.channelMemberMeta = new Map(); // username -> { invited_by }
         this.channelBlockedUsernames = new Set(); // usernames blocked by me in active channel (invite/kick control)
         // Room participants (ever chatted in this room). Loaded per-channel for offline list UI.
@@ -638,11 +639,22 @@ class AntiCodeApp {
         try {
             const { data, error } = await this.supabase
                 .from('anticode_channel_members')
-                .select('channel_id')
+                .select('channel_id, invited_by, status') // [MOD] fetch status and inviter
                 .eq('username', this.currentUser.username);
 
             if (!error && data) {
-                this.myJoinedChannelIds = new Set(data.map(r => String(r.channel_id)));
+                this.myJoinedChannelIds = new Set();
+                this.pendingInvites = [];
+                for (const r of data) {
+                    const st = r.status || 'joined'; // Default to joined if null
+                    if (st === 'joined') {
+                        this.myJoinedChannelIds.add(String(r.channel_id));
+                    } else if (st === 'invited') {
+                        this.pendingInvites.push(r);
+                    }
+                }
+                // Update Badge
+                this.renderProfileInviteBadge();
             }
         } catch (e) {
             console.warn('loadMyChannelMemberships failed:', e);
@@ -1233,10 +1245,24 @@ class AntiCodeApp {
             }
         } catch (_) { }
 
+        // [Fix] Check if already member
+        const { data: existingMember } = await this.supabase
+            .from('anticode_channel_members')
+            .select('status')
+            .eq('channel_id', chId)
+            .eq('username', friendUsername)
+            .single();
+
+        if (existingMember && existingMember.status === 'joined') {
+            alert('이미 참여 중인 유저입니다.');
+            return;
+        }
+
         const payload = {
             channel_id: chId,
             username: friendUsername,
             invited_by: this.currentUser.username,
+            status: 'invited', // [New] Set status
             created_at: new Date().toISOString()
         };
         const { error } = await this.supabase
@@ -4292,9 +4318,19 @@ class AntiCodeApp {
         const info = document.getElementById('current-user-info');
         if (!info) return;
         const avatarHtml = this.currentUser.avatar_url ? `<img src="${this.currentUser.avatar_url}" class="avatar-img">` : `<div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>`;
+
+        // [New] Badge logic
+        const pendingCount = this.pendingInvites ? this.pendingInvites.length : 0;
+        const badgeHtml = pendingCount > 0
+            ? `<div class="invite-badge" id="profile-invite-badge" title="초대 ${pendingCount}건">${pendingCount > 99 ? '99+' : pendingCount}</div>`
+            : '';
+
         info.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-            ${avatarHtml}
+        <div style="display:flex; align-items:center; gap:10px; position:relative;">
+            <div style="position:relative;">
+                ${avatarHtml}
+                ${badgeHtml}
+            </div>
             <div class="user-info-text">
                 <div class="member-name" style="font-size:0.8rem;">${this.currentUser.nickname}</div>
                 <div class="uid-row" style="display:flex; align-items:center; gap:4px;">
@@ -4336,7 +4372,13 @@ class AntiCodeApp {
         }
 
         // Profile Management
-        _safeBind('current-user-info', 'onclick', () => {
+        _safeBind('current-user-info', 'onclick', (e) => {
+            // [MOD] If clicked badge, toggle invites
+            if (e.target && e.target.closest && e.target.closest('#profile-invite-badge')) {
+                e.stopPropagation();
+                this.toggleInviteList();
+                return;
+            }
             const nick = document.getElementById('edit-nickname');
             const av = document.getElementById('edit-avatar-url');
             if (nick) nick.value = this.currentUser.nickname;
@@ -4868,6 +4910,121 @@ class AntiCodeApp {
                     avatarFileInput.value = '';
                 }
             };
+        }
+    }
+    // [New] Invitation System Methods
+    renderProfileInviteBadge() {
+        this.renderUserInfo();
+    }
+
+    toggleInviteList() {
+        const existing = document.getElementById('invite-dropdown-menu');
+        if (existing) {
+            existing.remove();
+            return;
+        }
+        if (!this.pendingInvites || this.pendingInvites.length === 0) {
+            alert('대기 중인 초대가 없습니다.');
+            return;
+        }
+        this.renderInviteListModal();
+    }
+
+    async renderInviteListModal() {
+        const menu = document.createElement('div');
+        menu.id = 'invite-dropdown-menu';
+        menu.className = 'invite-dropdown';
+        menu.style.display = 'flex';
+
+        const header = document.createElement('div');
+        header.className = 'invite-dropdown-header';
+        header.innerHTML = `<span>초대 목록 (${this.pendingInvites.length})</span><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;">✕</button>`;
+        menu.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'invite-list';
+
+        for (const inv of this.pendingInvites) {
+            let ch = this.channels.find(c => String(c.id) === String(inv.channel_id));
+            let chName = ch ? ch.name : '로딩 중...';
+
+            if (!ch) {
+                try {
+                    const { data } = await this.supabase
+                        .from('anticode_channels')
+                        .select('name')
+                        .eq('id', inv.channel_id)
+                        .single();
+                    if (data) chName = data.name;
+                } catch (_) { }
+            }
+
+            const inviter = inv.invited_by || 'Unknown';
+            const item = document.createElement('div');
+            item.className = 'invite-item';
+            item.innerHTML = `
+                <div class="invite-info">
+                    <span class="invite-channel-name"># ${this.escapeHtml(chName)}</span>
+                    <span class="invite-sender">Invited by ${this.escapeHtml(inviter)}</span>
+                </div>
+                <div class="invite-actions">
+                    <button class="invite-accept-btn" onclick="window.app.acceptChannelInvite('${inv.channel_id}')">수락</button>
+                    <button class="invite-reject-btn" onclick="window.app.rejectChannelInvite('${inv.channel_id}')">거절</button>
+                </div>
+            `;
+            list.appendChild(item);
+        }
+        menu.appendChild(list);
+
+        const info = document.getElementById('current-user-info');
+        if (info) info.appendChild(menu);
+        else document.body.appendChild(menu);
+    }
+
+    async acceptChannelInvite(channelId) {
+        try {
+            const { error } = await this.supabase
+                .from('anticode_channel_members')
+                .update({ status: 'joined' })
+                .eq('channel_id', channelId)
+                .eq('username', this.currentUser.username);
+
+            if (error) throw error;
+
+            alert('초대를 수락했습니다!');
+            await this.loadMyChannelMemberships();
+            await this.loadChannels(); // Reload channels to ensure full visibility (esp hidden ones)
+            this.renderChannels();
+            this.renderUserInfo();
+
+            const dd = document.getElementById('invite-dropdown-menu');
+            if (dd) dd.remove();
+
+            this.handleChannelSwitch(channelId);
+
+        } catch (e) {
+            alert('초대 수락 실패: ' + e.message);
+        }
+    }
+
+    async rejectChannelInvite(channelId) {
+        if (!confirm('초대를 거절하시겠습니까?')) return;
+        try {
+            const { error } = await this.supabase
+                .from('anticode_channel_members')
+                .delete()
+                .eq('channel_id', channelId)
+                .eq('username', this.currentUser.username);
+
+            if (error) throw error;
+
+            await this.loadMyChannelMemberships();
+            this.renderUserInfo();
+            const dd = document.getElementById('invite-dropdown-menu');
+            if (dd) dd.remove();
+
+        } catch (e) {
+            alert('초대 거절 실패: ' + e.message);
         }
     }
 }
