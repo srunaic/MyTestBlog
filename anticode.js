@@ -1049,7 +1049,10 @@ class AntiCodeApp {
                     // "myJoinedChannelIds" tracks channels I am a member of (invited/joined)
                     if (!isOwner && !this.myJoinedChannelIds.has(String(ch.id))) return false;
                 }
-                return (ch.name || '').toLowerCase().includes(q) || (ch.category || '').toLowerCase().includes(q) || (ch.type || '').toLowerCase().includes(q);
+                return (ch.name || '').toLowerCase().includes(q) ||
+                    (ch.category || '').toLowerCase().includes(q) ||
+                    (ch.type || '').toLowerCase().includes(q) ||
+                    (ch.owner_id || '').toLowerCase().includes(q);
             })
             : base.filter(ch => {
                 if (ch.type === 'open_hidden') {
@@ -1061,31 +1064,127 @@ class AntiCodeApp {
                 return true;
             });
 
-        const limited = filtered.slice(0, 30);
-        if (limited.length === 0) {
-            resultsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">검색 결과 없음</div>`;
+        const combinedResults = [
+            ...limited.map(ch => ({ type: 'channel', data: ch })),
+        ];
+
+        // Perform async global page search if query is long enough
+        if (q && q.length >= 2) {
+            this.searchGlobalPages(q).then(pages => {
+                if (!pages || pages.length === 0) {
+                    this._renderDiscoveryResults(combinedResults, resultsBox, pid);
+                    return;
+                }
+                const pageResults = pages.map(p => ({ type: 'page', data: p }));
+                // Re-render with pages at the top
+                this._renderDiscoveryResults([...pageResults, ...combinedResults], resultsBox, pid);
+            });
+        }
+
+        this._renderDiscoveryResults(combinedResults, resultsBox, pid);
+    }
+
+    async searchGlobalPages(q) {
+        if (!this.supabase || !q) return [];
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_channel_pages')
+                .select('id, name, username')
+                .or(`name.ilike.%${q}%,username.ilike.%${q}%`)
+                .limit(10);
+            return data || [];
+        } catch (_) { return []; }
+    }
+
+    _renderDiscoveryResults(items, container, pid) {
+        if (!container) return;
+        if (items.length === 0) {
+            container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">검색 결과 없음</div>`;
             return;
         }
-        resultsBox.innerHTML = limited.map(ch => {
-            const label = this._channelLabel(ch);
-            const canAdd = pid !== 'all';
-            return `
-              <div class="member-card" style="margin-bottom:8px;">
-                <div class="member-info" style="cursor:pointer;" 
-                     onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
-                  <span class="member-name-text" title="${this.escapeHtml(ch.name)}">
-                    <span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}
-                  </span>
-                  <span class="member-status-sub">${this.escapeHtml(label)}</span>
-                </div>
-                <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
-                  ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">추가</button>` : ''}
-                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
-                </div>
-              </div>
-            `;
+
+        container.innerHTML = items.map(item => {
+            if (item.type === 'channel') {
+                const ch = item.data;
+                const label = this._channelLabel(ch);
+                const canAdd = pid !== 'all';
+                const ownerInfo = ch.owner_id ? `<span style="font-size:0.7rem; opacity:0.6;"> (by ${ch.owner_id})</span>` : '';
+                return `
+                  <div class="member-card" style="margin-bottom:8px;">
+                    <div class="member-info" style="cursor:pointer;" 
+                         onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
+                      <span class="member-name-text" title="${this.escapeHtml(ch.name)}">
+                        <span style="color:var(--accent); margin-right:4px;">#</span>${this.escapeHtml(this._truncateName(ch.name, 18).short)}${this.escapeHtml(ownerInfo)}
+                      </span>
+                      <span class="member-status-sub">[채널] ${this.escapeHtml(label)}</span>
+                    </div>
+                    <div class="member-actions">
+                      <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
+                      ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.addChannelToPage && window.app.addChannelToPage('${pid}','${ch.id}')">추가</button>` : ''}
+                      <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
+                    </div>
+                  </div>
+                `;
+            } else {
+                const p = item.data;
+                return `
+                  <div class="member-card" style="margin-bottom:8px;">
+                    <div class="member-info" style="cursor:default;">
+                      <span class="member-name-text" title="${this.escapeHtml(p.name)}">
+                        <span style="color:var(--futuristic-accent); margin-right:4px;">📂</span>${this.escapeHtml(p.name)}
+                      </span>
+                      <span class="member-status-sub">[페이지] 소유자: ${this.escapeHtml(p.username)}</span>
+                    </div>
+                    <div class="member-actions">
+                       <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.loadGlobalPageIntoCurrentView && window.app.loadGlobalPageIntoCurrentView('${p.id}')">보기</button>
+                    </div>
+                  </div>
+                `;
+            }
         }).join('');
+    }
+
+    async loadGlobalPageIntoCurrentView(pageId) {
+        // Feature: temporarily list channels in this page so user can add them
+        try {
+            const { data: items, error } = await this.supabase
+                .from('anticode_channel_page_items')
+                .select('channel_id')
+                .eq('page_id', pageId);
+            if (error || !items) return alert('페이지 로드 실패');
+
+            const cids = new Set(items.map(it => String(it.channel_id)));
+            const resultsBox = document.getElementById('pages-modal-results');
+            if (!resultsBox) return;
+
+            const filtered = this.channels.filter(ch => cids.has(String(ch.id)));
+            const pageObj = await this.supabase.from('anticode_channel_pages').select('name').eq('id', pageId).single();
+            const pageName = pageObj.data?.name || "선택된 페이지";
+
+            resultsBox.innerHTML = `
+                <div style="padding: 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px; font-weight: bold; color: var(--accent);">
+                    📂 ${pageName} 의 채널들
+                </div>
+                ${filtered.map(ch => {
+                const label = this._channelLabel(ch);
+                const pid = document.getElementById('pages-modal-select')?.value || 'all';
+                const canAdd = pid !== 'all';
+                return `
+                        <div class="member-card" style="margin-bottom:8px;">
+                            <div class="member-info" style="cursor:pointer;" onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">
+                                <span class="member-name-text">#${this.escapeHtml(ch.name)}</span>
+                                <span class="member-status-sub">${this.escapeHtml(label)}</span>
+                            </div>
+                            <div class="member-actions">
+                                 ${canAdd ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app.addChannelToPage('${pid}','${ch.id}')">추가</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+            }).join('')}
+                <button class="notif-toggle-btn" style="width:100%; margin-top:10px;" onclick="window.app._refreshPersonalSearchResults(true)">검색 목록으로 돌아가기</button>
+            `;
+
+        } catch (e) { alert('오류 발생'); }
     }
 
     openFriendModalForChannel(channelId) {
