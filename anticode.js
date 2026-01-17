@@ -3156,7 +3156,7 @@ class AntiCodeApp {
         const displayFriends = this.friends.slice(0, 3);
         const hasMore = this.friends.length > 3;
 
-        const html = displayFriends.map(f => {
+        let html = displayFriends.map(f => {
             // Fix: Enforce square avatar even for large source images
             const avatarStyle = `width:32px; height:32px; border-radius:8px; object-fit:cover; flex-shrink:0;`;
             return `
