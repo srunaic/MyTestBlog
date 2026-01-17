@@ -103,11 +103,14 @@ class Channel {
         `;
     }
 
-    renderSidebarItem(isActive, isAdmin, voiceState = { show: false, on: false }) {
+    renderSidebarItem(isActive, currentUsername, isAdmin, voiceState = { show: false, on: false }) {
         const hash = this.type === 'secret' ? '🔒' : '#';
         const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
-        const deleteHtml = isAdmin ? `<button class="delete-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.deleteChannel('${this.id}')" title="채널 삭제">&times;</button>` : '';
-        const editHtml = isAdmin ? `<button class="edit-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.editChannelPrompt('${this.id}')" title="채널 수정">✎</button>` : '';
+        const isOwner = currentUsername && String(this.owner_id) === String(currentUsername);
+        const canManage = isAdmin || isOwner;
+
+        const deleteHtml = canManage ? `<button class="delete-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.deleteChannel('${this.id}')" title="채널 삭제">&times;</button>` : '';
+        const editHtml = canManage ? `<button class="edit-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.editChannelPrompt('${this.id}')" title="채널 수정">✎</button>` : '';
         const voiceHtml = (voiceState && voiceState.show)
             ? `<span class="channel-voice-indicator ${voiceState.on ? 'on' : 'off'}" title="보이스 톡 ${voiceState.on ? 'ON' : 'OFF'}">${voiceState.on ? '🎙️' : '🎤'}</span>`
             : '';
@@ -687,6 +690,9 @@ class AntiCodeApp {
         this.activeChannelPageId = v;
         try { localStorage.setItem(this._getActiveChannelPageKey(), v); } catch (_) { }
         this.renderChannels();
+        // Update UI visibility for creation buttons when page changes
+        if (this._updateCreateBtnVisibility) this._updateCreateBtnVisibility();
+        if (this._updateMenuAddVisibility) this._updateMenuAddVisibility();
     }
 
     async loadChannelPages() {
@@ -3190,19 +3196,25 @@ class AntiCodeApp {
             group.innerHTML = `
                 <div class="group-header" data-cat="${catId}" style="cursor:pointer;">
                     <span class="group-label">${isCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}</span>
-                    ${(catId === 'chat' && this.isAdminMode) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : ''}
+                    ${(() => {
+                    if (catId !== 'chat') return '';
+                    const isAppAdmin = this.isAdminMode;
+                    const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
+                    const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+                    return (isAppAdmin || isPageOwner) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : '';
+                })()}
                 </div>
                 <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">
             ${chans.map(c => {
-                const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
-                const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
-                // [MOD] Add visual indicator for hidden chat
-                if (c.type === 'open_hidden') {
-                    // Maybe render a special icon or style, but requirement says "hidden" processing only.
-                    // The sidebar item render handles basic display.
-                }
-                return c.renderSidebarItem(isActive, this.isAdminMode, voiceState);
-            }).join('')}
+                    const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
+                    const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
+                    // [MOD] Add visual indicator for hidden chat
+                    if (c.type === 'open_hidden') {
+                        // Maybe render a special icon or style, but requirement says "hidden" processing only.
+                        // The sidebar item render handles basic display.
+                    }
+                    return c.renderSidebarItem(isActive, this.currentUser?.username, this.isAdminMode, voiceState);
+                }).join('')}
                 </div>
             `;
 
@@ -3414,9 +3426,11 @@ class AntiCodeApp {
     }
 
     async editChannelPrompt(channelId) {
-        if (!this.isAdminMode) return alert('관리자만 수정할 수 있습니다.');
         const ch = this.channels.find(c => c.id === channelId);
         if (!ch) return;
+
+        const isOwner = this.currentUser?.username && String(ch.owner_id) === String(this.currentUser.username);
+        if (!this.isAdminMode && !isOwner) return alert('관리자나 방장만 수정할 수 있습니다.');
 
         const newName = prompt('채널 이름', ch.name);
         if (newName == null) return;
@@ -3478,8 +3492,11 @@ class AntiCodeApp {
     }
 
     async createChannel(name, type, category, password) {
-        if (!this.isAdminMode) {
-            alert('방장만 채널을 생성할 수 있습니다.');
+        const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
+        const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+
+        if (!this.isAdminMode && !isPageOwner) {
+            alert('방장이나 페이지 소유자만 채널을 생성할 수 있습니다.');
             return false;
         }
         const limit = this._isProUser() ? DEFAULT_CHANNEL_LIMIT_PRO : DEFAULT_CHANNEL_LIMIT_FREE;
@@ -4167,16 +4184,24 @@ class AntiCodeApp {
         _safeBind('menu-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
         const menuAdd = document.getElementById('menu-add');
         if (menuAdd) {
-            if (this.isAdminMode) {
-                menuAdd.onclick = (e) => {
-                    e.stopPropagation();
-                    if (dropdown) dropdown.style.display = 'none';
-                    const m = document.getElementById('create-channel-modal');
-                    if (m) m.style.display = 'flex';
-                };
-            } else {
-                menuAdd.style.display = 'none';
-            }
+            const updateMenuAddVisibility = () => {
+                const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
+                const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+                if (this.isAdminMode || isPageOwner) {
+                    menuAdd.style.display = 'flex';
+                    menuAdd.onclick = (e) => {
+                        e.stopPropagation();
+                        if (dropdown) dropdown.style.display = 'none';
+                        const m = document.getElementById('create-channel-modal');
+                        if (m) m.style.display = 'flex';
+                    };
+                } else {
+                    menuAdd.style.display = 'none';
+                }
+            };
+            updateMenuAddVisibility();
+            // Store as a method so it can be re-run on page switch if needed
+            this._updateMenuAddVisibility = updateMenuAddVisibility;
         }
         _safeBind('menu-profile', 'onclick', (e) => {
             e.stopPropagation();
@@ -4205,11 +4230,18 @@ class AntiCodeApp {
 
         const openCreateBtn = document.getElementById('open-create-channel');
         if (openCreateBtn) {
-            if (this.isAdminMode) {
-                openCreateBtn.onclick = () => cModal && (cModal.style.display = 'flex');
-            } else {
-                openCreateBtn.style.display = 'none';
-            }
+            const updateCreateBtnVisibility = () => {
+                const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
+                const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+                if (this.isAdminMode || isPageOwner) {
+                    openCreateBtn.style.display = 'flex';
+                    openCreateBtn.onclick = () => cModal && (cModal.style.display = 'flex');
+                } else {
+                    openCreateBtn.style.display = 'none';
+                }
+            };
+            updateCreateBtnVisibility();
+            this._updateCreateBtnVisibility = updateCreateBtnVisibility;
         }
         _safeBind('close-channel-modal', 'onclick', () => cModal && (cModal.style.display = 'none'));
         if (typeSelect && passGroup) typeSelect.onchange = () => passGroup.style.display = typeSelect.value === 'secret' ? 'block' : 'none';
