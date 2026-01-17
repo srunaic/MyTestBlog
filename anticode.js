@@ -4230,7 +4230,7 @@ class AntiCodeApp {
         try {
             const { error } = await this.supabase
                 .from('anticode_messages')
-                .update({ content: newContent, updated_at: new Date().toISOString() })
+                .update({ content: newContent })
                 .eq('id', messageId);
 
             if (error) throw error;
