@@ -3902,17 +3902,13 @@ class AntiCodeApp {
                 const existing = container.querySelector(selector);
                 if (existing && typeof this.finalizeOptimistic === 'function') {
                     await this.finalizeOptimistic(existing, msg);
-                    // Mark as processed immediately after finalization
-                    if (msg.id) this.processedMessageIds.add(msg.id);
-                    this._isRecentDuplicate(msg); // Record fingerprint
                     return;
                 }
 
-                // If no optimistic element to finalize, check if it's a structural duplicate (same content/author/time)
+                // If no optimistic element to finalize, check if it's a structural duplicate
                 if (this._isRecentDuplicate(msg)) return;
             } else {
-                // For optimistic messages, we still record the fingerprint so the follow-up 
-                // Postgres/Broadcast events know this message has already been handled.
+                // For optimistic messages, record fingerprint to prevent early realtime duplicates
                 this._isRecentDuplicate(msg);
             }
 
@@ -3959,6 +3955,13 @@ class AntiCodeApp {
         // Keep data-temp-id but mark it as finalized so we don't accidentally match it again 
         // with another message, but keep it for immediate server confirmation events.
         el.setAttribute('data-finalized', 'true');
+
+        // Record as processed to prevent realtime duplicates
+        if (realMsg.id) {
+            if (!this.processedMessageIds) this.processedMessageIds = new Set();
+            this.processedMessageIds.add(realMsg.id);
+        }
+        this._isRecentDuplicate(realMsg); // Record fingerprint for filtered version
 
         const status = el.querySelector('.sending-status');
         if (status) status.innerText = '';
