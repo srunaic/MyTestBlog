@@ -3891,14 +3891,9 @@ class AntiCodeApp {
             // 1. Deduplicate by ID
             if (msg.id && this.processedMessageIds.has(msg.id)) return;
 
-            // 2. Deduplicate by Fingerprint (important for Broadcast vs Postgres events)
-            if (!isOptimistic && this._isRecentDuplicate(msg)) return;
-
-            if (msg.id) this.processedMessageIds.add(msg.id);
-
-            // 3. Match Optimistic element
+            // 2. Matching logic for non-optimistic messages
             if (!isOptimistic) {
-                // If tempId is present in message, try to find by temp-id first
+                // Priority: Try to find and finalize an existing optimistic placeholder
                 const tempId = msg.tempId || null;
                 const selector = tempId
                     ? `.message-item[data-temp-id="${tempId}"]`
@@ -3907,9 +3902,21 @@ class AntiCodeApp {
                 const existing = container.querySelector(selector);
                 if (existing && typeof this.finalizeOptimistic === 'function') {
                     await this.finalizeOptimistic(existing, msg);
+                    // Mark as processed immediately after finalization
+                    if (msg.id) this.processedMessageIds.add(msg.id);
+                    this._isRecentDuplicate(msg); // Record fingerprint
                     return;
                 }
+
+                // If no optimistic element to finalize, check if it's a structural duplicate (same content/author/time)
+                if (this._isRecentDuplicate(msg)) return;
+            } else {
+                // For optimistic messages, we still record the fingerprint so the follow-up 
+                // Postgres/Broadcast events know this message has already been handled.
+                this._isRecentDuplicate(msg);
             }
+
+            if (msg.id) this.processedMessageIds.add(msg.id);
 
             let info = this.userCache ? this.userCache[msg.user_id] : null;
             if (!info && typeof this.getUserInfo === 'function') {
