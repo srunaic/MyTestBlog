@@ -83,12 +83,25 @@
                         <button id="menu-pages">📄 내 채널 페이지</button>
                         <button id="menu-add">➕ 새 채널 생성</button>
                         <button id="menu-profile">⚙️ 프로필 설정</button>
+                        <button id="menu-blocked-list">🚫 차단한 유저 목록</button>
                         <button onclick="window.location.href='index.html'" id="menu-back">↩️ 블로그로 돌아가기</button>
                         <button onclick="toggleNotifSound()" class="notif-toggle-btn notif-sound-toggle">🔔 알림 소리
                             ON</button>
                     </div>
                 </div>
             </header>
+
+            <div id="blocked-list-modal" class="modal-overlay" style="display:none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>차단한 유저 목록</h2>
+                        <button id="close-blocked-modal" class="close-btn">&times;</button>
+                    </div>
+                    <div id="blocked-users-container" class="blocked-list-container">
+                        <!-- Blocked users will be listed here -->
+                    </div>
+                </div>
+            </div>
 
             <div id="message-container" class="message-container">
                 <div class="chat-welcome">

@@ -1589,7 +1589,7 @@ class AntiCodeApp {
             for (const r of rows) {
                 const u = r?.username ? String(r.username) : '';
                 if (!u) continue;
-                this.channelMemberMeta.set(u, { 
+                this.channelMemberMeta.set(u, {
                     invited_by: r?.invited_by ? String(r.invited_by) : null,
                     status: r?.status || 'joined'
                 });
@@ -1654,7 +1654,7 @@ class AntiCodeApp {
         const target = String(username || '');
         if (!target) return false;
         if (target === this.currentUser?.username) return false;
-        if (!confirm(`${target} 님을 차단할까요?\\n(차단된 유저는 다시 초대할 수 없습니다. 차단해제로 해제 가능)`)) return false;
+        if (!confirm(`${target} 님을 차단할까요?\n(차단된 유저는 다시 초대할 수 없습니다. 차단해제로 해제 가능)`)) return false;
         try {
             const { error } = await this.supabase
                 .from('anticode_channel_blocks')
@@ -1662,10 +1662,14 @@ class AntiCodeApp {
                     channel_id: this.activeChannel.id,
                     blocked_username: target,
                     blocked_by: this.currentUser.username
-                }], { onConflict: 'channel_id,blocked_username,blocked_by' });
+                }], { onConflict: 'channel_id,blocked_username' });
             if (error) throw error;
             this.channelBlockedUsernames.add(target);
             try { this.renderFriendModalList(); } catch (_) { }
+
+            // Immediate UI Refresh
+            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+
             alert('차단 완료!');
             return true;
         } catch (e) {
@@ -1679,23 +1683,75 @@ class AntiCodeApp {
         if (!this.activeChannel) return false;
         const target = String(username || '');
         if (!target) return false;
-        if (!confirm(`${target} 님 차단을 해제할까요?\\n(해제 후 다시 초대할 수 있습니다)`)) return false;
+        if (!confirm(`${target} 님 차단을 해제할까요?\n(해제 후 다시 초대할 수 있습니다)`)) return false;
         try {
             const { error } = await this.supabase
                 .from('anticode_channel_blocks')
                 .delete()
                 .eq('channel_id', this.activeChannel.id)
-                .eq('blocked_username', target)
-                .eq('blocked_by', this.currentUser.username);
+                .eq('blocked_username', target);
             if (error) throw error;
             this.channelBlockedUsernames.delete(target);
             try { this.renderFriendModalList(); } catch (_) { }
+
+            // Immediate UI Refresh
+            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+
             alert('차단 해제 완료!');
             return true;
         } catch (e) {
             console.error('unblockUser failed:', e);
             alert('차단 해제 실패: ' + (e?.message || e));
             return false;
+        }
+    }
+
+    async openBlockedListModal() {
+        const m = document.getElementById('blocked-list-modal');
+        if (m) {
+            m.style.display = 'flex';
+            await this.renderBlockedList();
+        }
+    }
+
+    async renderBlockedList() {
+        const container = document.getElementById('blocked-users-container');
+        if (!container) return;
+        container.innerHTML = '<div style="padding: 20px; text-align: center;">로딩 중...</div>';
+
+        if (!this.activeChannel) {
+            container.innerHTML = '<div style="padding: 20px; text-align: center;">활성 채널이 없습니다.</div>';
+            return;
+        }
+
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_channel_blocks')
+                .select('blocked_username, blocked_by, created_at')
+                .eq('channel_id', this.activeChannel.id);
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">차단한 유저가 없습니다.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            data.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'blocked-user-item';
+                row.innerHTML = `
+                    <div class="blocked-user-info">
+                        <span class="blocked-username">${this.escapeHtml(item.blocked_username)}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">차단일: ${new Date(item.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <button class="unblock-action-btn" onclick="window.app.unblockUserInActiveChannel('${item.blocked_username}').then(ok => { if(ok) window.app.renderBlockedList(); })">차단 해제</button>
+                `;
+                container.appendChild(row);
+            });
+        } catch (e) {
+            container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ff4d4d;">오류: ${e.message}</div>`;
         }
     }
 
@@ -4518,6 +4574,15 @@ class AntiCodeApp {
             if (dropdown) dropdown.style.display = 'none';
             const mod = document.getElementById('profile-modal');
             if (mod) mod.style.display = 'flex';
+        });
+        _safeBind('menu-blocked-list', 'onclick', (e) => {
+            e.stopPropagation();
+            if (dropdown) dropdown.style.display = 'none';
+            this.openBlockedListModal();
+        });
+        _safeBind('close-blocked-modal', 'onclick', () => {
+            const m = document.getElementById('blocked-list-modal');
+            if (m) m.style.display = 'none';
         });
 
         document.addEventListener('click', () => {
