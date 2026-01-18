@@ -4369,12 +4369,19 @@ class AntiCodeApp {
 
         // Profile Management
         _safeBind('current-user-info', 'onclick', (e) => {
-            // [MOD] If clicked badge, toggle invites
+            // Only handle badge click for invitations
             if (e.target && e.target.closest && e.target.closest('#profile-invite-badge')) {
                 e.stopPropagation();
                 this.toggleInviteList();
                 return;
             }
+            // MOD: Profile Edit modal no longer opens on clicking the profile info area.
+            // This prevents conflict with badge interaction and UID copy clicks.
+        });
+
+        // MOD: Attach Profile Edit modal trigger to the gear icon (Settings button)
+        _safeBind('open-settings-btn', 'onclick', (e) => {
+            if (e) e.stopPropagation();
             const nick = document.getElementById('edit-nickname');
             const av = document.getElementById('edit-avatar-url');
             if (nick) nick.value = this.currentUser.nickname;
