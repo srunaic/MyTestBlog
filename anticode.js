@@ -1607,12 +1607,13 @@ class AntiCodeApp {
         try {
             const { data, error } = await this.supabase
                 .from('anticode_channel_members')
-                .select('username')
+                .select('username, status')
                 .eq('channel_id', channelId)
                 .eq('username', u)
                 .limit(1);
             if (error) throw error;
-            return !!(data && data.length > 0);
+            if (!data || data.length === 0) return false;
+            return data[0].status !== 'kicked';
         } catch (_) {
             return false;
         }
@@ -1828,13 +1829,30 @@ class AntiCodeApp {
             if (!me) return;
             const isOwner = channel.owner_id && String(channel.owner_id) === String(me);
             if (isOwner) return;
-            if (channel.type === 'secret') {
-                const isMember = await this._hasChannelMembership(channel.id, me);
-                if (!isMember) {
-                    alert('이 채널에서 강퇴되었거나 권한이 없습니다.');
-                    const fallback = this.channels.find(c => c.type !== 'secret') || this.channels[0];
-                    if (fallback && fallback.id !== channel.id) await this.switchChannel(fallback.id);
-                }
+
+            // Check membership for ALL channels.
+            // _hasChannelMembership(channel.id, me) returns false if status is 'kicked' OR absent.
+            const isMember = await this._hasChannelMembership(channel.id, me);
+
+            // Special case for General/Open channels: users are allowed even if not in table, UNLESS status is 'kicked'.
+            // So we fetch data explicitly to check for the 'kicked' status.
+            const { data } = await this.supabase
+                .from('anticode_channel_members')
+                .select('status')
+                .eq('channel_id', channel.id)
+                .eq('username', me)
+                .maybeSingle();
+
+            if (data?.status === 'kicked') {
+                alert('이 채널에서 강퇴되었습니다.');
+                const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden' && String(c.id) !== String(channel.id)) || this.channels[0];
+                if (fallback && fallback.id !== channel.id) await this.switchChannel(fallback.id);
+                else window.location.reload();
+            } else if (channel.type === 'secret' && !isMember) {
+                // For secret channels, they MUST have a valid membership status (invited/joined, not kicked)
+                alert('이 비밀 채팅방에 접근 권한이 없습니다.');
+                const fallback = this.channels.find(c => c.type !== 'secret') || this.channels[0];
+                if (fallback && fallback.id !== channel.id) await this.switchChannel(fallback.id);
             }
         } catch (_) { }
     }
@@ -1881,7 +1899,11 @@ class AntiCodeApp {
             if (!byUsername.has(uname)) byUsername.set(uname, u);
         }
 
-        const onlineUsers = Array.from(byUsername.values());
+        const onlineUsers = Array.from(byUsername.values()).filter(u => {
+            const uname = u?.username ? String(u.username) : '';
+            const meta = this.channelMemberMeta?.get(uname);
+            return meta?.status !== 'kicked';
+        });
         if (onlineCountText) onlineCountText.innerText = String(onlineUsers.length);
 
         // Admins first, then by nickname/username (stable + friendly)
@@ -1904,6 +1926,11 @@ class AntiCodeApp {
         for (const p of participants) {
             const uname = p?.username ? String(p.username) : (typeof p === 'string' ? p : '');
             if (!uname || seen.has(uname)) continue;
+
+            // Check if kicked
+            const meta = this.channelMemberMeta?.get(uname);
+            if (meta?.status === 'kicked') continue;
+
             seen.add(uname);
             if (!onlineNames.has(uname)) participantNames.push(uname);
         }
@@ -3932,7 +3959,7 @@ class AntiCodeApp {
                     setTimeout(() => el.remove(), 300);
                 }
             })
-            .on('broadcast', { event: 'kick' }, payload => {
+            .on('broadcast', { event: 'kick' }, async payload => {
                 const data = payload?.payload;
                 if (!data) return;
                 // If I am the target, I must leave
@@ -3943,8 +3970,11 @@ class AntiCodeApp {
                     else window.location.reload();
                     return;
                 }
-                // If I am observer, remove target's presence if needed (handled by presence sync usually)
+                // If I am observer, refresh member metadata to hide the kicked user
                 try {
+                    await this.loadChannelMembers(channelId);
+                    await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {});
+
                     const msgs = document.querySelectorAll(`[data-author="${data.target}"]`);
                     msgs.forEach(el => el.remove());
                 } catch (_) { }
