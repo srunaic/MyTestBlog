@@ -1576,11 +1576,11 @@ class AntiCodeApp {
         try {
             const { data, error } = await this.supabase
                 .from('anticode_channel_members')
-                .select('username, invited_by')
+                .select('username, invited_by, status') // Fetch status
                 .eq('channel_id', channelId);
             if (error) throw error;
             const rows = (data || []).filter(Boolean);
-            const names = rows.map(r => r.username).filter(Boolean).map(String);
+            const names = rows.filter(r => r.status !== 'kicked').map(r => r.username).filter(Boolean).map(String);
             // Always include channel owner if present
             const chan = this.channels.find(c => c.id === channelId);
             if (chan?.owner_id) names.push(String(chan.owner_id));
@@ -1589,7 +1589,10 @@ class AntiCodeApp {
             for (const r of rows) {
                 const u = r?.username ? String(r.username) : '';
                 if (!u) continue;
-                this.channelMemberMeta.set(u, { invited_by: r?.invited_by ? String(r.invited_by) : null });
+                this.channelMemberMeta.set(u, { 
+                    invited_by: r?.invited_by ? String(r.invited_by) : null,
+                    status: r?.status || 'joined'
+                });
             }
         } catch (e) {
             console.warn('loadChannelMembers failed:', e?.message || e);
@@ -1729,35 +1732,28 @@ class AntiCodeApp {
         const target = String(targetUsername || '');
         if (!target) return;
         if (!this._canKickInActiveChannel(target)) return alert('강퇴 권한이 없습니다.');
-        if (!confirm(`${target} 님을 이 방에서 강퇴할까요?\\n(강퇴된 유저는 다시 들어오려면 비밀번호를 다시 입력해야 합니다)`)) return;
+        if (!confirm(`${target} 님을 이 방에서 강퇴할까요?\n(강퇴된 유저는 방장이 다시 초대해야 재입장이 가능합니다)`)) return;
         try {
+            // Update status to 'kicked' rather than deleting member record
             const { error } = await this.supabase
                 .from('anticode_channel_members')
-                .delete()
+                .update({ status: 'kicked' })
                 .eq('channel_id', this.activeChannel.id)
                 .eq('username', target);
             if (error) throw error;
-            // Auto-block kicked user so they cannot be re-invited until unblocked
-            try {
-                await this.supabase
-                    .from('anticode_channel_blocks')
-                    .upsert([{
-                        channel_id: this.activeChannel.id,
-                        blocked_username: target,
-                        blocked_by: this.currentUser.username
-                    }], { onConflict: 'channel_id,blocked_username,blocked_by' });
-                this.channelBlockedUsernames.add(target);
-            } catch (_) { }
+
             await this.loadChannelMembers(this.activeChannel.id);
             try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
 
-            // [NEW] Real-time Kick Signal
+            // Real-time Kick Signal via the main message channel
             try {
-                this.voiceChannel?.send({
-                    type: 'broadcast',
-                    event: 'kick',
-                    payload: { target: target, channel_id: this.activeChannel.id }
-                });
+                if (this.messageSubscription) {
+                    this.messageSubscription.send({
+                        type: 'broadcast',
+                        event: 'kick',
+                        payload: { target: target, channel_id: this.activeChannel.id }
+                    });
+                }
             } catch (_) { }
 
             alert('강퇴 완료!');
@@ -3532,6 +3528,17 @@ class AntiCodeApp {
             return;
         }
 
+        // Kicked check: Deny re-entry for kicked users
+        const myMeta = this.channelMemberMeta?.get(this.currentUser.username);
+        if (myMeta?.status === 'kicked') {
+            alert('이 방에서 강퇴되었습니다. 방장이 다시 초대해야 입장 가능합니다.');
+            const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden' && String(c.id) !== String(channel.id)) || this.channels[0];
+            if (fallback && fallback.id !== channel.id) {
+                await this.switchChannel(fallback.id);
+            }
+            return;
+        }
+
         // [MOD] Hidden Open Chat Gate
         if (channel.type === 'open_hidden') {
             const me = this.currentUser?.username;
@@ -3868,6 +3875,23 @@ class AntiCodeApp {
                     el.style.opacity = '0';
                     setTimeout(() => el.remove(), 300);
                 }
+            })
+            .on('broadcast', { event: 'kick' }, payload => {
+                const data = payload?.payload;
+                if (!data) return;
+                // If I am the target, I must leave
+                if (data.target === this.currentUser?.username) {
+                    alert('이 방에서 강퇴되었습니다.');
+                    const fallback = this.channels.find(c => c.type === 'general') || this.channels[0];
+                    if (fallback) this.switchChannel(fallback.id);
+                    else window.location.reload();
+                    return;
+                }
+                // If I am observer, remove target's presence if needed (handled by presence sync usually)
+                try {
+                    const msgs = document.querySelectorAll(`[data-author="${data.target}"]`);
+                    msgs.forEach(el => el.remove());
+                } catch (_) { }
             })
             .subscribe((status) => {
                 console.log(`Subscription status for ${channelId}:`, status);
