@@ -4379,9 +4379,13 @@ class AntiCodeApp {
             // This prevents conflict with badge interaction and UID copy clicks.
         });
 
-        // MOD: Attach Profile Edit modal trigger to the gear icon (Settings button)
-        _safeBind('open-settings-btn', 'onclick', (e) => {
+        // MOD: Attach Profile Edit modal trigger to the new button INSIDE settings modal
+        _safeBind('open-profile-edit-btn', 'onclick', (e) => {
             if (e) e.stopPropagation();
+            // Close the general settings modal first to avoid overlap
+            const sModal = document.getElementById('app-settings-modal');
+            if (sModal) sModal.style.display = 'none';
+
             const nick = document.getElementById('edit-nickname');
             const av = document.getElementById('edit-avatar-url');
             if (nick) nick.value = this.currentUser.nickname;
