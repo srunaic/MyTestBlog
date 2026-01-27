@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2315';
+const APP_VERSION = '2026.01.27.2325';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -754,7 +754,7 @@ class AntiCodeApp {
     _getVisibleChannelsByActivePage() {
         const me = this.currentUser?.username;
 
-        // 1. Filter channels that should be visible to THIS user (Ownership or Membership)
+        // 1. Filter ALL channels that this user is ALLOWED to see (Ownership or Membership for hidden types)
         const userAccessibleChannels = this.channels.filter(ch => {
             const isOwner = me && String(ch.owner_id) === String(me);
             const isMember = me && this.myJoinedChannelIds.has(String(ch.id));
@@ -767,7 +767,7 @@ class AntiCodeApp {
 
         // 2. Determine which channels to show based on the Active Page
         if (this.activeChannelPageId === 'all') {
-            // [MOD] On 'All' page, show all public channels + any private/hidden ones I've joined
+            // [MOD] On 'All' page (The Hub): Show all public channels + any private/hidden ones I've joined/own
             return userAccessibleChannels.filter(ch => {
                 const isOwner = me && String(ch.owner_id) === String(me);
                 const isMember = me && this.myJoinedChannelIds.has(String(ch.id));
@@ -775,30 +775,17 @@ class AntiCodeApp {
             });
         }
 
-        // [MOD] On Custom Pages:
-        // Hide standard public channels unless mapped to this page OR active.
+        // [MOD] On Custom Pages (Strict Isolation):
+        // Show ONLY channels mapped to this page + Always show the CURRENT room I am in.
         const items = this.channelPageItems.get(this.activeChannelPageId) || [];
         const pageChannelIds = new Set(items.map(it => String(it.channel_id)));
 
         const filtered = userAccessibleChannels.filter(ch => {
             const sid = String(ch.id);
-            const isOwner = me && String(ch.owner_id) === String(me);
-            const isMember = me && this.myJoinedChannelIds.has(sid);
             const isActive = this.activeChannel && sid === String(this.activeChannel.id);
 
-            // 1. Show if specifically mapped to this custom page
-            if (pageChannelIds.has(sid)) return true;
-
-            // 2. Always show the channel I am CURRENTLY in
-            if (isActive) return true;
-
-            // 3. For HIDDEN/PRIVATE rooms, show if I joined them (Persistent access as requested)
-            if (ch.type === 'open_hidden') {
-                return (isOwner || isMember);
-            }
-
-            // 4. For standard public channels, hide if not on this page
-            return false;
+            // Show only if mapped to this page OR I am currently chatting in it
+            return pageChannelIds.has(sid) || isActive;
         });
 
         // Sort by page order if mapped, otherwise append to end

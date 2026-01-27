@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.27.2315",
-    "message": "Refined custom page visibility: Hide unmapped general channels."
+    "version": "2026.01.27.2325",
+    "message": "Strict page isolation for custom channel lists."
 }

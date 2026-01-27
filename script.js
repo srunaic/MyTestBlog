@@ -25,7 +25,7 @@ var currentPage = 1;
 var postsPerPage = 12;
 
 // [NEW] Version Control
-const APP_VERSION = '2026.01.27.2315';
+const APP_VERSION = '2026.01.27.2325';
 var isServerDown = false;
 
 // 🧵 Web Worker (Logic Thread) Manager
