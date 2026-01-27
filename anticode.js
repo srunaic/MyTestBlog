@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2328';
+const APP_VERSION = '2026.01.27.2335';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -3356,13 +3356,13 @@ class AntiCodeApp {
                     <div class="avatar-sm" style="${avatarStyle} display:${f.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); font-weight:bold;">${f.nickname[0]}</div>
                     <span class="status-indicator"></span>
                 </div>
-                <div class="friend-info">
-                    <span class="friend-nickname">${this.escapeHtml(f.nickname)} <small>#${f.uid}</small></span>
-                    <span class="friend-status-text">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
+                <div class="friend-info" style="flex: 1; min-width: 0;">
+                    <span class="friend-nickname" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(f.nickname)} <small>#${f.uid}</small></span>
+                    <span class="friend-status-text" style="display: block; color: var(--text-muted); font-size: 0.7rem;">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
                 </div>
-                <div class="friend-actions" style="display: flex; gap: 4px; align-items: center; margin-left: auto;">
-                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel(window.app.activeChannel?.id, '${f.username}')" title="방으로 초대" style="background: rgba(0,242,255,0.1); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; width: 24px; height: 24px; font-size: 0.85rem; padding: 0; display: flex; align-items: center; justify-content: center; transform: translateY(-1px);">+</button>
-                    <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제" style="margin-top: 0;">&times;</button>
+                <div class="friend-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel(window.app.activeChannel?.id, '${f.username}')" title="방으로 초대" style="background: rgba(0,242,255,0.15); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; width: 28px; height: 28px; font-size: 1rem; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;">+</button>
+                    <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제" style="margin: 0; background: rgba(218, 55, 60, 0.1); border: 1px solid #da373c; color: #da373c; width: 28px; height: 28px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
                 </div>
             </li>
         `;
