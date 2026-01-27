@@ -2782,9 +2782,9 @@ class AntiCodeApp {
     }
 
     async uploadFile(file, bucket = 'uploads') {
-        // 500KB Size Limit Check (Bypassed for Pro/Admin)
-        if (file.size > 512000 && !(this._isAdmin() || this._isProUser())) {
-            throw new Error(`파일 크기가 500KB를 초과합니다. (현재: ${Math.round(file.size / 1024)}KB)`);
+        // 5MB Size Limit Check (Bypassed for Pro/Admin)
+        if (file.size > 5242880 && !(this._isAdmin() || this._isProUser())) {
+            throw new Error(`파일 크기가 5MB를 초과합니다. (현재: ${Math.round(file.size / 1024 / 1024 * 10) / 10}MB)`);
         }
 
         // Prefer Cloudflare R2 (via Worker) to avoid Supabase Storage limits/cost
@@ -4942,9 +4942,9 @@ class AntiCodeApp {
                         // compress first (improves speed + makes 500KB cap workable)
                         uploadFile = await this.compressImageFile(file);
                         if (!isPro) {
-                            const maxBytes = 500 * 1024;
+                            const maxBytes = 5 * 1024 * 1024;
                             if (uploadFile.size > maxBytes) {
-                                alert(`이미지 용량이 너무 큽니다.\\n무료 플랜은 500KB 이하만 업로드할 수 있어요.\\n(유료(Pro)는 제한 없음)`);
+                                alert(`이미지 용량이 너무 큽니다.\\n무료 플랜은 5MB 이하만 업로드할 수 있어요.\\n(유료(Pro)는 제한 없음)`);
                                 return;
                             }
                         }
