@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.27.2245",
-    "message": "Persistence fix for joined channels across page views."
+    "version": "2026.01.27.2305",
+    "message": "Improved friend invitation UI with confirmation prompt."
 }

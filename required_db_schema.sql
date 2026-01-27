@@ -8,6 +8,7 @@ create table if not exists public.anticode_channel_members (
   username text not null,
   invited_by text,
   role text default 'member',
+  status text default 'joined', -- [NEW] Added for invitation system
   unique(channel_id, username)
 );
 
@@ -21,8 +22,22 @@ create table if not exists public.anticode_channel_blocks (
   unique(channel_id, blocked_username)
 );
 
--- 3. Enable Realtime (Critical for immediate updates)
--- Run these commands to ensure clients receive "INSERT" events
+-- 3. Row Level Security (RLS) Policies for Anon Access
+-- Enable RLS
+alter table public.anticode_channel_members enable row level security;
+alter table public.anticode_channel_blocks enable row level security;
+
+-- Policies for Members
+drop policy if exists "Enable all for anon on members" on public.anticode_channel_members;
+create policy "Enable all for anon on members" on public.anticode_channel_members for all using (true) with check (true);
+
+-- Policies for Blocks
+drop policy if exists "Enable all for anon on blocks" on public.anticode_channel_blocks;
+create policy "Enable all for anon on blocks" on public.anticode_channel_blocks for all using (true) with check (true);
+
+-- 4. Enable Realtime
+-- Run these commands to ensure clients receive events
 alter publication supabase_realtime add table anticode_channel_members;
 alter publication supabase_realtime add table anticode_channel_blocks;
 alter publication supabase_realtime add table anticode_messages;
+alter publication supabase_realtime add table anticode_friends;

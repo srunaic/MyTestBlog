@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2245';
+const APP_VERSION = '2026.01.27.2305';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -1236,6 +1236,10 @@ class AntiCodeApp {
         const chId = String(channelId || '');
         if (!chId) return alert('채널을 선택하세요.');
         if (!friendUsername) return;
+
+        // [MOD] Added Confirmation Prompt
+        const confirmInvite = confirm(`${friendUsername}님을 현재 채널에 초대하시겠습니까?`);
+        if (!confirmInvite) return;
 
         const isFriend = this.friends?.some(f => f.username === friendUsername);
         if (!isFriend) return alert('친구만 초대할 수 있습니다.');
@@ -3358,7 +3362,10 @@ class AntiCodeApp {
                     <span class="friend-nickname">${this.escapeHtml(f.nickname)} <small>#${f.uid}</small></span>
                     <span class="friend-status-text">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
                 </div>
-                <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제">&times;</button>
+                <div class="friend-actions" style="display: flex; gap: 4px; align-items: center; margin-left: auto;">
+                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel(window.app.activeChannel?.id, '${f.username}')" title="방으로 초대" style="background: rgba(0,242,255,0.1); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; width: 24px; height: 24px; font-size: 0.85rem; padding: 0; display: flex; align-items: center; justify-content: center; transform: translateY(-1px);">+</button>
+                    <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제" style="margin-top: 0;">&times;</button>
+                </div>
             </li>
         `;
         }).join('');
