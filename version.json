@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.27.2345",
-    "message": "Improved update notification system: real-time SW bypass."
+    "version": "2026.01.27.2355",
+    "message": "Fixed image upload optimistic rendering for sender."
 }

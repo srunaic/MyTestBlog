@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2345';
+const APP_VERSION = '2026.01.27.2355';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -5088,7 +5088,7 @@ class AntiCodeApp {
 
                     try {
                         const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
-                        if (opt) this.finalizeOptimistic(opt, String(data?.id || ''));
+                        if (opt) this.finalizeOptimistic(opt, { ...newMessage, id: data?.id });
                     } catch (_) { }
 
                     // Offline push notification (file/image message)
