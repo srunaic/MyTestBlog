@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2305';
+const APP_VERSION = '2026.01.27.2315';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -776,7 +776,7 @@ class AntiCodeApp {
         }
 
         // [MOD] On Custom Pages:
-        // Show channels mapped to this page + ALWAYS show channels I've joined/own
+        // Hide standard public channels unless mapped to this page OR active.
         const items = this.channelPageItems.get(this.activeChannelPageId) || [];
         const pageChannelIds = new Set(items.map(it => String(it.channel_id)));
 
@@ -784,9 +784,21 @@ class AntiCodeApp {
             const sid = String(ch.id);
             const isOwner = me && String(ch.owner_id) === String(me);
             const isMember = me && this.myJoinedChannelIds.has(sid);
+            const isActive = this.activeChannel && sid === String(this.activeChannel.id);
 
-            // Show if mapped to page OR if user is a specific member/owner of it
-            return pageChannelIds.has(sid) || isOwner || isMember;
+            // 1. Show if specifically mapped to this custom page
+            if (pageChannelIds.has(sid)) return true;
+
+            // 2. Always show the channel I am CURRENTLY in
+            if (isActive) return true;
+
+            // 3. For HIDDEN/PRIVATE rooms, show if I joined them (Persistent access as requested)
+            if (ch.type === 'open_hidden') {
+                return (isOwner || isMember);
+            }
+
+            // 4. For standard public channels, hide if not on this page
+            return false;
         });
 
         // Sort by page order if mapped, otherwise append to end
