@@ -364,7 +364,17 @@
                         <span id="auth-switch-text">계정이 없으신가요?</span>
                         <a href="javascript:void(0)" id="auth-switch-link" onclick="toggleAuthMode()">회원가입</a>
                     </div>
-                    <button type="button" class="cancel-btn full" onclick="closeAuthModal()">CLOSE</button>
+                    <!-- [NEW] Account Recovery Links -->
+                    <div class="recovery-links"
+                        style="margin-top: 10px; font-size: 0.8rem; text-align: center; opacity: 0.7;">
+                        <a href="javascript:void(0)" onclick="openRecoveryModal('id')"
+                            style="color: var(--futuristic-accent); text-decoration: none; margin-right: 15px;">아이디
+                            찾기</a>
+                        <a href="javascript:void(0)" onclick="openRecoveryModal('pw')"
+                            style="color: var(--futuristic-accent); text-decoration: none;">비밀번호 찾기</a>
+                    </div>
+                    <button type="button" class="cancel-btn full" onclick="closeAuthModal()"
+                        style="margin-top: 20px;">CLOSE</button>
                 </div>
             </form>
         </div>
@@ -411,6 +421,30 @@
                     <!-- Activity items rendered here -->
                 </div>
             </div>
+        </div>
+    </div>
+    <!-- 4. Recovery Modal [NEW] -->
+    <div id="recovery-modal" class="modal-overlay">
+        <div class="modal-content auth-modal">
+            <h2 id="recovery-modal-title">ACCOUNT RECOVERY</h2>
+            <form id="recovery-form">
+                <div class="form-group" id="recovery-nickname-group">
+                    <label>NICKNAME</label>
+                    <input type="text" id="recovery-nickname" required placeholder="가입 시 입력한 닉네임">
+                </div>
+                <div class="form-group" id="recovery-username-group" style="display:none;">
+                    <label>ID</label>
+                    <input type="text" id="recovery-username" placeholder="가입 시 입력한 아이디">
+                </div>
+                <div id="recovery-result"
+                    style="margin: 15px 0; padding: 10px; background: rgba(0,242,255,0.1); border-radius: 5px; display: none; text-align: center; color: #00f2ff; word-break: break-all;">
+                </div>
+                <div class="modal-btns">
+                    <button type="submit" id="recovery-submit-btn" class="submit-btn full">SEARCH</button>
+                    <button type="button" class="cancel-btn full" onclick="closeRecoveryModal()"
+                        style="margin-top: 10px;">CLOSE</button>
+                </div>
+            </form>
         </div>
     </div>
     <!-- 3. Chatbot UI -->

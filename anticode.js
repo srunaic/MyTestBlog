@@ -3162,11 +3162,11 @@ class AntiCodeApp {
 
     async loadFriends() {
         try {
-            // Direct Query based on verified schema: id, user_username, friend_username, created_at
+            // Step 1: Fetch mutual friendships (where I am the user OR I am the friend)
             const { data: friendsData, error } = await this.supabase
                 .from('anticode_friends')
-                .select('friend_username')
-                .eq('user_username', this.currentUser.username);
+                .select('user_username, friend_username')
+                .or(`user_username.eq.${this.currentUser.username},friend_username.eq.${this.currentUser.username}`);
 
             if (error) { throw error; }
 
@@ -3176,13 +3176,19 @@ class AntiCodeApp {
                 return;
             }
 
-            const usernames = friendsData.map(f => f.friend_username).filter(Boolean);
+            // Map to the "other" person's username
+            const usernames = friendsData.map(f =>
+                f.user_username === this.currentUser.username ? f.friend_username : f.user_username
+            ).filter(Boolean);
+
+            // Deduplicate in case of mutual records
+            const uniqueUsernames = [...new Set(usernames)];
 
             // Step 2: Batch fetch user info for all friends to populate cache
             const { data: usersData, error: usersError } = await this.supabase
                 .from('anticode_users')
                 .select('username, nickname, uid, avatar_url')
-                .in('username', usernames);
+                .in('username', uniqueUsernames);
 
             if (usersError) throw usersError;
 
@@ -3198,7 +3204,7 @@ class AntiCodeApp {
             }
 
             // Construct friends list from cache
-            this.friends = usernames.map(uname => {
+            this.friends = uniqueUsernames.map(uname => {
                 const info = this.userCache[uname];
                 return {
                     username: uname,
@@ -3208,7 +3214,6 @@ class AntiCodeApp {
                     online: false
                 };
             });
-
             this.renderFriends();
         } catch (error) {
             console.error('Failed to load friends:', error);
@@ -3228,11 +3233,20 @@ class AntiCodeApp {
         if (searchError || !target) { alert('사용자를 찾을 수 없습니다.'); return false; }
         if (target.username === this.currentUser.username) { alert('자기 자신은 친구로 추가할 수 없습니다.'); return false; }
 
+        // Check if already friends in EITHER direction
+        const { data: existing, error: checkError } = await this.supabase
+            .from('anticode_friends')
+            .select('id')
+            .or(`and(user_username.eq.${this.currentUser.username},friend_username.eq.${target.username}),and(user_username.eq.${target.username},friend_username.eq.${this.currentUser.username})`)
+            .maybeSingle();
+
+        if (existing) { alert('이미 친구로 등록된 사용자입니다.'); return false; }
+
         const { error: addError } = await this.supabase
             .from('anticode_friends')
             .insert([{ user_username: this.currentUser.username, friend_username: target.username }]);
 
-        if (addError) { alert('이미 친구거나 오류가 발생했습니다.'); return false; }
+        if (addError) { alert('친구 추가 중 오류가 발생했습니다: ' + addError.message); return false; }
 
         await this.loadFriends();
         return true;

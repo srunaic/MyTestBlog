@@ -374,6 +374,8 @@ window.deleteComment = (id) => deleteComment(id);
 window.editComment = (id, content) => editComment(id, content);
 window.handleReaction = (id, type) => handleReaction(id, type);
 window.renderUserActivity = (tab) => renderUserActivity(tab);
+window.openRecoveryModal = (mode) => openRecoveryModal(mode);
+window.closeRecoveryModal = () => closeRecoveryModal();
 
 // ==========================================
 // 3. DOM ELEMENTS (Initialized in init)
@@ -452,6 +454,14 @@ function initializeDOMElements() {
     submitCommentBtn = document.getElementById('submit-comment-btn');
     emojiPicker = document.getElementById('emoticon-picker');
     activityContent = document.getElementById('activity-content');
+
+    const recoveryForm = document.getElementById('recovery-form');
+    if (recoveryForm) {
+        recoveryForm.onsubmit = (e) => {
+            e.preventDefault();
+            handleRecoverySubmit();
+        };
+    }
 }
 
 // ==========================================
@@ -752,6 +762,79 @@ function closeAuthModal() {
 }
 function toggleAuthMode() {
     openAuthModal(authMode === 'login' ? 'signup' : 'login');
+}
+
+// --- Account Recovery Handlers [NEW] ---
+let recoveryMode = 'id'; // 'id' or 'pw'
+function openRecoveryModal(mode) {
+    recoveryMode = mode;
+    const modal = document.getElementById('recovery-modal');
+    const title = document.getElementById('recovery-modal-title');
+    const userGroup = document.getElementById('recovery-username-group');
+    const resBox = document.getElementById('recovery-result');
+    const nickInp = document.getElementById('recovery-nickname');
+    const userInp = document.getElementById('recovery-username');
+
+    if (!modal) return;
+    modal.classList.add('active');
+    if (resBox) resBox.style.display = 'none';
+    if (nickInp) nickInp.value = '';
+    if (userInp) userInp.value = '';
+
+    if (title) title.textContent = mode === 'id' ? 'FIND ID' : 'FIND PASSWORD';
+    if (userGroup) userGroup.style.display = mode === 'pw' ? 'block' : 'none';
+}
+
+function closeRecoveryModal() {
+    const modal = document.getElementById('recovery-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+async function handleRecoverySubmit() {
+    const nick = document.getElementById('recovery-nickname').value.trim();
+    const username = document.getElementById('recovery-username').value.trim();
+    const resBox = document.getElementById('recovery-result');
+
+    if (!nick) return alert('닉네임을 입력해주세요.');
+    if (recoveryMode === 'pw' && !username) return alert('아이디를 입력해주세요.');
+
+    try {
+        let foundUser = null;
+        if (supabase) {
+            let query = supabase.from('users').select('username, password').eq('nickname', nick);
+            if (recoveryMode === 'pw') query = query.eq('username', username);
+
+            const { data, error } = await query.maybeSingle();
+            if (error) throw error;
+            foundUser = data;
+        } else {
+            // Local fallback
+            foundUser = users.find(u => {
+                const nickMatch = u.nickname === nick;
+                if (recoveryMode === 'pw') return nickMatch && u.username === username;
+                return nickMatch;
+            });
+        }
+
+        if (resBox) {
+            resBox.style.display = 'block';
+            if (foundUser) {
+                if (recoveryMode === 'id') {
+                    // Masking ID for security? No, the user asked to "find" it. Let's show it or partial.
+                    // The user said "Find ID, Find Password", so I'll show it but maybe masked if it's sensitive.
+                    // Given the request style, I'll just show it.
+                    resBox.innerHTML = `찾으시는 아이디는: <strong>${foundUser.username}</strong> 입니다.`;
+                } else {
+                    resBox.innerHTML = `비밀번호는: <strong>${foundUser.password}</strong> 입니다.`;
+                }
+            } else {
+                resBox.innerHTML = `<span style="color:#ff007a;">일치하는 정보가 없습니다.</span>`;
+            }
+        }
+    } catch (err) {
+        console.error('Recovery error:', err);
+        alert('조회 중 오류가 발생했습니다.');
+    }
 }
 
 
