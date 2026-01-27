@@ -1,5 +1,5 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v2.4'; // [PERFORMANCE] Increment version
+const CACHE_NAME = 'nanodoroshi-v2.5'; // [UPDATE] Force refresh for new versioning logic
 const ASSETS = [
     '/',
     '/index.html',
@@ -47,6 +47,9 @@ self.addEventListener('activate', event => {
 // Fetch Event Handler: Reliability & Performance
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
+
+    // [MOD] EXCLUDE version.json from SW cache (Must be real-time for update alerts)
+    if (url.pathname.includes('version.json')) return;
 
     // 1. Critical bypass for non-GET (Supabase POST/Auth/Realtime)
     if (event.request.method !== 'GET' || url.hostname.includes('supabase.co')) return;

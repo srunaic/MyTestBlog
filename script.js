@@ -25,7 +25,7 @@ var currentPage = 1;
 var postsPerPage = 12;
 
 // [NEW] Version Control
-const APP_VERSION = '2026.01.27.2335';
+const APP_VERSION = '2026.01.27.2345';
 var isServerDown = false;
 
 // 🧵 Web Worker (Logic Thread) Manager
@@ -543,7 +543,7 @@ async function init() {
     checkServerHealth();
     checkAppUpdate();
     setInterval(checkServerHealth, 30000); // 30s
-    setInterval(checkAppUpdate, 60000 * 5); // 5m
+    setInterval(checkAppUpdate, 30000); // [MOD] Increased frequency for better detection (30s)
 
     if (submitCommentBtn) {
         submitCommentBtn.onclick = submitComment;
@@ -666,9 +666,11 @@ async function checkAppUpdate() {
         const res = await fetch('./version.json?t=' + Date.now());
         const data = await res.json();
         if (data && data.version && data.version !== APP_VERSION) {
-            console.log('Update found:', data.version, '(Current:', APP_VERSION, ')');
+            console.log('[UPDATE] New version available:', data.version, '(Current:', APP_VERSION, ')');
             const updatePrompt = document.getElementById('update-notification');
             if (updatePrompt) updatePrompt.style.display = 'flex';
+        } else {
+            console.log('[DEBUG] App version is current:', APP_VERSION);
         }
     } catch (e) {
         // Silent fail for version check

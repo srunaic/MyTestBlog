@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2335';
+const APP_VERSION = '2026.01.27.2345';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -2976,7 +2976,7 @@ class AntiCodeApp {
             this.checkServerHealth();
             this.checkAppUpdate();
             setInterval(() => this.checkServerHealth(), 30000);
-            setInterval(() => this.checkAppUpdate(), 60000 * 5);
+            setInterval(() => this.checkAppUpdate(), 30000); // [MOD] Increased frequency (30s)
 
             // Admin-only: auto-clean old chat messages on a 90-day cadence
             await this.maybeAutoCleanupMessages();
@@ -3061,9 +3061,11 @@ class AntiCodeApp {
             const res = await fetch('./version.json?t=' + Date.now());
             const data = await res.json();
             if (data && data.version && data.version !== APP_VERSION) {
-                console.log('Update found:', data.version, '(Current:', APP_VERSION, ')');
+                console.log('[UPDATE] New version available:', data.version, '(Current:', APP_VERSION, ')');
                 const updatePrompt = document.getElementById('update-notification');
                 if (updatePrompt) updatePrompt.style.display = 'flex';
+            } else {
+                console.log('[DEBUG] Channel view version is current:', APP_VERSION);
             }
         } catch (e) { }
     }
