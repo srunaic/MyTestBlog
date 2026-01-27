@@ -9,6 +9,8 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
+const APP_VERSION = '2026.01.27.2223';
+var isServerDown = false;
 
 const CATEGORY_NAMES = {
     notice: '📢 공지사항',
@@ -2946,6 +2948,12 @@ class AntiCodeApp {
             this.loadMicGainPreference();
             await this.refreshPushStatus();
 
+            // [NEW] Health Checks & Update Polling
+            this.checkServerHealth();
+            this.checkAppUpdate();
+            setInterval(() => this.checkServerHealth(), 30000);
+            setInterval(() => this.checkAppUpdate(), 60000 * 5);
+
             // Admin-only: auto-clean old chat messages on a 90-day cadence
             await this.maybeAutoCleanupMessages();
 
@@ -2997,9 +3005,43 @@ class AntiCodeApp {
             } else {
                 await this.handleLastVisitedOrFirstChannel();
             }
+            this.toggleMaintenanceMode(false);
         } catch (e) {
             console.error('App Init Error:', e);
+            this.toggleMaintenanceMode(true);
         }
+    }
+
+    // --- Health & Update Logic [NEW] ---
+    async checkServerHealth() {
+        if (!this.supabase) return;
+        try {
+            const { error } = await this.supabase.from('anticode_channels').select('id').limit(1);
+            if (error) throw error;
+            this.toggleMaintenanceMode(false);
+        } catch (e) {
+            console.warn('Health check failed:', e);
+            this.toggleMaintenanceMode(true);
+        }
+    }
+
+    toggleMaintenanceMode(isDown) {
+        const overlay = document.getElementById('maintenance-overlay');
+        if (!overlay) return;
+        isServerDown = isDown;
+        overlay.style.display = isDown ? 'flex' : 'none';
+    }
+
+    async checkAppUpdate() {
+        try {
+            const res = await fetch('./version.json?t=' + Date.now());
+            const data = await res.json();
+            if (data && data.version && data.version !== APP_VERSION) {
+                console.log('Update found:', data.version, '(Current:', APP_VERSION, ')');
+                const updatePrompt = document.getElementById('update-notification');
+                if (updatePrompt) updatePrompt.style.display = 'flex';
+            }
+        } catch (e) { }
     }
 
     async handleLastVisitedOrFirstChannel() {

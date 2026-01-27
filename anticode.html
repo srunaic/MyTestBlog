@@ -15,9 +15,97 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap"
         rel="stylesheet">
+    <style>
+        /* Server Maintenance & Update UI */
+        #maintenance-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 16, 0.98);
+            color: white;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            text-align: center;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        #maintenance-overlay h1 {
+            color: #ffb92f;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 185, 47, 0.5);
+        }
+
+        #maintenance-overlay p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        #update-notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffb92f;
+            color: black;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 10002;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            font-weight: bold;
+            animation: slideUp 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes slideUp {
+            from {
+                bottom: -100px;
+                opacity: 0;
+            }
+
+            to {
+                bottom: 80px;
+                opacity: 1;
+            }
+        }
+
+        #update-notification button {
+            background: black;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        #update-notification button:hover {
+            transform: scale(1.05);
+            background: #333;
+        }
+    </style>
 </head>
 
 <body class="anticode-body">
+    <!-- Maintenance & Update UI -->
+    <div id="maintenance-overlay">
+        <h1>🚧 ANTICODE MAINTENANCE</h1>
+        <p>현재 서버 점검 중이거나 데이터베이스 연결이 원활하지 않습니다.<br>잠시 후 다시 시도해 주세요.</p>
+    </div>
+    <div id="update-notification">
+        <span>앱 업데이트가 필요합니다.</span>
+        <button onclick="location.reload()">재시작</button>
+    </div>
+
     <div id="anticode-container">
         <!-- Sidebar: Channels -->
         <aside class="anticode-sidebar">

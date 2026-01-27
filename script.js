@@ -24,6 +24,10 @@ var SESSION_KEY = 'nano_dorothy_session';
 var currentPage = 1;
 var postsPerPage = 12;
 
+// [NEW] Version Control
+const APP_VERSION = '2026.01.27.2223';
+var isServerDown = false;
+
 // 🧵 Web Worker (Logic Thread) Manager
 const LogicWorker = {
     worker: null,
@@ -535,6 +539,12 @@ async function init() {
     // Initialize Notifications (Non-blocking)
     setTimeout(() => NotificationManager.init(), 500);
 
+    // [NEW] Health Checks & Update Polling
+    checkServerHealth();
+    checkAppUpdate();
+    setInterval(checkServerHealth, 30000); // 30s
+    setInterval(checkAppUpdate, 60000 * 5); // 5m
+
     if (submitCommentBtn) {
         submitCommentBtn.onclick = submitComment;
     }
@@ -624,8 +634,44 @@ async function loadData() {
             if (!userError && userData) users = userData;
         }
 
+        toggleMaintenanceMode(false);
     } catch (err) {
         console.error('Data load error:', err);
+        toggleMaintenanceMode(true);
+    }
+}
+
+// --- Health & Update Logic [NEW] ---
+async function checkServerHealth() {
+    if (!supabase) return;
+    try {
+        const { error } = await supabase.from('posts').select('id', { count: 'exact', head: true }).limit(1);
+        if (error) throw error;
+        toggleMaintenanceMode(false);
+    } catch (e) {
+        console.warn('Health check failed:', e);
+        toggleMaintenanceMode(true);
+    }
+}
+
+function toggleMaintenanceMode(isDown) {
+    const overlay = document.getElementById('maintenance-overlay');
+    if (!overlay) return;
+    isServerDown = isDown;
+    overlay.style.display = isDown ? 'flex' : 'none';
+}
+
+async function checkAppUpdate() {
+    try {
+        const res = await fetch('./version.json?t=' + Date.now());
+        const data = await res.json();
+        if (data && data.version && data.version !== APP_VERSION) {
+            console.log('Update found:', data.version, '(Current:', APP_VERSION, ')');
+            const updatePrompt = document.getElementById('update-notification');
+            if (updatePrompt) updatePrompt.style.display = 'flex';
+        }
+    } catch (e) {
+        // Silent fail for version check
     }
 }
 
