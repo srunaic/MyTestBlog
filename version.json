@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.27.2355",
-    "message": "Fixed image upload optimistic rendering for sender."
+    "version": "2026.01.28.0015",
+    "message": "Strict page isolation + Realtime channel deletion sync."
 }

@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2355';
+const APP_VERSION = '2026.01.28.0015';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -767,11 +767,22 @@ class AntiCodeApp {
 
         // 2. Determine which channels to show based on the Active Page
         if (this.activeChannelPageId === 'all') {
-            // [MOD] On 'All' page (The Hub): Show all public channels + any private/hidden ones I've joined/own
+            // [MOD] Hub Logic: Hide private channels that are already mapped to a custom page.
+            const allMappedIds = new Set();
+            this.channelPageItems.forEach((items) => {
+                items.forEach(it => allMappedIds.add(String(it.channel_id)));
+            });
+
             return userAccessibleChannels.filter(ch => {
+                const sid = String(ch.id);
                 const isOwner = me && String(ch.owner_id) === String(me);
-                const isMember = me && this.myJoinedChannelIds.has(String(ch.id));
-                return ch.is_public === true || isOwner || isMember;
+                const isMember = me && this.myJoinedChannelIds.has(sid);
+
+                const isPublic = ch.is_public === true;
+                const isMapped = allMappedIds.has(sid);
+
+                // Show in hub if it's public OR it's a private room I own/joined but NOT assigned to a page yet.
+                return isPublic || ((isOwner || isMember) && !isMapped);
             });
         }
 
@@ -2957,6 +2968,7 @@ class AntiCodeApp {
                     try { if (this.messageSubscription) this.supabase.removeChannel(this.messageSubscription); } catch (_) { }
                     try { if (this.channelPresenceChannel) this.supabase.removeChannel(this.channelPresenceChannel); } catch (_) { }
                     try { if (this.presenceChannel) this.supabase.removeChannel(this.presenceChannel); } catch (_) { }
+                    try { if (this.channelRealtimeChannel) this.supabase.removeChannel(this.channelRealtimeChannel); } catch (_) { }
                 };
                 window.addEventListener('pagehide', cleanup, { capture: true });
                 window.addEventListener('beforeunload', cleanup, { capture: true });
@@ -2997,6 +3009,7 @@ class AntiCodeApp {
             this.setupEventListeners();
             this.renderUserInfo();
             this.setupPresence();
+            this.setupChannelRealtime();
 
             // 4. Default Channel
             const params = new URLSearchParams(window.location.search);
@@ -4117,6 +4130,38 @@ class AntiCodeApp {
                     this.lastSeenInterval = setInterval(() => this.updateLastSeen(), 60000);
                 }
             });
+    }
+
+    setupChannelRealtime() {
+        if (this.channelRealtimeChannel) this.supabase.removeChannel(this.channelRealtimeChannel);
+
+        this.channelRealtimeChannel = this.supabase.channel('global-channels')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'anticode_channels' }, (payload) => {
+                console.log('[Realtime] Channel Change:', payload);
+                const { eventType, new: newRow, old: oldRow } = payload;
+
+                if (eventType === 'INSERT') {
+                    if (!this.channels.find(c => String(c.id) === String(newRow.id))) {
+                        this.channels.push(new Channel(newRow));
+                        this.renderChannels();
+                    }
+                } else if (eventType === 'UPDATE') {
+                    const idx = this.channels.findIndex(c => String(c.id) === String(newRow.id));
+                    if (idx !== -1) {
+                        this.channels[idx] = new Channel(newRow);
+                        this.renderChannels();
+                    }
+                } else if (eventType === 'DELETE') {
+                    const deletedId = oldRow.id;
+                    this.channels = this.channels.filter(c => String(c.id) !== String(deletedId));
+                    this.renderChannels();
+                    // If active channel was deleted, switch to fallback
+                    if (this.activeChannel && String(this.activeChannel.id) === String(deletedId)) {
+                        this.handleLastVisitedOrFirstChannel();
+                    }
+                }
+            })
+            .subscribe();
     }
 
     async updateLastSeen() {
