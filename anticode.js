@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2325';
+const APP_VERSION = '2026.01.27.2328';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -782,10 +782,9 @@ class AntiCodeApp {
 
         const filtered = userAccessibleChannels.filter(ch => {
             const sid = String(ch.id);
-            const isActive = this.activeChannel && sid === String(this.activeChannel.id);
-
-            // Show only if mapped to this page OR I am currently chatting in it
-            return pageChannelIds.has(sid) || isActive;
+            // [MOD] Removed isActive check for absolute isolation.
+            // Only show if specifically mapped to this custom page.
+            return pageChannelIds.has(sid);
         });
 
         // Sort by page order if mapped, otherwise append to end

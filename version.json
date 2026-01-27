@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.27.2325",
-    "message": "Strict page isolation for custom channel lists."
+    "version": "2026.01.27.2328",
+    "message": "Absolute page isolation: Sidebar only shows mapped channels."
 }
