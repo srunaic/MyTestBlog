@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2235';
+const APP_VERSION = '2026.01.27.2245';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -752,28 +752,50 @@ class AntiCodeApp {
     }
 
     _getVisibleChannelsByActivePage() {
-        // Filter channels for sidebar based on selected page
-        // [MOD] Also filter out hidden open chats if not owner/invited
         const me = this.currentUser?.username;
-        const visibleChannels = this.channels.filter(ch => {
+
+        // 1. Filter channels that should be visible to THIS user (Ownership or Membership)
+        const userAccessibleChannels = this.channels.filter(ch => {
+            const isOwner = me && String(ch.owner_id) === String(me);
+            const isMember = me && this.myJoinedChannelIds.has(String(ch.id));
+
             if (ch.type === 'open_hidden') {
-                if (!me) return false;
-                const isOwner = String(ch.owner_id) === String(me);
-                // "myJoinedChannelIds" tracks channels I am a member of (invited/joined)
-                return isOwner || this.myJoinedChannelIds.has(String(ch.id));
+                return isOwner || isMember;
             }
             return true;
         });
 
+        // 2. Determine which channels to show based on the Active Page
         if (this.activeChannelPageId === 'all') {
-            return visibleChannels.filter(ch => ch.is_public === true);
+            // [MOD] On 'All' page, show all public channels + any private/hidden ones I've joined
+            return userAccessibleChannels.filter(ch => {
+                const isOwner = me && String(ch.owner_id) === String(me);
+                const isMember = me && this.myJoinedChannelIds.has(String(ch.id));
+                return ch.is_public === true || isOwner || isMember;
+            });
         }
+
+        // [MOD] On Custom Pages:
+        // Show channels mapped to this page + ALWAYS show channels I've joined/own
         const items = this.channelPageItems.get(this.activeChannelPageId) || [];
+        const pageChannelIds = new Set(items.map(it => String(it.channel_id)));
+
+        const filtered = userAccessibleChannels.filter(ch => {
+            const sid = String(ch.id);
+            const isOwner = me && String(ch.owner_id) === String(me);
+            const isMember = me && this.myJoinedChannelIds.has(sid);
+
+            // Show if mapped to page OR if user is a specific member/owner of it
+            return pageChannelIds.has(sid) || isOwner || isMember;
+        });
+
+        // Sort by page order if mapped, otherwise append to end
         const order = new Map(items.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
-        const filtered = visibleChannels
-            .filter(ch => order.has(String(ch.id)))
-            .sort((a, b) => (order.get(String(a.id)) ?? 0) - (order.get(String(b.id)) ?? 0));
-        return filtered;
+        return filtered.sort((a, b) => {
+            const posA = order.get(String(a.id)) ?? 9999;
+            const posB = order.get(String(b.id)) ?? 9999;
+            return posA - posB;
+        });
     }
 
     renderChannelPageSelector() {
