@@ -2802,8 +2802,8 @@ class AntiCodeApp {
                     body: file
                 });
                 const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data?.ok) {
-                    throw new Error(data?.error || `upload_failed (${res.status})`);
+                if (!res.ok || !data?.ok || !data?.url) {
+                    throw new Error(data?.error || `upload_failed (${res.status}) - No URL returned`);
                 }
                 return data.url;
             } catch (r2Error) {
@@ -2832,6 +2832,7 @@ class AntiCodeApp {
             .from(bucket)
             .getPublicUrl(filePath);
 
+        if (!publicUrl) throw new Error('Supabase Public URL gen failed');
         return publicUrl;
     }
 
@@ -3889,8 +3890,8 @@ class AntiCodeApp {
                         </div>
                     </div>
                     <div class="message-text">
-                        ${contentHtml}
-                        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')"></div>` : ''}
+                        ${contentHtml || (msg.image_url ? '' : '<span style="color:red; font-size:0.8rem;">[내용 없음]</span>')}
+                        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')" onerror="this.onerror=null; this.parentNode.innerHTML='<span style=\\'color:red; font-size:0.8rem;\\'>❌ 이미지 로드 실패</span>'"></div>` : ''}
                     </div>
                 </div>
             `;
@@ -4957,7 +4958,10 @@ class AntiCodeApp {
                         }
                     }
 
+
                     const url = await this.uploadFile(uploadFile);
+                    console.log('Uploaded Chat Image URL:', url); // Debug
+                    if (!url) throw new Error('업로드 URL을 가져오지 못했습니다.');
 
                     // Use same optimistic + finalize flow as text messages
                     const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
