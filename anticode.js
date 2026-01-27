@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.27.2223';
+const APP_VERSION = '2026.01.27.2235';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {

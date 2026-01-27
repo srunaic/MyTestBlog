@@ -22,22 +22,20 @@ drop policy if exists "Users can view their own friends" on public.anticode_frie
 create policy "Users can view their own friends"
 on public.anticode_friends for select
 using (
-  auth.role() = 'authenticated' 
-  -- Simplified: If you are authenticated, you can read rows. 
-  -- (Ideally you restrict to your own username, but this ensures functionality first)
+  true -- Allow all valid requests (or check anon specifically if desired)
 );
 
 -- Policy: Allow users to add friends
 drop policy if exists "Users can add friends" on public.anticode_friends;
 create policy "Users can add friends"
 on public.anticode_friends for insert
-with check ( auth.role() = 'authenticated' );
+with check ( true );
 
 -- Policy: Allow users to delete friends
 drop policy if exists "Users can delete friends" on public.anticode_friends;
 create policy "Users can delete friends"
 on public.anticode_friends for delete
-using ( auth.role() = 'authenticated' );
+using ( true );
 
 -- 4. (Optional) Flush schema cache advice
 -- If this still fails, try Reloading the page or checking Console Log for "406 Not Acceptable" which means Schema Cache issue.
