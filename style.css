@@ -1218,9 +1218,9 @@ body {
         flex-direction: column;
         position: relative;
         border-radius: 20px;
-        background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 35, 0.6));
-        border: 1px solid var(--futuristic-accent);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-soft);
     }
 
     .title-item h2,
@@ -1478,6 +1478,14 @@ body {
     bottom: 30px;
     right: 30px;
     z-index: 10000;
+}
+
+@media screen and (max-width: 768px) {
+    #chatbot-container {
+        bottom: 90px;
+        /* Lift up to avoid overlapping with layout-switcher */
+        right: 20px;
+    }
 }
 
 .chat-toggle-btn {
@@ -1845,15 +1853,16 @@ body {
     bottom: 25px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(10, 10, 30, 0.8);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     padding: 8px;
     border-radius: 50px;
-    border: 1px solid var(--futuristic-accent);
+    border: 1px solid var(--accent-soft);
     display: none;
     gap: 5px;
-    z-index: 9999;
-    box-shadow: 0 5px 30px rgba(0, 242, 255, 0.2);
+    z-index: 9998;
+    /* Just below chatbot to prevent click blocking */
+    box-shadow: 0 5px 30px rgba(255, 105, 180, 0.2);
 }
 
 @media screen and (max-width: 768px) {
