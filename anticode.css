@@ -121,12 +121,21 @@
 }
 
 .add-channel-btn {
-    display: none !important;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-left: auto;
 }
 
 .add-channel-btn:hover {
     background: var(--accent-hover);
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 #channel-list {

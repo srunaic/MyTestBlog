@@ -3474,7 +3474,7 @@ class AntiCodeApp {
                     var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
                     const pageOwner = page ? page.username : null;
                     const isPageOwner = pageOwner && String(pageOwner) === String((this.currentUser && this.currentUser.username));
-                    return '';
+                    return (isAppAdmin || isPageOwner) ? '<button id="open-create-channel-cat" class="add-channel-btn">채팅방 추가</button>' : '';
                 })()}
                 </div>
                 <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">

@@ -93,10 +93,8 @@ body {
     letter-spacing: -5px;
     text-transform: uppercase;
     margin-bottom: 0.5rem;
-    background: linear-gradient(to bottom, #d81b60, var(--accent-vibrant));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--accent-main);
+    filter: drop-shadow(0 2px 10px rgba(255, 105, 180, 0.1));
     line-height: 1;
 }
 
@@ -151,17 +149,15 @@ body {
 .hero-nav a,
 .hero-nav .user-info-text {
     text-decoration: none;
-    color: var(--futuristic-text);
+    color: var(--accent-main);
     font-size: 0.8rem;
-    font-weight: 950;
-    letter-spacing: 1px;
+    font-weight: 900;
     text-transform: uppercase;
-    opacity: 0.8;
+    letter-spacing: 1px;
     transition: 0.3s;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 10px 20px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 16px;
+    border-radius: 50px;
+    border: 1px solid transparent;
     display: flex;
     align-items: center;
     justify-content: center;
