@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.28.2210",
-    "message": "PWA fix: Safe-area insets and standalone mode viewport fixes for Android chat input visibility."
+    "version": "2026.01.28.2218",
+    "message": "Fix: clearNotifications export now uses NotificationManager correctly."
 }

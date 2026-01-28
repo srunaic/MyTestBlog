@@ -5258,7 +5258,7 @@ if (typeof window !== 'undefined') {
         openAuthModal: (mode) => app.openAuthModal(mode),
         closeAuthModal: () => app.closeAuthModal(),
         toggleVoice: () => app.toggleVoice(),
-        clearNotifications: () => app.clearNotifications(),
+        clearNotifications: () => NotificationManager.clearNotifications(),
         toggleSidebar: () => app.toggleSidebar(),
         toggleMemberSidebar: () => app.toggleMemberSidebar(),
         editChannel: (id) => app.editChannel(id),
