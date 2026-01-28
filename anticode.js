@@ -3325,7 +3325,7 @@ class AntiCodeApp {
                     <span class="friend-status-text" style="display: block; color: var(--text-muted); font-size: 0.7rem;">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
                 </div>
                 <div class="friend-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel((window.app.activeChannel ? window.app.activeChannel.id : null), '${f.username}')" title="방으로 초대" style="background: rgba(0,242,255,0.15); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; width: 28px; height: 28px; font-size: 1rem; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;">+</button>
+                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel((window.app.activeChannel ? window.app.activeChannel.id : null), '${f.username}')" title="방으로 초대">초대</button>
                     <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제" style="margin: 0; background: rgba(218, 55, 60, 0.1); border: 1px solid #da373c; color: #da373c; width: 28px; height: 28px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
                 </div>
             </li>
@@ -3474,7 +3474,7 @@ class AntiCodeApp {
                     var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
                     const pageOwner = page ? page.username : null;
                     const isPageOwner = pageOwner && String(pageOwner) === String((this.currentUser && this.currentUser.username));
-                    return (isAppAdmin || isPageOwner) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : '';
+                    return '';
                 })()}
                 </div>
                 <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">

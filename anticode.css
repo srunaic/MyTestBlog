@@ -121,18 +121,7 @@
 }
 
 .add-channel-btn {
-    background: var(--accent);
-    border: none;
-    color: #fff;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    font-size: 1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
+    display: none !important;
 }
 
 .add-channel-btn:hover {
@@ -511,21 +500,31 @@
     margin: 4px 8px;
 }
 
-.delete-friend-btn {
+.delete-friend-btn,
+.invite-friend-btn {
     margin-left: auto;
-    background: transparent;
-    border: 1px solid #da373c;
-    color: #da373c;
-    font-size: 0.75rem;
-    padding: 4px 8px;
-    border-radius: 4px;
+    background: var(--accent-soft);
+    border: none;
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 50px;
     cursor: pointer;
     transition: 0.2s;
+    font-weight: 900;
+}
+
+.delete-friend-btn {
+    background: #ffcdd2;
+    color: #c62828;
 }
 
 .delete-friend-btn:hover {
-    background: #da373c;
-    color: #fff;
+    background: #ef9a9a;
+}
+
+.invite-friend-btn:hover {
+    background: var(--accent);
 }
 
 .friend-item:hover {
