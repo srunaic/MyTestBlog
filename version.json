@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.28.1935",
-    "message": "Android compatibility fix: relaxed obfuscation + removed browser block."
+    "version": "2026.01.28.1945",
+    "message": "Beta restriction removed: accessible to everyone."
 }

@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.28.1935';
+const APP_VERSION = '2026.01.28.1945';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -183,7 +183,7 @@ const SoundFX = {
     },
 
     micOn() {
-        // Upward double chirp
+        // 마이크 온
         this._beep({ freq: 880, durationMs: 55, gain: 0.05, type: 'triangle' });
         this._beep({ freq: 1320, durationMs: 55, gain: 0.05, type: 'triangle', delayMs: 70 });
     },
@@ -2886,41 +2886,6 @@ class AntiCodeApp {
         };
 
         LogicWorker.init(); // [MULTI-THREAD] Start the Logic Thread
-
-        // 0. Beta Access Check (Restrict browser access, allow only APK/App context)
-        const BETA_KEY = 'ANTICODE_BETA_2026';
-        const granted = localStorage.getItem('anticode_beta_granted');
-
-        // Admin Exception: if already logged in as admin, bypass all checks
-        const tempAuth = this.getAuth();
-        const isAdmin = tempAuth && tempAuth.role === 'admin';
-
-        if (!isAdmin) {
-            // [MOD] Removed standalone/APK restriction to fix Android browser compatibility
-            // If in app, check for beta key
-            if (granted !== 'true') {
-                const guard = document.getElementById('beta-guard');
-                const input = document.getElementById('beta-key-input');
-                const btn = document.getElementById('verify-beta-btn');
-
-                if (guard && input && btn) {
-                    guard.style.display = 'flex';
-                    btn.onclick = () => {
-                        if (input.value === BETA_KEY) {
-                            localStorage.setItem('anticode_beta_granted', 'true');
-                            guard.style.display = 'none';
-                            this.init();
-                        } else {
-                            alert('잘못된 베타키입니다.');
-                            input.value = '';
-                        }
-                    };
-                    input.onkeydown = (e) => { if (e.key === 'Enter') btn.click(); };
-                }
-                return;
-            }
-        }
-
 
         // One-time audio unlock on first user interaction (helps mobile play effects reliably)
         try {
