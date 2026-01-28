@@ -25,7 +25,7 @@ var currentPage = 1;
 var postsPerPage = 12;
 
 // [NEW] Version Control
-const APP_VERSION = '2026.01.28.1945';
+const APP_VERSION = '2026.01.28.2015';
 var isServerDown = false;
 
 // 🧵 Web Worker (Logic Thread) Manager
@@ -275,7 +275,7 @@ function isProUser() {
     if (currentUser && currentUser.role === 'admin') return true;
 
     // Optional future column: users.plan = "pro"
-    const plan = String(currentUser?.plan || '').toLowerCase();
+    const plan = String((currentUser && currentUser.plan) || '').toLowerCase();
     if (plan === 'pro') return true;
 
     return false;
@@ -302,8 +302,8 @@ async function uploadToR2(file, folder = 'blog') {
         body: file
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) {
-        const errMsg = data?.error || `upload_failed (${res.status})`;
+    if (!res.ok || !data || !data.ok) {
+        const errMsg = (data && data.error) || ('upload_failed (' + res.status + ')');
         throw new Error(errMsg);
     }
     return data.url;
@@ -1173,7 +1173,8 @@ function showDetail(id) {
 
     const isAuthor = currentUser && currentUser.nickname === post.author;
     const canManage = isAdminMode || isAuthor;
-    const catName = categories.find(c => c.id === post.category)?.name.split(' (')[0] || '미분류';
+    const foundCat = categories.find(function (c) { return c.id === post.category; });
+    const catName = (foundCat && foundCat.name) ? foundCat.name.split(' (')[0] : '미분류';
 
     detailContent.innerHTML = `
         <header class="detail-header">

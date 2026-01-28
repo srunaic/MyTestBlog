@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.28.1945';
+const APP_VERSION = '2026.01.28.2015';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -153,7 +153,9 @@ const SoundFX = {
         try {
             this.ctx = new AC();
             // Resume best-effort (requires user gesture on most browsers)
-            this.ctx.resume?.().catch(() => { });
+            if (this.ctx.resume) {
+                this.ctx.resume().catch(function () { });
+            }
             this.unlocked = true;
         } catch (_) {
             this.ctx = null;
@@ -166,7 +168,7 @@ const SoundFX = {
         this.ensure();
         const ctx = this.ctx;
         if (!ctx || ctx.state !== 'running') return;
-        const vol = Number(NotificationManager.volume ?? 0.8);
+        const vol = Number(NotificationManager.volume !== undefined ? NotificationManager.volume : 0.8);
         const gainScaled = gain * (Number.isFinite(vol) ? Math.max(0, Math.min(1, vol)) : 0.8);
         const t0 = ctx.currentTime + (delayMs / 1000);
         const osc = ctx.createOscillator();
@@ -271,17 +273,19 @@ const NotificationManager = {
             // [NEW] Real-time Invite listener
             .on('postgres_changes', { event: 'INSERT', table: 'anticode_channel_members' }, async (payload) => {
                 // Check if this invite is for ME
-                const me = window.app?.currentUser?.username;
+                var me = window.app && window.app.currentUser ? window.app.currentUser.username : null;
                 if (!me || payload.new.username !== me) return;
 
                 console.log('Real-time invite received:', payload.new);
                 await window.app.loadMyChannelMemberships();
                 window.app.renderChannels();
                 if (window.NotificationManager) window.NotificationManager.playSound();
-                window.app.showInAppToast?.(`새로운 채널에 초대되었습니다!`);
+                if (window.app && window.app.showInAppToast) {
+                    window.app.showInAppToast("새로운 채널에 초대되었습니다!");
+                }
             })
             .on('postgres_changes', { event: 'UPDATE', table: 'anticode_channel_members' }, async (payload) => {
-                const me = window.app?.currentUser?.username;
+                var me = window.app && window.app.currentUser ? window.app.currentUser.username : null;
                 if (!me || payload.new.username !== me) return;
                 // If status changed to 'invited' (re-invite?) or 'joined' (accepted elsewhere)
                 await window.app.loadMyChannelMemberships();
@@ -293,8 +297,8 @@ const NotificationManager = {
     notify(type, data) {
         // Skip notifying myself for chat events
         try {
-            const me = window.app?.currentUser?.username;
-            if (type === 'chat' && me && (data?.user_id === me || data?.author === me)) return;
+            var me = window.app && window.app.currentUser ? window.app.currentUser.username : null;
+            if (type === 'chat' && me && (data && (data.user_id === me || data.author === me))) return;
         } catch (_) { }
 
         // Increment count
@@ -312,10 +316,10 @@ const NotificationManager = {
             if ((document.hidden || !document.hasFocus()) && this.isOsNotifEnabled()) {
                 this.showOsNotification('Nanodoroshi / Anticode', {
                     body: msg,
-                    tag: type === 'chat' ? `anticode_chat_${data?.channel_id || ''}` : `nano_${type}`,
+                    tag: type === 'chat' ? ('anticode_chat_' + (data && data.channel_id ? data.channel_id : '')) : ('nano_' + type),
                     renotify: false,
                     silent: false,
-                    data: { kind: type, channel_id: data?.channel_id || null }
+                    data: { kind: type, channel_id: (data && data.channel_id ? data.channel_id : null) }
                 });
             }
         } catch (_) { }
@@ -323,15 +327,15 @@ const NotificationManager = {
 
     _formatMessage(type, data) {
         if (type === 'chat') {
-            const author = data?.author || data?.user_id || '익명';
-            const content = String(data?.content ?? '').slice(0, 140);
-            return `[채팅] ${author}: ${content}`;
+            var author = (data && data.author) || (data && data.user_id) || '익명';
+            var content = String(data && (data.content !== undefined && data.content !== null) ? data.content : '').slice(0, 140);
+            return '[채팅] ' + author + ': ' + content;
         }
-        if (type === 'post') return `[새 글] ${data?.title || '새 게시글'}`;
-        if (type === 'post-update') return `[글 수정] ${data?.title || '게시글 업데이트'}`;
-        if (type === 'comment') return `[새 댓글] ${data?.content ? String(data.content).slice(0, 120) : '새 댓글'}`;
-        if (type === 'comment-update') return `[댓글 수정] ${data?.content ? String(data.content).slice(0, 120) : '댓글 업데이트'}`;
-        return `[알림] 새 이벤트`;
+        if (type === 'post') return '[새 글] ' + ((data && data.title) || '새 게시글');
+        if (type === 'post-update') return '[글 수정] ' + ((data && data.title) || '게시글 업데이트');
+        if (type === 'comment') return '[새 댓글] ' + (data && data.content ? String(data.content).slice(0, 120) : '새 댓글');
+        if (type === 'comment-update') return '[댓글 수정] ' + (data && data.content ? String(data.content).slice(0, 120) : '댓글 업데이트');
+        return '[알림] 새 이벤트';
     },
 
     showInAppToast(text) {
@@ -405,8 +409,8 @@ const NotificationManager = {
         if (Notification.permission !== 'granted') return;
         // Prefer service worker notification (more consistent on mobile/PWA)
         try {
-            const reg = await navigator.serviceWorker?.ready;
-            if (reg?.showNotification) {
+            var reg = await (navigator.serviceWorker && navigator.serviceWorker.ready);
+            if (reg && reg.showNotification) {
                 await reg.showNotification(title, options);
                 return;
             }
@@ -550,17 +554,17 @@ class AntiCodeApp {
 
     async refreshEntitlements() {
         // Server-truth plan source: public.app_entitlements (updated by RevenueCat webhook)
-        if (!this.supabase || !this.currentUser?.username) return;
+        if (!this.supabase || !(this.currentUser && this.currentUser.username)) return;
         try {
-            const { data, error } = await this.supabase
+            var { data, error } = await this.supabase
                 .from('app_entitlements')
                 .select('is_active, period_ends_at')
                 .eq('user_id', this.currentUser.username)
                 .eq('entitlement', 'pro')
                 .limit(1);
             if (error) throw error;
-            const row = (data && data[0]) ? data[0] : null;
-            const active = !!row?.is_active && (!row?.period_ends_at || new Date(row.period_ends_at).getTime() > Date.now());
+            var row = (data && data[0]) ? data[0] : null;
+            var active = !!(row && row.is_active) && (!(row && row.period_ends_at) || new Date(row.period_ends_at).getTime() > Date.now());
             this.currentUser.plan = active ? 'pro' : 'free';
             this._refreshPlanTier();
         } catch (_) {
@@ -578,9 +582,9 @@ class AntiCodeApp {
     }
 
     _voiceUsageStorageKey() {
-        const u = this.currentUser?.username || 'anonymous';
-        const day = this._localDayKey();
-        return `anticode_voice_used_seconds::${u}::${day}`;
+        var u = (this.currentUser && this.currentUser.username) || 'anonymous';
+        var day = this._localDayKey();
+        return 'anticode_voice_used_seconds::' + u + '::' + day;
     }
 
     _getFreeVoiceUsedSeconds() {
@@ -616,9 +620,9 @@ class AntiCodeApp {
             }
         } catch (_) { }
 
-        const plan = (this.currentUser?.plan || '').toLowerCase();
+        var plan = ((this.currentUser && this.currentUser.plan) || '').toLowerCase();
         if (plan === 'pro') this.planTier = 'pro';
-        else if (this.currentUser?.role === 'admin') this.planTier = 'pro';
+        else if (this.currentUser && this.currentUser.role === 'admin') this.planTier = 'pro';
         else this.planTier = 'free';
     }
 
@@ -627,11 +631,11 @@ class AntiCodeApp {
     }
 
     _isAdmin() {
-        return String(this.currentUser?.role || '') === 'admin';
+        return String((this.currentUser && this.currentUser.role) || '') === 'admin';
     }
 
     async loadMyChannelMemberships() {
-        if (!this.supabase || !this.currentUser?.username) return;
+        if (!this.supabase || !(this.currentUser && this.currentUser.username)) return;
         try {
             const { data, error } = await this.supabase
                 .from('anticode_channel_members')
@@ -659,7 +663,7 @@ class AntiCodeApp {
 
     _canCreateMorePersonalPages() {
         if (this._isAdmin() || this._isProUser()) return true;
-        return (this.channelPages?.length || 0) < FREE_MAX_PERSONAL_PAGES;
+        return ((this.channelPages && this.channelPages.length) || 0) < FREE_MAX_PERSONAL_PAGES;
     }
 
     _canAddMoreChannelsToPage(pageId) {
@@ -681,7 +685,7 @@ class AntiCodeApp {
     }
 
     _getActiveChannelPageKey() {
-        const u = this.currentUser?.username || 'anonymous';
+        const u = (this.currentUser && this.currentUser.username) || 'anonymous';
         return `anticode_active_channel_page::${u}`;
     }
 
@@ -715,7 +719,7 @@ class AntiCodeApp {
     }
 
     async loadChannelPages() {
-        if (!this.supabase || !this.currentUser?.username) return;
+        if (!this.supabase || !(this.currentUser && this.currentUser.username)) return;
         const { data, error } = await this.supabase
             .from('anticode_channel_pages')
             .select('*')
@@ -746,13 +750,14 @@ class AntiCodeApp {
         }
     }
 
-    _pageNameById(pageId) {
-        if (!pageId || pageId === 'all') return '전체 채널';
-        return this.channelPages.find(p => p.id === pageId)?.name || '내 페이지';
+    _getPageName(pageId) {
+        if (pageId === 'all') return '전체 채널';
+        var page = this.channelPages.find(function (p) { return p.id === pageId; });
+        return (page && page.name) ? page.name : '내 페이지';
     }
 
     _getVisibleChannelsByActivePage() {
-        const me = this.currentUser?.username;
+        const me = (this.currentUser && this.currentUser.username);
 
         // 1. Filter ALL channels that this user is ALLOWED to see (Ownership or Membership for hidden types)
         const userAccessibleChannels = this.channels.filter(ch => {
@@ -799,10 +804,10 @@ class AntiCodeApp {
         });
 
         // Sort by page order if mapped, otherwise append to end
-        const order = new Map(items.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
+        const order = new Map(items.map((it, idx) => [String(it.channel_id), Number((it.position === 0 || it.position) ? it.position : idx)]));
         return filtered.sort((a, b) => {
-            const posA = order.get(String(a.id)) ?? 9999;
-            const posB = order.get(String(b.id)) ?? 9999;
+            const posA = order.get(String(a.id)) || 9999;
+            const posB = order.get(String(b.id)) || 9999;
             return posA - posB;
         });
     }
@@ -1006,7 +1011,7 @@ class AntiCodeApp {
         // Drag & drop delegation (single set of listeners)
         if (itemsBox) {
             itemsBox.addEventListener('dragstart', (e) => {
-                const el = e.target?.closest?.('.draggable-item');
+                const el = (e.target && e.target.closest && e.target.closest('.draggable-item'));
                 if (!el) return;
                 el.classList.add('dragging');
                 try {
@@ -1015,10 +1020,10 @@ class AntiCodeApp {
                 } catch (_) { }
             });
             itemsBox.addEventListener('dragend', async (e) => {
-                const el = e.target?.closest?.('.draggable-item');
+                const el = (e.target && e.target.closest && e.target.closest('.draggable-item'));
                 if (!el) return;
                 el.classList.remove('dragging');
-                const pid = String(document.getElementById('pages-modal-select')?.value || 'all');
+                const pid = String((document.getElementById('pages-modal-select') && document.getElementById('pages-modal-select').value) || 'all');
                 await this._persistPersonalPageOrderFromDom(pid, itemsBox);
             });
             itemsBox.addEventListener('dragover', (e) => {
@@ -1050,8 +1055,8 @@ class AntiCodeApp {
         const its = (this.channelPageItems.get(pid) || []).slice();
         const idSet = new Set(its.map(it => String(it.channel_id)));
         const chans = this.channels.filter(c => idSet.has(String(c.id)));
-        const order = new Map(its.map((it, idx) => [String(it.channel_id), Number(it.position ?? idx)]));
-        chans.sort((a, b) => (order.get(String(a.id)) ?? 0) - (order.get(String(b.id)) ?? 0));
+        const order = new Map(its.map((it, idx) => [String(it.channel_id), Number((it.position === 0 || it.position) ? it.position : idx)]));
+        chans.sort((a, b) => (order.get(String(a.id)) || 0) - (order.get(String(b.id)) || 0));
 
         if (chans.length === 0) {
             itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">이 페이지에 채널이 없습니다.</div>`;
@@ -1092,7 +1097,7 @@ class AntiCodeApp {
         const filtered = q
             ? base.filter(ch => {
                 if (ch.type === 'open_hidden') {
-                    const me = this.currentUser?.username;
+                    const me = (this.currentUser && this.currentUser.username);
                     if (!me) return false;
                     const isOwner = String(ch.owner_id) === String(me);
                     // "myJoinedChannelIds" tracks channels I am a member of (invited/joined)
@@ -1105,7 +1110,7 @@ class AntiCodeApp {
             })
             : base.filter(ch => {
                 if (ch.type === 'open_hidden') {
-                    const me = this.currentUser?.username;
+                    const me = (this.currentUser && this.currentUser.username);
                     if (!me) return false;
                     const isOwner = String(ch.owner_id) === String(me);
                     if (!isOwner && !this.myJoinedChannelIds.has(String(ch.id))) return false;
@@ -1113,6 +1118,7 @@ class AntiCodeApp {
                 return true;
             });
 
+        const limited = filtered.slice(0, 50); // Limit results for performance
         const combinedResults = [
             ...limited.map(ch => ({ type: 'channel', data: ch })),
         ];
@@ -1208,7 +1214,7 @@ class AntiCodeApp {
 
             const filtered = this.channels.filter(ch => cids.has(String(ch.id)));
             const pageObj = await this.supabase.from('anticode_channel_pages').select('name').eq('id', pageId).single();
-            const pageName = pageObj.data?.name || "선택된 페이지";
+            const pageName = (pageObj.data && pageObj.data.name) || "선택된 페이지";
 
             resultsBox.innerHTML = `
                 <div style="padding: 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px; font-weight: bold; color: var(--accent);">
@@ -1216,7 +1222,7 @@ class AntiCodeApp {
                 </div>
                 ${filtered.map(ch => {
                 const label = this._channelLabel(ch);
-                const pid = document.getElementById('pages-modal-select')?.value || 'all';
+                const pid = (document.getElementById('pages-modal-select') && document.getElementById('pages-modal-select').value) || 'all';
                 const canAdd = pid !== 'all';
                 return `
                         <div class="member-card" style="margin-bottom:8px;">
@@ -1250,7 +1256,7 @@ class AntiCodeApp {
         const confirmInvite = confirm(`${friendUsername}님을 현재 채널에 초대하시겠습니까?`);
         if (!confirmInvite) return;
 
-        const isFriend = this.friends?.some(f => f.username === friendUsername);
+        const isFriend = this.friends && this.friends.some(f => f.username === friendUsername);
         if (!isFriend) return alert('친구만 초대할 수 있습니다.');
 
         // [New] Check Permission: Only owner can invite
@@ -1305,9 +1311,9 @@ class AntiCodeApp {
             return;
         }
         // If inviting to current channel, refresh UI
-        if (this.activeChannel?.id && String(this.activeChannel.id) === chId) {
+        if (this.activeChannel && this.activeChannel.id && String(this.activeChannel.id) === chId) {
             await this.loadChannelMembers(this.activeChannel.id);
-            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+            try { await this.updateChannelMemberPanel((this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState()) || {}); } catch (_) { }
         }
         alert('초대 완료!');
     }
@@ -1349,7 +1355,7 @@ class AntiCodeApp {
 
         try {
             // Ensure key is stable for the session day
-            const u = this.currentUser?.username || 'anonymous';
+            const u = (this.currentUser && this.currentUser.username) || 'anonymous';
             const day = this._voiceSessionDayKey || this._localDayKey();
             const key = `anticode_voice_used_seconds::${u}::${day}`;
             const prev = Number(localStorage.getItem(key) || '0');
@@ -1399,7 +1405,7 @@ class AntiCodeApp {
             this.pushEnabled = !!sub;
             this._setPushStatus(sub ? '켜짐' : '꺼짐');
         } catch (e) {
-            this._setPushStatus('오류: ' + (e?.message || e));
+            this._setPushStatus('오류: ' + (e && e.message || e));
         }
     }
 
@@ -1471,9 +1477,9 @@ class AntiCodeApp {
                     return true;
                 } catch (_) { return false; }
             };
-            const existingKey = existing?.options?.applicationServerKey;
+            const existingKey = (existing && existing.options && existing.options.applicationServerKey);
             if (existing && existingKey && !reminderEq(existingKey, desiredKey)) {
-                try { await existing.unsubscribe(); } catch (_) { }
+                try { existing.unsubscribe && await existing.unsubscribe(); } catch (_) { }
                 try { await this._disablePushSubscriptionInDb(existing); } catch (_) { }
             }
         } catch (_) { }
@@ -1516,17 +1522,17 @@ class AntiCodeApp {
             });
             alert('푸시 테스트 알림을 보냈습니다. (완전 오프라인 푸시는 서버 발송 설정 후 동작)');
         } catch (e) {
-            alert('푸시 테스트 실패: ' + (e?.message || e));
+            alert('푸시 테스트 실패: ' + (e && e.message || e));
         }
     }
 
     async _sendPushForChatMessage({ channel_id, author, content }) {
         try {
-            const channelId = channel_id || this.activeChannel?.id;
+            const channelId = channel_id || (this.activeChannel && this.activeChannel.id);
             if (!channelId) return;
-            const room = this.activeChannel?.name || channelId;
-            const authorName = author || this.currentUser.nickname || this.currentUser.username;
-            const bodyText = String(content ?? '').slice(0, 180);
+            const room = (this.activeChannel && this.activeChannel.name) || channelId;
+            const authorName = author || (this.currentUser && this.currentUser.nickname) || (this.currentUser && this.currentUser.username);
+            const bodyText = String(content || '').slice(0, 180);
             await fetch(`${SUPABASE_URL}/functions/v1/push-send`, {
                 method: 'POST',
                 headers: {
@@ -1572,7 +1578,7 @@ class AntiCodeApp {
             canvas.width = tw; canvas.height = th;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, tw, th);
-            img.close?.();
+            img.close && img.close();
 
             const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
             if (!blob) return file;
@@ -1584,7 +1590,7 @@ class AntiCodeApp {
     }
 
     escapeHtml(str) {
-        return String(str ?? '')
+        return String(str || '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
@@ -1605,7 +1611,7 @@ class AntiCodeApp {
                 }], { onConflict: 'channel_id,username' });
         } catch (e) {
             // Table may not exist yet or RLS may block; don't break chat.
-            console.warn('ensureCurrentUserChannelMembership failed:', e?.message || e);
+            console.warn('ensureCurrentUserChannelMembership failed:', (e && e.message) || e);
         }
     }
 
@@ -1620,26 +1626,26 @@ class AntiCodeApp {
             const names = rows.filter(r => r.status !== 'kicked').map(r => r.username).filter(Boolean).map(String);
             // Always include channel owner if present
             const chan = this.channels.find(c => c.id === channelId);
-            if (chan?.owner_id) names.push(String(chan.owner_id));
+            if (chan && chan.owner_id) names.push(String(chan.owner_id));
             this.channelMembers = Array.from(new Set(names));
             this.channelMemberMeta = new Map();
             for (const r of rows) {
-                const u = r?.username ? String(r.username) : '';
+                const u = r && r.username ? String(r.username) : '';
                 if (!u) continue;
                 this.channelMemberMeta.set(u, {
-                    invited_by: r?.invited_by ? String(r.invited_by) : null,
-                    status: r?.status || 'joined'
+                    invited_by: r && r.invited_by ? String(r.invited_by) : null,
+                    status: r && r.status || 'joined'
                 });
             }
         } catch (e) {
-            console.warn('loadChannelMembers failed:', e?.message || e);
-            this.channelMembers = this.currentUser?.username ? [this.currentUser.username] : [];
+            console.warn('loadChannelMembers failed:', (e && e.message) || e);
+            this.channelMembers = (this.currentUser && this.currentUser.username) ? [this.currentUser.username] : [];
             this.channelMemberMeta = new Map();
         }
     }
 
     async _hasChannelMembership(channelId, username) {
-        const u = username || this.currentUser?.username;
+        const u = username || (this.currentUser && this.currentUser.username);
         if (!u || !this.supabase) return false;
         try {
             const { data, error } = await this.supabase
@@ -1660,7 +1666,7 @@ class AntiCodeApp {
         // Load block list for this channel, scoped to current user (blocked_by = me)
         this.channelBlockedUsernames = new Set();
         try {
-            const me = this.currentUser?.username;
+            const me = (this.currentUser && this.currentUser.username);
             if (!me) return;
             const { data, error } = await this.supabase
                 .from('anticode_channel_blocks')
@@ -1669,7 +1675,7 @@ class AntiCodeApp {
                 .eq('blocked_by', me);
             if (error) throw error;
             (data || []).forEach(r => {
-                const u = r?.blocked_username ? String(r.blocked_username) : '';
+                const u = r && r.blocked_username ? String(r.blocked_username) : '';
                 if (u) this.channelBlockedUsernames.add(u);
             });
         } catch (_) {
@@ -1681,7 +1687,7 @@ class AntiCodeApp {
     _isBlockedInActiveChannel(username) {
         try {
             const u = String(username || '');
-            return !!(u && this.channelBlockedUsernames?.has?.(u));
+            return !!(u && this.channelBlockedUsernames && this.channelBlockedUsernames.has && this.channelBlockedUsernames.has(u));
         } catch (_) {
             return false;
         }
@@ -1691,7 +1697,7 @@ class AntiCodeApp {
         if (!this.activeChannel) return false;
         const target = String(username || '');
         if (!target) return false;
-        if (target === this.currentUser?.username) return false;
+        if (target === (this.currentUser && this.currentUser.username)) return false;
         if (!confirm(`${target} 님을 차단할까요?\n(차단된 유저는 다시 초대할 수 없습니다. 차단해제로 해제 가능)`)) return false;
         try {
             const { error } = await this.supabase
@@ -1706,13 +1712,13 @@ class AntiCodeApp {
             try { this.renderFriendModalList(); } catch (_) { }
 
             // Immediate UI Refresh
-            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+            try { await this.updateChannelMemberPanel((this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState()) || {}); } catch (_) { }
 
             alert('차단 완료!');
             return true;
         } catch (e) {
             console.error('blockUser failed:', e);
-            alert('차단 실패: ' + (e?.message || e));
+            alert('차단 실패: ' + ((e && e.message) || e));
             return false;
         }
     }
@@ -1733,13 +1739,13 @@ class AntiCodeApp {
             try { this.renderFriendModalList(); } catch (_) { }
 
             // Immediate UI Refresh
-            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+            try { await this.updateChannelMemberPanel((this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState()) || {}); } catch (_) { }
 
             alert('차단 해제 완료!');
             return true;
         } catch (e) {
             console.error('unblockUser failed:', e);
-            alert('차단 해제 실패: ' + (e?.message || e));
+            alert('차단 해제 실패: ' + ((e && e.message) || e));
             return false;
         }
     }
@@ -1799,22 +1805,22 @@ class AntiCodeApp {
         // Non-secret channels are open
         if (ch.type !== 'secret') return true;
         // Secret channels: owner OR invited/joined member
-        if (ch.owner_id && ch.owner_id === this.currentUser?.username) return true;
-        return (this.channelMembers || []).includes(this.currentUser?.username);
+        if (ch.owner_id && ch.owner_id === (this.currentUser && this.currentUser.username)) return true;
+        return (this.channelMembers || []).includes((this.currentUser && this.currentUser.username));
     }
 
     _canKickInActiveChannel(targetUsername) {
         try {
             if (!this.activeChannel || !targetUsername) return false;
             const target = String(targetUsername);
-            const me = this.currentUser?.username ? String(this.currentUser.username) : null;
+            const me = (this.currentUser && this.currentUser.username) ? String(this.currentUser.username) : null;
             if (!me) return false;
             if (target === me) return false;
-            const owner = this.activeChannel.owner_id ? String(this.activeChannel.owner_id) : null;
+            const owner = (this.activeChannel.owner_id) ? String(this.activeChannel.owner_id) : null;
             if (owner && target === owner) return false;
             if (owner && me === owner) return true; // owner can kick anyone except owner
-            const meta = this.channelMemberMeta?.get?.(target);
-            if (meta?.invited_by && String(meta.invited_by) === me) return true; // inviter can kick their invites
+            const meta = (this.channelMemberMeta && this.channelMemberMeta.get && this.channelMemberMeta.get(target));
+            if (meta && meta.invited_by && String(meta.invited_by) === me) return true; // inviter can kick their invites
             return false;
         } catch (_) {
             return false;
@@ -1837,7 +1843,7 @@ class AntiCodeApp {
             if (error) throw error;
 
             await this.loadChannelMembers(this.activeChannel.id);
-            try { await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {}); } catch (_) { }
+            try { await this.updateChannelMemberPanel((this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState()) || {}); } catch (_) { }
 
             // Real-time Kick Signal via the main message channel
             try {
@@ -1853,7 +1859,7 @@ class AntiCodeApp {
             alert('강퇴 완료!');
         } catch (e) {
             console.error('kick member failed:', e);
-            alert('강퇴 실패: ' + (e?.message || e));
+            alert('강퇴 실패: ' + ((e && e.message) || e));
         }
     }
 
@@ -1862,7 +1868,7 @@ class AntiCodeApp {
         try {
             const channel = this.activeChannel;
             if (!channel) return;
-            const me = this.currentUser?.username;
+            const me = (this.currentUser && this.currentUser.username);
             if (!me) return;
             const isOwner = channel.owner_id && String(channel.owner_id) === String(me);
             if (isOwner) return;
@@ -1880,7 +1886,7 @@ class AntiCodeApp {
                 .eq('username', me)
                 .maybeSingle();
 
-            if (data?.status === 'kicked') {
+            if (data && data.status === 'kicked') {
                 alert('이 채널에서 강퇴되었습니다.');
                 const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden' && String(c.id) !== String(channel.id)) || this.channels[0];
                 if (fallback && fallback.id !== channel.id) await this.switchChannel(fallback.id);
@@ -1922,7 +1928,7 @@ class AntiCodeApp {
         // - Free/Pro irrelevant here; admin must be included as a normal online user
         const raw = [];
         for (const id in (state || {})) {
-            const arr = state?.[id];
+            const arr = state && state[id];
             if (Array.isArray(arr)) {
                 for (const u of arr) if (u) raw.push(u);
             }
@@ -1931,42 +1937,42 @@ class AntiCodeApp {
         // De-duplicate by username (presence key is username, but keep it safe)
         const byUsername = new Map();
         for (const u of raw) {
-            const uname = u?.username ? String(u.username) : '';
+            const uname = u && u.username ? String(u.username) : '';
             if (!uname) continue;
             if (!byUsername.has(uname)) byUsername.set(uname, u);
         }
 
         const onlineUsers = Array.from(byUsername.values()).filter(u => {
-            const uname = u?.username ? String(u.username) : '';
-            const meta = this.channelMemberMeta?.get(uname);
-            return meta?.status !== 'kicked';
+            const uname = u && u.username ? String(u.username) : '';
+            const meta = (this.channelMemberMeta && this.channelMemberMeta.get && this.channelMemberMeta.get(uname));
+            return meta && meta.status !== 'kicked';
         });
         if (onlineCountText) onlineCountText.innerText = String(onlineUsers.length);
 
         // Admins first, then by nickname/username (stable + friendly)
         onlineUsers.sort((a, b) => {
-            const aAdmin = String(a?.role || '').toLowerCase() === 'admin';
-            const bAdmin = String(b?.role || '').toLowerCase() === 'admin';
+            const aAdmin = String((a && a.role) || '').toLowerCase() === 'admin';
+            const bAdmin = String((b && b.role) || '').toLowerCase() === 'admin';
             if (aAdmin !== bAdmin) return aAdmin ? -1 : 1;
-            const an = String(a?.nickname || a?.username || '');
-            const bn = String(b?.nickname || b?.username || '');
+            const an = String((a && a.nickname) || (a && a.username) || '');
+            const bn = String((b && b.nickname) || (b && b.username) || '');
             return an.localeCompare(bn, 'ko');
         });
 
         const friendUsernames = new Set((this.friends || []).map(f => f.username));
-        const onlineNames = new Set(onlineUsers.map(u => String(u?.username || '')).filter(Boolean));
+        const onlineNames = new Set(onlineUsers.map(u => String((u && u.username) || '')).filter(Boolean));
 
         // Offline participants (ever chatted) = participants - currently online
         const participants = Array.isArray(this.channelParticipants) ? this.channelParticipants : [];
         const participantNames = [];
         const seen = new Set();
         for (const p of participants) {
-            const uname = p?.username ? String(p.username) : (typeof p === 'string' ? p : '');
+            const uname = p && p.username ? String(p.username) : (typeof p === 'string' ? p : '');
             if (!uname || seen.has(uname)) continue;
 
             // Check if kicked
-            const meta = this.channelMemberMeta?.get(uname);
-            if (meta?.status === 'kicked') continue;
+            const meta = (this.channelMemberMeta && this.channelMemberMeta.get && this.channelMemberMeta.get(uname));
+            if (meta && meta.status === 'kicked') continue;
 
             seen.add(uname);
             if (!onlineNames.has(uname)) participantNames.push(uname);
@@ -1974,12 +1980,12 @@ class AntiCodeApp {
 
         // Render online first
         const parts = onlineUsers.map((info) => {
-            const uname = String(info?.username || '');
-            const nick = info?.nickname || uname;
+            const uname = String((info && info.username) || '');
+            const nick = (info && info.nickname) || uname;
             const tn = this._truncateName(nick, 8);
-            const avatar = info?.avatar_url;
+            const avatar = (info && info.avatar_url);
             const isFriend = friendUsernames.has(uname);
-            const isAdmin = String(info?.role || '').toLowerCase() === 'admin';
+            const isAdmin = String((info && info.role) || '').toLowerCase() === 'admin';
             const showKick = this._canKickInActiveChannel(uname);
             const isBlocked = this._isBlockedInActiveChannel(uname);
 
@@ -2015,7 +2021,7 @@ class AntiCodeApp {
                     .in('username', offlineNames);
                 if (!error && Array.isArray(data)) {
                     for (const row of data) {
-                        const u = row?.username ? String(row.username) : '';
+                        const u = row && row.username ? String(row.username) : '';
                         if (u) infoMap.set(u, row);
                         // populate cache for later reuse
                         if (u) this.userCache[u] = row;
@@ -2026,11 +2032,11 @@ class AntiCodeApp {
 
         for (const uname of offlineNames) {
             const info = infoMap.get(uname) || this.userCache[uname] || { nickname: uname, avatar_url: null, last_seen: null };
-            const nick = info?.nickname || uname;
+            const nick = (info && info.nickname) || uname;
             const tn = this._truncateName(nick, 8);
-            const avatar = info?.avatar_url;
+            const avatar = (info && info.avatar_url);
             const isFriend = friendUsernames.has(uname);
-            const lastSeen = info?.last_seen ? formatDistanceToNow(info.last_seen) : '오프라인';
+            const lastSeen = (info && info.last_seen) ? formatDistanceToNow(info.last_seen) : '오프라인';
             const showKick = this._canKickInActiveChannel(uname);
             const isBlocked = this._isBlockedInActiveChannel(uname);
             parts.push(`
@@ -2091,7 +2097,7 @@ class AntiCodeApp {
                         nickname: this.currentUser.nickname,
                         uid: this.currentUser.uid,
                         avatar_url: this.currentUser.avatar_url,
-                        role: this.currentUser?.role || 'user',
+                        role: (this.currentUser && this.currentUser.role) || 'user',
                         online_at: new Date().toISOString(),
                     };
                     try { await this.channelPresenceChannel.track(trackData); } catch (_) { }
@@ -2110,12 +2116,12 @@ class AntiCodeApp {
     }
 
     _getVoiceDeviceKey() {
-        const u = this.currentUser?.username || 'anonymous';
+        const u = (this.currentUser && this.currentUser.username) || 'anonymous';
         return `anticode_voice_device::${u}`;
     }
 
     _getMicGainKey() {
-        const u = this.currentUser?.username || 'anonymous';
+        const u = (this.currentUser && this.currentUser.username) || 'anonymous';
         return `anticode_mic_gain::${u}`;
     }
 
@@ -2175,7 +2181,7 @@ class AntiCodeApp {
             };
             this._micRawStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
             this._micAudioCtx = new AC();
-            await this._micAudioCtx.resume?.().catch(() => { });
+            this._micAudioCtx.resume && await this._micAudioCtx.resume().catch(() => { });
 
             this._micSource = this._micAudioCtx.createMediaStreamSource(this._micRawStream);
             this._micAnalyser = this._micAudioCtx.createAnalyser();
@@ -2206,7 +2212,7 @@ class AntiCodeApp {
             // Ensure gain is up-to-date
             if (this._micGainNode) this._micGainNode.gain.value = this.micGain;
             // Ensure localAudioStream points at processed stream
-            if (this._micDest?.stream) this.localAudioStream = this._micDest.stream;
+            if (this._micDest && this._micDest.stream) this.localAudioStream = this._micDest.stream;
         }
 
         // Monitor (hear yourself) only when testing
@@ -2231,11 +2237,11 @@ class AntiCodeApp {
     async _teardownMicPipeline({ force = false } = {}) {
         if (!force && (this._micUsers.voice || this._micUsers.test)) return;
         this._setMicMonitor(false);
-        try { this._micSource?.disconnect?.(); } catch (_) { }
-        try { this._micAnalyser?.disconnect?.(); } catch (_) { }
-        try { this._micCompressor?.disconnect?.(); } catch (_) { }
-        try { this._micGainNode?.disconnect?.(); } catch (_) { }
-        try { this._micDest?.disconnect?.(); } catch (_) { }
+        try { this._micSource && this._micSource.disconnect && this._micSource.disconnect(); } catch (_) { }
+        try { this._micAnalyser && this._micAnalyser.disconnect && this._micAnalyser.disconnect(); } catch (_) { }
+        try { this._micCompressor && this._micCompressor.disconnect && this._micCompressor.disconnect(); } catch (_) { }
+        try { this._micGainNode && this._micGainNode.disconnect && this._micGainNode.disconnect(); } catch (_) { }
+        try { this._micDest && this._micDest.disconnect && this._micDest.disconnect(); } catch (_) { }
         // Ensure the processed stream track is stopped too (important on some mobile browsers)
         try {
             if (this.localAudioStream) this.localAudioStream.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
@@ -2243,7 +2249,7 @@ class AntiCodeApp {
         try {
             if (this._micRawStream) this._micRawStream.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
         } catch (_) { }
-        try { await this._micAudioCtx?.close?.(); } catch (_) { }
+        try { this._micAudioCtx && this._micAudioCtx.close && await this._micAudioCtx.close(); } catch (_) { }
         this._micDeviceIdInUse = null;
         this._micRawStream = null;
         this._micAudioCtx = null;
@@ -2315,7 +2321,7 @@ class AntiCodeApp {
             if (btn) btn.textContent = '마이크 ON';
         } catch (e) {
             console.error('Mic test error:', e);
-            alert('마이크 테스트 실패: ' + (e?.message || e));
+            alert('마이크 테스트 실패: ' + ((e && e.message) || e));
             this._micUsers.test = false;
             this._setMicMonitor(false);
             this._stopMicMeter();
@@ -2330,7 +2336,7 @@ class AntiCodeApp {
 
         // On many browsers, device labels are empty until mic permission is granted once.
         // If asked, briefly request permission so USB mic names show up.
-        if (requestPermissionIfNeeded && navigator?.mediaDevices?.getUserMedia) {
+        if (requestPermissionIfNeeded && (navigator && navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
             try {
                 const tmp = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 tmp.getTracks().forEach(t => { try { t.stop(); } catch (_) { } });
@@ -2417,7 +2423,7 @@ class AntiCodeApp {
                         nickname: this.currentUser.nickname,
                         uid: this.currentUser.uid,
                         avatar_url: this.currentUser.avatar_url,
-                        role: this.currentUser?.role || 'user',
+                        role: (this.currentUser && this.currentUser.role) || 'user',
                         online_at: new Date().toISOString(),
                         voice: true
                     });
@@ -2426,12 +2432,12 @@ class AntiCodeApp {
 
             // Connect to peers who are already voice-enabled
             try {
-                const state = this.channelPresenceChannel?.presenceState?.() || {};
+                const state = (this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState()) || {};
                 await this._reconcileVoicePeersFromPresence(state);
             } catch (_) { }
         } catch (e) {
             console.error('startVoice error:', e);
-            alert('마이크 권한이 필요합니다.\\n' + (e?.message || e));
+            alert('마이크 권한이 필요합니다.\\n' + ((e && e.message) || e));
             this._micUsers.voice = false;
             await this.stopVoice({ playFx: false });
         }
@@ -2451,7 +2457,7 @@ class AntiCodeApp {
         try {
             const peers = Array.from(this.peerConnections.keys());
             for (const uname of peers) {
-                this.voiceChannel?.send({
+                this.voiceChannel && this.voiceChannel.send({
                     type: 'broadcast',
                     event: 'webrtc',
                     payload: { type: 'leave', from: this.currentUser.username, to: uname }
@@ -2467,7 +2473,7 @@ class AntiCodeApp {
                     nickname: this.currentUser.nickname,
                     uid: this.currentUser.uid,
                     avatar_url: this.currentUser.avatar_url,
-                    role: this.currentUser?.role || 'user',
+                    role: (this.currentUser && this.currentUser.role) || 'user',
                     online_at: new Date().toISOString(),
                     voice: false
                 });
@@ -2478,9 +2484,9 @@ class AntiCodeApp {
         for (const [u, pc] of this.peerConnections.entries()) {
             // Ensure we stop sending immediately on some browsers
             try {
-                pc.getSenders?.().forEach(sender => {
-                    try { sender.replaceTrack?.(null); } catch (_) { }
-                    try { sender.track?.stop?.(); } catch (_) { }
+                pc.getSenders && pc.getSenders().forEach(sender => {
+                    try { sender.replaceTrack && sender.replaceTrack(null); } catch (_) { }
+                    try { sender.track && sender.track.stop && sender.track.stop(); } catch (_) { }
                 });
             } catch (_) { }
             try { pc.close(); } catch (_) { }
@@ -2488,7 +2494,7 @@ class AntiCodeApp {
         }
         // Remove audio elements
         for (const [u, el] of this.remoteAudioEls.entries()) {
-            try { el.pause?.(); } catch (_) { }
+            try { el.pause && el.pause(); } catch (_) { }
             try { el.srcObject = null; el.remove(); } catch (_) { }
             this.remoteAudioEls.delete(u);
         }
@@ -2509,7 +2515,7 @@ class AntiCodeApp {
         });
 
         this.voiceChannel.on('broadcast', { event: 'webrtc' }, async (payload) => {
-            const msg = payload?.payload;
+            const msg = (payload && payload.payload);
             if (!msg) return;
             if (msg.to && msg.to !== this.currentUser.username) return;
             if (msg.from === this.currentUser.username) return;
@@ -2520,10 +2526,10 @@ class AntiCodeApp {
             if (msg.type === 'leave') await this._onPeerLeave(msg.from);
         }).on('broadcast', { event: 'kick' }, async (payload) => {
             // [NEW] Real-time Kick handling
-            const data = payload?.payload; // { target: '...', channel_id: '...' }
+            const data = (payload && payload.payload); // { target: '...', channel_id: '...' }
             if (!data) return;
             // 1. If I am the target, I must leave
-            if (data.target === this.currentUser?.username) {
+            if (data.target === (this.currentUser && this.currentUser.username)) {
                 alert('이 방에서 강퇴되었습니다.');
                 // Switch to default channel
                 const fallback = this.channels.find(c => c.type === 'general') || this.channels[0];
@@ -2548,7 +2554,7 @@ class AntiCodeApp {
     async _reconcileVoicePeersFromPresence(state) {
         const peers = [];
         for (const k in (state || {})) {
-            const meta = state[k]?.[0];
+            const meta = state[k] && state[k][0];
             if (!meta) continue;
             if (meta.username === this.currentUser.username) continue;
             if (meta.voice) peers.push(meta.username);
@@ -2568,7 +2574,7 @@ class AntiCodeApp {
 
         pc.onicecandidate = (e) => {
             if (!e.candidate) return;
-            this.voiceChannel?.send({
+            this.voiceChannel && this.voiceChannel.send({
                 type: 'broadcast',
                 event: 'webrtc',
                 payload: { type: 'ice', from: this.currentUser.username, to: remoteUsername, candidate: e.candidate }
@@ -2576,7 +2582,7 @@ class AntiCodeApp {
         };
 
         pc.ontrack = (e) => {
-            const stream = e.streams?.[0];
+            const stream = e.streams && e.streams[0];
             if (!stream) return;
             let audio = this.remoteAudioEls.get(remoteUsername);
             if (!audio) {
@@ -2590,7 +2596,7 @@ class AntiCodeApp {
             }
             audio.srcObject = stream;
             // Mobile sometimes requires explicit play after user gesture; this is best-effort
-            audio.play?.().catch(() => { });
+            audio.play && audio.play().catch(() => { });
         };
 
         pc.onconnectionstatechange = () => {
@@ -2636,7 +2642,7 @@ class AntiCodeApp {
         const collision = pc.signalingState !== 'stable';
         if (collision && !polite) return;
         if (collision && polite) {
-            try { await pc.setLocalDescription({ type: 'rollback' }); } catch (_) { }
+            try { pc.setLocalDescription && await pc.setLocalDescription({ type: 'rollback' }); } catch (_) { }
         }
 
         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
@@ -2683,12 +2689,12 @@ class AntiCodeApp {
     }
 
     _getCleanupSettingsKey() {
-        const u = this.currentUser?.username || 'anonymous';
+        const u = (this.currentUser && this.currentUser.username) || 'anonymous';
         return `anticode_chat_cleanup_settings::${u}`;
     }
 
     _getCleanupLastRunKey() {
-        const u = this.currentUser?.username || 'anonymous';
+        const u = (this.currentUser && this.currentUser.username) || 'anonymous';
         return `anticode_chat_cleanup_last_run::${u}`;
     }
 
@@ -2697,7 +2703,7 @@ class AntiCodeApp {
             const raw = localStorage.getItem(this._getCleanupSettingsKey());
             if (!raw) return { enabled: true };
             const parsed = JSON.parse(raw);
-            return { enabled: parsed?.enabled !== false };
+            return { enabled: (parsed && parsed.enabled) !== false };
         } catch (_) {
             return { enabled: true };
         }
@@ -2761,7 +2767,7 @@ class AntiCodeApp {
     }
 
     _getUnlockedStorageKey() {
-        const u = this.currentUser?.username || 'anonymous';
+        const u = (this.currentUser && this.currentUser.username) || 'anonymous';
         return `anticode_unlocked_channels::${u}`;
     }
 
@@ -2839,8 +2845,8 @@ class AntiCodeApp {
                     body: file
                 });
                 const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data?.ok || !data?.url) {
-                    throw new Error(data?.error || `upload_failed (${res.status}) - No URL returned`);
+                if (!res.ok || !data || !data.ok || !data.url) {
+                    throw new Error((data && data.error) || ('upload_failed (' + res.status + ') - No URL returned'));
                 }
                 return data.url;
             } catch (r2Error) {
@@ -3012,11 +3018,11 @@ class AntiCodeApp {
 
     async checkAppUpdate() {
         try {
-            const res = await fetch('./version.json?t=' + Date.now());
-            const data = await res.json();
+            var res = await fetch('./version.json?t=' + Date.now());
+            var data = await res.json();
             if (data && data.version && data.version !== APP_VERSION) {
                 console.log('[UPDATE] New version available:', data.version, '(Current:', APP_VERSION, ')');
-                const updatePrompt = document.getElementById('update-notification');
+                var updatePrompt = document.getElementById('update-notification');
                 if (updatePrompt) updatePrompt.style.display = 'flex';
             } else {
                 console.log('[DEBUG] Channel view version is current:', APP_VERSION);
@@ -3028,8 +3034,8 @@ class AntiCodeApp {
         if (!this.channels || this.channels.length === 0) return;
 
         try {
-            const u = this.currentUser?.username || 'anonymous';
-            const lastId = localStorage.getItem(`anticode_last_channel::${u}`);
+            var u = (this.currentUser && this.currentUser.username) || 'anonymous';
+            var lastId = localStorage.getItem('anticode_last_channel::' + u);
 
             if (lastId) {
                 const target = this.channels.find(c => String(c.id) === String(lastId));
@@ -3130,7 +3136,7 @@ class AntiCodeApp {
                 return;
             }
         } catch (e) {
-            console.warn('loadChannelParticipants fallback (table missing?):', e?.message || e);
+            console.warn('loadChannelParticipants fallback (table missing?):', (e && e.message) || e);
         }
 
         // Fallback: derive from current retained messages only (NOT truly "ever", but avoids blank offline list).
@@ -3145,14 +3151,14 @@ class AntiCodeApp {
             const seen = new Set();
             const out = [];
             for (const row of (data || [])) {
-                const u = row?.user_id ? String(row.user_id) : '';
+                const u = (row && row.user_id) ? String(row.user_id) : '';
                 if (!u || seen.has(u)) continue;
                 seen.add(u);
-                out.push({ username: u, last_message_at: row?.created_at || null });
+                out.push({ username: u, last_message_at: (row && row.created_at) || null });
             }
             this.channelParticipants = out;
         } catch (e2) {
-            console.warn('loadChannelParticipants fallback failed:', e2?.message || e2);
+            console.warn('loadChannelParticipants fallback failed:', (e2 && e2.message) || e2);
             this.channelParticipants = [];
         }
     }
@@ -3290,7 +3296,7 @@ class AntiCodeApp {
             return true;
         } catch (e) {
             console.error(e);
-            alert('친구 삭제 실패: ' + (e?.message || e));
+            alert('친구 삭제 실패: ' + (e && e.message || e));
             return false;
         }
     }
@@ -3317,7 +3323,7 @@ class AntiCodeApp {
                     <span class="friend-status-text" style="display: block; color: var(--text-muted); font-size: 0.7rem;">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
                 </div>
                 <div class="friend-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel(window.app.activeChannel?.id, '${f.username}')" title="방으로 초대" style="background: rgba(0,242,255,0.15); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; width: 28px; height: 28px; font-size: 1rem; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;">+</button>
+                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel((window.app.activeChannel ? window.app.activeChannel.id : null), '${f.username}')" title="방으로 초대" style="background: rgba(0,242,255,0.15); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; width: 28px; height: 28px; font-size: 1rem; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;">+</button>
                     <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제" style="margin: 0; background: rgba(218, 55, 60, 0.1); border: 1px solid #da373c; color: #da373c; width: 28px; height: 28px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
                 </div>
             </li>
@@ -3353,9 +3359,9 @@ class AntiCodeApp {
         const container = document.getElementById('friend-modal-list');
         if (!container) return;
 
-        const targetChannelId = this._friendModalTargetChannelId || this.activeChannel?.id || '';
-        const targetChannel = targetChannelId ? this.channels.find(c => String(c.id) === String(targetChannelId)) : null;
-        const activeChannelName = targetChannel?.name || this.activeChannel?.name || '';
+        const targetChannelId = this._friendModalTargetChannelId || (this.activeChannel && this.activeChannel.id) || '';
+        const targetChannel = targetChannelId ? this.channels.find(function (c) { return String(c.id) === String(targetChannelId); }) : null;
+        const activeChannelName = (targetChannel && targetChannel.name) || (this.activeChannel && this.activeChannel.name) || '';
 
         // [New] Permission: Only owner can invite
         const isOwner = targetChannel && (targetChannel.owner_id === this.currentUser.username || this.currentUser.role === 'admin');
@@ -3440,7 +3446,7 @@ class AntiCodeApp {
         const orderedCats = [...known, ...extras];
 
         const collapseKey = (() => {
-            const u = this.currentUser?.username || 'anonymous';
+            const u = (this.currentUser && this.currentUser.username) || 'anonymous';
             return `anticode_channel_groups_collapsed::${u}`;
         })();
         const collapsed = (() => {
@@ -3453,7 +3459,7 @@ class AntiCodeApp {
         orderedCats.forEach(catId => {
             const chans = categories[catId] || [];
             if (chans.length === 0 && catId !== 'chat') return;
-            const isCollapsed = !!collapsed?.[catId];
+            const isCollapsed = !!(collapsed && collapsed[catId]);
 
             const group = document.createElement('div');
             group.className = 'channel-group' + (isCollapsed ? ' collapsed' : '');
@@ -3463,8 +3469,9 @@ class AntiCodeApp {
                     ${(() => {
                     if (catId !== 'chat') return '';
                     const isAppAdmin = this.isAdminMode;
-                    const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
-                    const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+                    var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
+                    const pageOwner = page ? page.username : null;
+                    const isPageOwner = pageOwner && String(pageOwner) === String((this.currentUser && this.currentUser.username));
                     return (isAppAdmin || isPageOwner) ? '<button id="open-create-channel-cat" class="add-channel-btn">+</button>' : '';
                 })()}
                 </div>
@@ -3477,7 +3484,7 @@ class AntiCodeApp {
                         // Maybe render a special icon or style, but requirement says "hidden" processing only.
                         // The sidebar item render handles basic display.
                     }
-                    return c.renderSidebarItem(isActive, this.currentUser?.username, this.isAdminMode, voiceState);
+                    return c.renderSidebarItem(isActive, (this.currentUser && this.currentUser.username), this.isAdminMode, voiceState);
                 }).join('')}
                 </div>
             `;
@@ -3485,7 +3492,7 @@ class AntiCodeApp {
             // Event binding for collapse
             const header = group.querySelector('.group-header');
             header.onclick = (e) => {
-                if (e?.target?.id === 'open-create-channel-cat') return;
+                if (e && e.target && e.target.id === 'open-create-channel-cat') return;
                 const list = group.querySelector('.sidebar-list');
                 const nowCollapsed = !group.classList.contains('collapsed');
                 if (nowCollapsed) { group.classList.add('collapsed'); if (list) list.style.display = 'none'; }
@@ -3522,23 +3529,25 @@ class AntiCodeApp {
 
         // Remember last visited channel for this user
         try {
-            const u = this.currentUser?.username || 'anonymous';
+            const u = (this.currentUser && this.currentUser.username) || 'anonymous';
             localStorage.setItem(`anticode_last_channel::${u}`, channelId);
         } catch (_) { }
 
         // If user clicks the already-active channel, do nothing (prevents reloading/clearing messages)
         if (this.activeChannel && this.activeChannel.id === channelId) {
             // Close sidebar on mobile
-            document.querySelector('.anticode-sidebar')?.classList.remove('open');
-            document.querySelector('.anticode-members')?.classList.remove('open');
+            var sidebar = document.querySelector('.anticode-sidebar');
+            if (sidebar) sidebar.classList.remove('open');
+            var members = document.querySelector('.anticode-members');
+            if (members) members.classList.remove('open');
             return;
         }
 
         // Password modal gate:
         // - If invited/member (or owner), allow entry without password.
         // - Otherwise, require password for password-protected channels.
-        const isOwner = channel.owner_id && channel.owner_id === this.currentUser?.username;
-        const isMember = isOwner ? true : await this._hasChannelMembership(channelId, this.currentUser?.username);
+        const isOwner = channel.owner_id && channel.owner_id === (this.currentUser && this.currentUser.username);
+        const isMember = isOwner ? true : await this._hasChannelMembership(channelId, (this.currentUser && this.currentUser.username));
         // Important: if you're not a member (e.g. after kick), you MUST re-enter password (even if previously unlocked on this device).
         if (channel.password && !isMember) {
             this.pendingChannelId = channelId;
@@ -3652,8 +3661,8 @@ class AntiCodeApp {
         }
 
         // Kicked check: Deny re-entry for kicked users
-        const myMeta = this.channelMemberMeta?.get(this.currentUser.username);
-        if (myMeta?.status === 'kicked') {
+        const myMeta = (this.channelMemberMeta && this.channelMemberMeta.get && this.channelMemberMeta.get(this.currentUser.username));
+        if (myMeta && myMeta.status === 'kicked') {
             alert('이 방에서 강퇴되었습니다. 방장이 다시 초대해야 입장 가능합니다.');
             const fallback = this.channels.find(c => c.type !== 'secret' && c.type !== 'open_hidden' && String(c.id) !== String(channel.id)) || this.channels[0];
             if (fallback && fallback.id !== channel.id) {
@@ -3664,7 +3673,7 @@ class AntiCodeApp {
 
         // [MOD] Hidden Open Chat Gate
         if (channel.type === 'open_hidden') {
-            const me = this.currentUser?.username;
+            const me = (this.currentUser && this.currentUser.username);
             const isOwner = String(channel.owner_id) === String(me);
             const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
 
@@ -3678,7 +3687,7 @@ class AntiCodeApp {
 
         // [MOD] Hidden Open Chat Gate
         if (channel.type === 'open_hidden') {
-            const me = this.currentUser?.username;
+            const me = (this.currentUser && this.currentUser.username);
             const isOwner = String(channel.owner_id) === String(me);
             const isMember = isOwner || this.myJoinedChannelIds.has(String(channel.id));
 
@@ -3714,7 +3723,7 @@ class AntiCodeApp {
         const ch = this.channels.find(c => c.id === channelId);
         if (!ch) return;
 
-        const isOwner = this.currentUser?.username && String(ch.owner_id) === String(this.currentUser.username);
+        const isOwner = (this.currentUser && this.currentUser.username) && String(ch.owner_id) === String(this.currentUser.username);
         if (!this.isAdminMode && !isOwner) return alert('관리자나 방장만 수정할 수 있습니다.');
 
         const newName = prompt('채널 이름', ch.name);
@@ -3743,14 +3752,14 @@ class AntiCodeApp {
             if (error) throw error;
             await this.loadChannels();
             // Refresh active channel object if needed
-            if (this.activeChannel?.id === channelId) {
+            if (this.activeChannel && this.activeChannel.id === channelId) {
                 this.activeChannel = this.channels.find(c => c.id === channelId) || this.activeChannel;
                 this.renderChannels();
             }
             alert('채널 수정 완료!');
         } catch (e) {
             console.error('editChannel failed:', e);
-            alert('채널 수정 실패: ' + (e?.message || e));
+            alert('채널 수정 실패: ' + (e && e.message || e));
         }
     }
 
@@ -3777,8 +3786,9 @@ class AntiCodeApp {
     }
 
     async createChannel(name, type, category, password) {
-        const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
-        const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+        var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
+        const pageOwner = page ? page.username : null;
+        const isPageOwner = pageOwner && String(pageOwner) === String((this.currentUser && this.currentUser.username));
 
         if (!this.isAdminMode && !isPageOwner) {
             alert('방장이나 페이지 소유자만 채널을 생성할 수 있습니다.');
@@ -3991,7 +4001,7 @@ class AntiCodeApp {
                 // Note: filter on channel_id may not work for DELETE if not in PK, 
                 // but we can filter in the callback or trust Supabase if it works.
             }, payload => {
-                const id = payload.old?.id;
+                const id = (payload.old && payload.old.id);
                 if (!id) return;
                 const el = document.getElementById(`msg-${id}`);
                 if (el) {
@@ -4000,10 +4010,10 @@ class AntiCodeApp {
                 }
             })
             .on('broadcast', { event: 'kick' }, async payload => {
-                const data = payload?.payload;
+                const data = (payload && payload.payload);
                 if (!data) return;
                 // If I am the target, I must leave
-                if (data.target === this.currentUser?.username) {
+                if (data.target === (this.currentUser && this.currentUser.username)) {
                     alert('이 방에서 강퇴되었습니다.');
                     const fallback = this.channels.find(c => c.type === 'general') || this.channels[0];
                     if (fallback) this.switchChannel(fallback.id);
@@ -4013,7 +4023,8 @@ class AntiCodeApp {
                 // If I am observer, refresh member metadata to hide the kicked user
                 try {
                     await this.loadChannelMembers(channelId);
-                    await this.updateChannelMemberPanel(this.channelPresenceChannel?.presenceState?.() || {});
+                    var state = (this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState());
+                    await this.updateChannelMemberPanel(state || {});
 
                     const msgs = document.querySelectorAll(`[data-author="${data.target}"]`);
                     msgs.forEach(el => el.remove());
@@ -4230,7 +4241,7 @@ class AntiCodeApp {
 
         if (error) {
             console.error('Failed to send message:', error);
-            this._markOptimisticFailed(tempId, error?.message || String(error));
+            this._markOptimisticFailed(tempId, (error && error.message) || String(error));
             return;
         }
 
@@ -4238,7 +4249,7 @@ class AntiCodeApp {
         try {
             const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
             if (opt && typeof this.finalizeOptimistic === 'function') {
-                this.finalizeOptimistic(opt, { ...newMessage, id: data?.id });
+                this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data ? data.id : null }));
             }
         } catch (_) { }
 
@@ -4468,8 +4479,8 @@ class AntiCodeApp {
 
         // Instant UI: Remove from DOM immediately
         const el = document.getElementById(`msg-${messageId}`);
-        const parent = el?.parentElement;
-        const nextSibling = el?.nextSibling;
+        const parent = (el && el.parentElement);
+        const nextSibling = (el && el.nextSibling);
         if (el) el.remove();
 
         try {
@@ -4605,11 +4616,11 @@ class AntiCodeApp {
         // Voice toggle (mic)
         _safeBind('voice-toggle-btn', 'onclick', async (e) => {
             try {
-                e?.stopPropagation?.();
+                if (e && e.stopPropagation) e.stopPropagation();
                 await this.toggleVoice();
             } catch (err) {
                 console.error('toggleVoice error:', err);
-                alert('보이스 톡 오류: ' + (err?.message || err));
+                alert('보이스 톡 오류: ' + (err && err.message || err));
             }
         });
 
@@ -4653,8 +4664,9 @@ class AntiCodeApp {
         const menuAdd = document.getElementById('menu-add');
         if (menuAdd) {
             const updateMenuAddVisibility = () => {
-                const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
-                const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+                var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
+                const pageOwner = page ? page.username : null;
+                const isPageOwner = pageOwner && String(pageOwner) === String((this.currentUser && this.currentUser.username));
                 if (this.isAdminMode || isPageOwner) {
                     menuAdd.style.display = 'flex';
                     menuAdd.onclick = (e) => {
@@ -4708,8 +4720,9 @@ class AntiCodeApp {
         const openCreateBtn = document.getElementById('open-create-channel');
         if (openCreateBtn) {
             const updateCreateBtnVisibility = () => {
-                const pageOwner = this.channelPages.find(p => p.id === this.activeChannelPageId)?.username;
-                const isPageOwner = pageOwner && String(pageOwner) === String(this.currentUser?.username);
+                var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
+                const pageOwner = page ? page.username : null;
+                const isPageOwner = pageOwner && String(pageOwner) === String((this.currentUser && this.currentUser.username));
                 if (this.isAdminMode || isPageOwner) {
                     openCreateBtn.style.display = 'flex';
                     openCreateBtn.onclick = () => cModal && (cModal.style.display = 'flex');
@@ -4756,7 +4769,8 @@ class AntiCodeApp {
             this.openChannelPagesModal();
         });
         _safeBind('pages-modal-create', 'onclick', async () => {
-            const name = document.getElementById('pages-modal-new-name')?.value || '';
+            const nameEl = document.getElementById('pages-modal-new-name');
+            const name = (nameEl ? nameEl.value : '');
             const ok = await this.createChannelPage(name);
             if (ok) {
                 const inp = document.getElementById('pages-modal-new-name');
@@ -4772,7 +4786,8 @@ class AntiCodeApp {
             const sel = document.getElementById('pages-modal-select');
             const pid = sel ? String(sel.value || '') : '';
             if (!pid || pid === 'all') return alert('이름을 바꿀 페이지를 선택하세요.');
-            const name = document.getElementById('pages-modal-rename')?.value || '';
+            const nameEl = document.getElementById('pages-modal-rename');
+            const name = (nameEl ? nameEl.value : '');
             const ok = await this.renameChannelPage(pid, name);
             if (ok) {
                 const inp = document.getElementById('pages-modal-rename');
@@ -4838,7 +4853,7 @@ class AntiCodeApp {
                 const nEl = document.getElementById('notif-volume');
                 const nValEl = document.getElementById('notif-volume-value');
                 if (nEl) {
-                    const pct = Math.round((NotificationManager.volume ?? 0.8) * 100);
+                    const pct = Math.round((NotificationManager.volume !== undefined ? NotificationManager.volume : 0.8) * 100);
                     nEl.value = String(pct);
                     if (nValEl) nValEl.textContent = `${pct}%`;
                 }
@@ -4959,10 +4974,10 @@ class AntiCodeApp {
             if (btn) { btn.disabled = true; btn.textContent = '실행 중...'; }
             try {
                 const res = await this.cleanupOldMessages(90);
-                if (!res.ok) alert('정리 실패: ' + (res.error?.message || res.error));
+                if (!res.ok) alert('정리 실패: ' + (res.error && res.error.message || res.error));
                 else alert('정리 완료!');
             } catch (e) {
-                alert('정리 실패: ' + (e?.message || e));
+                alert('정리 실패: ' + (e && e.message || e));
             } finally {
                 if (btn) { btn.disabled = false; btn.textContent = '지금 실행'; }
                 if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
@@ -5021,9 +5036,10 @@ class AntiCodeApp {
                             }
                         }
                     } else {
-                        const maxBytes = isPro ? (50 * 1024 * 1024) : (file.name?.toLowerCase().endsWith('.zip') ? (1 * 1024 * 1024) : (200 * 1024));
+                        var isZip = (file.name && file.name.toLowerCase().indexOf('.zip') !== -1);
+                        const maxBytes = isPro ? (50 * 1024 * 1024) : (isZip ? (1 * 1024 * 1024) : (200 * 1024));
                         if (file.size > maxBytes) {
-                            const limitText = isPro ? "50MB+" : (file.name?.toLowerCase().endsWith('.zip') ? "1MB" : "200KB");
+                            const limitText = isPro ? "50MB+" : (isZip ? "1MB" : "200KB");
                             alert(`파일 용량이 너무 큽니다.\\n현재 등급 최대 ${limitText}`);
                             return;
                         }
@@ -5068,13 +5084,13 @@ class AntiCodeApp {
 
                     if (error) {
                         console.error('Failed to send image message:', error);
-                        this._markOptimisticFailed(tempId, error?.message || String(error));
+                        this._markOptimisticFailed(tempId, (error && error.message) || String(error));
                         return;
                     }
 
                     try {
                         const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
-                        if (opt) this.finalizeOptimistic(opt, { ...newMessage, id: data?.id });
+                        if (opt) this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data ? data.id : null }));
                     } catch (_) { }
 
                     // Offline push notification (file/image message)

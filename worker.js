@@ -48,7 +48,7 @@ function extractYouTubeId(url) {
 }
 
 function linkify(escapedText) {
-    const text = String(escapedText ?? '');
+    const text = String((escapedText !== undefined && escapedText !== null) ? escapedText : '');
     const urlRe = /(https?:\/\/[^\s<]+[^\s<\.)\],!?])/g;
     return text.replace(urlRe, (rawUrl) => {
         const lower = rawUrl.toLowerCase();
@@ -67,7 +67,7 @@ function linkify(escapedText) {
 }
 
 function filterProfanity(text) {
-    const input = String(text ?? '');
+    const input = String((text !== undefined && text !== null) ? text : '');
     if (!input) return { text: input, flagged: false };
 
     const patterns = [

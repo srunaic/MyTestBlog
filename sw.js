@@ -110,7 +110,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
     try { event.notification.close(); } catch (_) { }
     event.waitUntil((async () => {
-        const url = event.notification?.data?.url || '/anticode.html';
+        const url = (event.notification && event.notification.data && event.notification.data.url) || '/anticode.html';
         const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         for (const client of allClients) {
             if ('focus' in client) {

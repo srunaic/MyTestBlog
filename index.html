@@ -4,6 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Emergency Debugger for Android/Older browsers
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            var string = msg.toLowerCase();
+            var message = [
+                'Message: ' + msg,
+                'URL: ' + url,
+                'Line: ' + lineNo,
+                'Column: ' + columnNo,
+                'Error object: ' + JSON.stringify(error)
+            ].join(' - ');
+            alert("Error detected: " + message);
+            return false;
+        };
+        window.onunhandledrejection = function (event) {
+            alert("Promise Rejection: " + event.reason);
+        };
+    </script>
 
     <!-- SEO Meta Tags -->
     <title>나노 도로시 | Nanodoroshi Official Blog</title>
