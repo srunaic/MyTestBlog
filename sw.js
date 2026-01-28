@@ -1,5 +1,5 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v2.5'; // [UPDATE] Force refresh for new versioning logic
+const CACHE_NAME = 'nanodoroshi-v2.6'; // [UPDATE] Clear stale obfuscated scripts
 const ASSETS = [
     '/',
     '/index.html',

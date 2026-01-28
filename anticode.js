@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.28.0015';
+const APP_VERSION = '2026.01.28.1935';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -2896,31 +2896,7 @@ class AntiCodeApp {
         const isAdmin = tempAuth && tempAuth.role === 'admin';
 
         if (!isAdmin) {
-            // Check if running inside a standalone app (APK/PWA)
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || document.referrer.includes('android-app://');
-
-            if (!isStandalone) {
-                // Block general browser access
-                document.body.innerHTML = `
-                    <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050510; color:white; font-family:sans-serif; text-align:center; padding:20px;">
-                        <h1 style="color:#00f2ff; margin-bottom:20px;">🔒 Beta Test Access Only</h1>
-                        <p style="font-size:1.1rem; line-height:1.6; margin-bottom:30px;">
-                            Anticode는 현재 베타 테스트 기간이며,<br>
-                            전용 <b>안드로이드 앱</b>을 통해서만 접속 가능합니다.
-                        </p>
-                        <a href="https://github.com/srunaic/MyTestBlog/raw/main/AntiCode-Beta-Signed.apk" 
-                           style="padding:15px 30px; background:#ffb92f; color:black; text-decoration:none; border-radius:8px; font-weight:bold; margin-bottom:20px;">
-                           안드로이드 앱 다운로드
-                        </a>
-                        <p style="font-size:0.8rem; color:#888;">
-                            웹 브라우저를 통한 직접 접속은 차단되었습니다.<br>
-                            문의: 관리자
-                        </p>
-                    </div>
-                `;
-                return;
-            }
-
+            // [MOD] Removed standalone/APK restriction to fix Android browser compatibility
             // If in app, check for beta key
             if (granted !== 'true') {
                 const guard = document.getElementById('beta-guard');

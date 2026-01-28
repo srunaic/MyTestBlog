@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.28.0015",
-    "message": "Strict page isolation + Realtime channel deletion sync."
+    "version": "2026.01.28.1935",
+    "message": "Android compatibility fix: relaxed obfuscation + removed browser block."
 }
