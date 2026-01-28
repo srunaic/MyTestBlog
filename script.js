@@ -2121,20 +2121,6 @@ async function renderUserActivity() {
     }
 }
 
-async function checkAppUpdate() {
-    try {
-        const res = await fetch('./version.json?t=' + Date.now());
-        const data = await res.json();
-        if (data && data.version && data.version !== APP_VERSION) {
-            console.log('[UPDATE] New version available:', data.version, '(Current:', APP_VERSION, ')');
-            if (typeof location !== 'undefined' && location.reload) {
-                console.log('Force updating...');
-                location.reload(true);
-            }
-        }
-    } catch (e) { }
-}
-
 // Final Export: Attach to window for inline HTML onclick/onchange handlers
 if (typeof window !== 'undefined') {
     Object.assign(window, {
