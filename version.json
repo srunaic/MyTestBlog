@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.28.2348",
-    "message": "UI Polish: Vibrant pink branding for RosaeHub header/nickname and restored Chat Room Add button."
+    "version": "2026.01.29.0010",
+    "message": "UI Polish: Localized all buttons to Korean (친구추가, 삭제, 채팅방 추가) and hardened blog nickname colors."
 }

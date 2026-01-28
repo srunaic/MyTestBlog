@@ -151,16 +151,17 @@ body {
     text-decoration: none;
     color: var(--accent-main);
     font-size: 0.8rem;
-    font-weight: 900;
+    font-weight: 950;
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: 0.3s;
     padding: 8px 16px;
     border-radius: 50px;
-    border: 1px solid transparent;
+    border: 1px solid var(--accent-soft);
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .hero-nav a:hover {
@@ -179,13 +180,7 @@ body {
     background: rgba(0, 242, 255, 0.15);
 }
 
-.hero-nav .user-info-text {
-    opacity: 1;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    font-weight: 950;
-}
+
 
 .hero-nav .logout-link {
     color: #ff007a;

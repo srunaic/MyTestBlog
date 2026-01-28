@@ -3326,7 +3326,7 @@ class AntiCodeApp {
                 </div>
                 <div class="friend-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
                     <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel((window.app.activeChannel ? window.app.activeChannel.id : null), '${f.username}')" title="방으로 초대">초대</button>
-                    <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제" style="margin: 0; background: rgba(218, 55, 60, 0.1); border: 1px solid #da373c; color: #da373c; width: 28px; height: 28px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+                    <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제">삭제</button>
                 </div>
             </li>
         `;
