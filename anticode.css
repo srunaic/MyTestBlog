@@ -895,34 +895,24 @@ input:focus {
 }
 
 .delete-msg-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 77, 77, 0.2);
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    /* Slightly larger */
+    background: #fdf2f4;
+    border: 1px solid var(--accent-light, #fce4ec);
+    color: var(--accent-main);
+    font-size: 0.9rem;
     cursor: pointer;
-    opacity: 0;
     transition: all 0.2s ease;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-left: 8px;
+    padding: 4px 8px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-}
-
-.message-item:hover .delete-msg-btn {
-    opacity: 0.5;
-    /* More visible than 0.4 */
+    margin-left: 8px;
 }
 
 .delete-msg-btn:hover {
-    opacity: 1 !important;
-    color: #fff !important;
-    background: #ff4d4d !important;
-    border-color: #ff4d4d !important;
-    box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
-    transform: scale(1.1);
+    background: var(--accent-main);
+    color: #fff;
+    border-color: var(--accent-main);
 }
 
 .member-name {
@@ -1514,19 +1504,7 @@ input:focus {
     opacity: 1;
 }
 
-.delete-msg-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 2px;
-    filter: grayscale(1);
-    transition: filter 0.2s;
-}
 
-.delete-msg-btn:hover {
-    filter: none;
-}
 
 /* Invitation System */
 .invite-badge {

@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.29.0010",
-    "message": "UI Polish: Localized all buttons to Korean (친구추가, 삭제, 채팅방 추가) and hardened blog nickname colors."
+    "version": "2026.01.29.0015",
+    "message": "Critical Bug Fix: Resolved Settings Modal crash. UI Improvement: Enabled always-visible trash icons for message owners and admins."
 }

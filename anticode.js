@@ -4417,17 +4417,7 @@ class AntiCodeApp {
         }
     }
 
-    async deleteMessage(messageId) {
-        if (!confirm('메시지를 삭제하시겠습니까?')) return;
-        try {
-            const { error } = await this.supabase.from('anticode_messages').delete().eq('id', messageId);
-            if (error) throw error;
-            const el = document.getElementById(`msg-${messageId}`);
-            if (el) el.remove();
-        } catch (e) {
-            alert('삭제 실패: ' + e.message);
-        }
-    }
+
 
     // [NEW] Edit Message Prompt
     editMessagePrompt(messageId, oldContent) {
@@ -4815,7 +4805,7 @@ class AntiCodeApp {
         _safeBind('open-settings-btn', 'onclick', () => {
             if (sModal) {
                 sModal.style.display = 'flex';
-                this.updateButtons();
+                NotificationManager.updateButtons();
             }
             // Admin-only chat cleanup controls
             const cleanupGroup = document.getElementById('chat-cleanup-setting');
