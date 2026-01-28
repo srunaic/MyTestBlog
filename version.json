@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.28.2015",
-    "message": "Broad compatibility fix: Purged modern JS operators (?., ??). Added emergency debugger."
+    "version": "2026.01.28.2125",
+    "message": "Critical fix: Globalized interactive functions to restore button functionality in module context."
 }

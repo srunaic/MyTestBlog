@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <script>
         // Emergency Debugger for Android/Older browsers
         window.onerror = function (msg, url, lineNo, columnNo, error) {
@@ -23,8 +26,8 @@
         };
     </script>
     <title>AntiCode | Nanodoroshi Community</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="anticode.css">
+    <link rel="stylesheet" href="style.css?v=2026.01.28.2015">
+    <link rel="stylesheet" href="anticode.css?v=2026.01.28.2015">
     <link rel="manifest" href="/manifest-v3.json?v=3">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -543,13 +546,33 @@
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
         preload="auto"></audio>
 
-    <script type="module" src="anticode.js"></script>
+    <script type="module" src="anticode.js?v=2026.01.28.2015"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('PWA Service Worker registered'))
+                    .then(reg => {
+                        console.log('PWA Service Worker registered');
+                        reg.update();
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('New SW version! Reloading...');
+                                    location.reload(true);
+                                }
+                            };
+                        };
+                    })
                     .catch(err => console.error('PWA Service Worker registration failed', err));
+            });
+
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
             });
         }
     </script>

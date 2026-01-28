@@ -3022,8 +3022,10 @@ class AntiCodeApp {
             var data = await res.json();
             if (data && data.version && data.version !== APP_VERSION) {
                 console.log('[UPDATE] New version available:', data.version, '(Current:', APP_VERSION, ')');
-                var updatePrompt = document.getElementById('update-notification');
-                if (updatePrompt) updatePrompt.style.display = 'flex';
+                if (typeof location !== 'undefined' && location.reload) {
+                    console.log('Force updating to ' + data.version + '...');
+                    location.reload(true);
+                }
             } else {
                 console.log('[DEBUG] Channel view version is current:', APP_VERSION);
             }
@@ -5247,4 +5249,30 @@ class AntiCodeApp {
 }
 const app = new AntiCodeApp();
 window.app = app;
+
+// Global Function Exports (Fix ReferenceErrors in module context)
+if (typeof window !== 'undefined') {
+    Object.assign(window, {
+        switchChannel: (id) => app.handleChannelSwitch(id),
+        logout: () => app.handleLogout(),
+        openAuthModal: (mode) => app.openAuthModal(mode),
+        closeAuthModal: () => app.closeAuthModal(),
+        toggleVoice: () => app.toggleVoice(),
+        clearNotifications: () => app.clearNotifications(),
+        toggleSidebar: () => app.toggleSidebar(),
+        toggleMemberSidebar: () => app.toggleMemberSidebar(),
+        editChannel: (id) => app.editChannel(id),
+        deleteChannel: (id) => app.deleteChannel(id),
+        inviteFriendToChannel: (user, cid) => app.inviteFriendToChannel(user, cid),
+        removeFriend: (user) => app.removeFriend(user),
+        acceptFriendRequest: (user) => app.acceptFriendRequest(user),
+        declineFriendRequest: (user) => app.declineFriendRequest(user),
+        handleKick: (channelId, username) => app.handleKick(channelId, username),
+        handleRoleChange: (channelId, username, role) => app.handleRoleChange(channelId, username, role),
+        acceptChannelInvite: (cid) => app.acceptChannelInvite(cid),
+        rejectChannelInvite: (cid) => app.rejectChannelInvite(cid),
+        checkAppUpdate: () => app.checkAppUpdate()
+    });
+}
+
 app.init();

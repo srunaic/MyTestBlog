@@ -1,14 +1,14 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v2.6'; // [UPDATE] Clear stale obfuscated scripts
+const CACHE_NAME = 'nanodoroshi-v2.7'; // [UPDATE] Forced cache purge for compatibility sweep
 const ASSETS = [
     '/',
-    '/index.html',
-    '/style.css',
-    '/script.js',
-    '/worker.js', // [MULTI-THREAD] Add worker to cache
-    '/anticode.html',
-    '/anticode.css',
-    '/anticode.js',
+    '/index.html?v=2026.01.28.2015',
+    '/style.css?v=2026.01.28.2015',
+    '/script.js?v=2026.01.28.2015',
+    '/worker.js?v=2026.01.28.2015',
+    '/anticode.html?v=2026.01.28.2015',
+    '/anticode.css?v=2026.01.28.2015',
+    '/anticode.js?v=2026.01.28.2015',
     '/icon-192x192-maskable.png',
     '/manifest-v3.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
@@ -54,8 +54,12 @@ self.addEventListener('fetch', event => {
     // 1. Critical bypass for non-GET (Supabase POST/Auth/Realtime)
     if (event.request.method !== 'GET' || url.hostname.includes('supabase.co')) return;
 
-    // 2. Navigation Strategy: Network-First (Avoids redirect mismatch errors)
-    if (event.request.mode === 'navigate') {
+    // 2. Network-First Strategy for HTML, JS, and CSS (Aggressive update)
+    const isCritical = event.request.mode === 'navigate' ||
+        url.pathname.endsWith('.js') ||
+        url.pathname.endsWith('.css');
+
+    if (isCritical) {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
@@ -68,7 +72,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // 3. Asset Strategy: Stale-While-Revalidate (Static files)
+    // 3. Asset Strategy: Stale-While-Revalidate (Images, fonts, etc)
     event.respondWith(
         caches.open(CACHE_NAME).then(cache => {
             return cache.match(event.request).then(response => {

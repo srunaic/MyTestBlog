@@ -37,7 +37,7 @@ const LogicWorker = {
     init() {
         if (this.worker) return;
         try {
-            this.worker = new Worker('./worker.js');
+            this.worker = new Worker('./worker.js?v=2026.01.28.2015');
             this.worker.onmessage = (e) => {
                 const { id, result, error } = e.data;
                 const callback = this.callbacks.get(id);
@@ -141,10 +141,7 @@ const NotificationManager = {
         if (this.initialized) this.cleanup();
         this.updateBadge();
         this.updateButtons();
-
-        // Use a small delay to ensure supabase is ready
         this._subTimeout = setTimeout(() => this.setupSubscriptions(), 2000);
-
         this.initialized = true;
     },
 
@@ -161,51 +158,19 @@ const NotificationManager = {
 
     setupSubscriptions() {
         if (!supabase) return;
-        console.log('Setting up notification subscriptions...');
-
-        // Post Notifications
         supabase.channel('notif-posts')
-            .on('postgres_changes', { event: 'INSERT', table: 'posts' }, payload => {
-                this.notify('post', payload.new);
-            })
-            .on('postgres_changes', { event: 'UPDATE', table: 'posts' }, payload => {
-                this.notify('post-update', payload.new);
-            })
+            .on('postgres_changes', { event: 'INSERT', table: 'posts' }, payload => this.notify('post', payload.new))
             .subscribe();
-
-        // Comment Notifications
         supabase.channel('notif-comments')
-            .on('postgres_changes', { event: 'INSERT', table: 'comments' }, payload => {
-                this.notify('comment', payload.new);
-            })
-            .on('postgres_changes', { event: 'UPDATE', table: 'comments' }, payload => {
-                this.notify('comment-update', payload.new);
-            })
+            .on('postgres_changes', { event: 'INSERT', table: 'comments' }, payload => this.notify('comment', payload.new))
             .subscribe();
-
-        // AntiCode Notifications
-        supabase.channel('chat-notif')
-            .on('postgres_changes', { event: 'INSERT', table: 'anticode_messages' }, payload => {
-                this.notify('chat', payload.new);
-            }).subscribe();
     },
 
     notify(type, data) {
-        // Increment count
         this.count++;
         if (this.count > 100) this.count = 100;
-
         this.updateBadge();
         this.playSound();
-    },
-
-    playSound() {
-        if (!this.isSoundOn) return;
-        const audio = document.getElementById('notif-sound');
-        if (audio) {
-            audio.currentTime = 0;
-            audio.play().catch(e => console.warn('Sound play blocked by browser policy. Interaction needed.'));
-        }
     },
 
     updateBadge() {
@@ -223,12 +188,6 @@ const NotificationManager = {
         }
     },
 
-    toggleSound() {
-        this.isSoundOn = !this.isSoundOn;
-        localStorage.setItem('nano_notif_sound', this.isSoundOn ? 'on' : 'off');
-        this.updateButtons();
-    },
-
     updateButtons() {
         const btns = document.querySelectorAll('.notif-toggle-btn');
         btns.forEach(btn => {
@@ -243,14 +202,30 @@ const NotificationManager = {
         });
     },
 
+    playSound() {
+        if (!this.isSoundOn) return;
+        const audio = document.getElementById('notif-sound');
+        if (audio) {
+            audio.currentTime = 0;
+            audio.play().catch(e => console.warn('Sound play blocked by browser policy. Interaction needed.'));
+        }
+    },
+
     clearNotifications() {
         this.count = 0;
         this.updateBadge();
+    },
+
+    toggleSound() {
+        this.isSoundOn = !this.isSoundOn;
+        localStorage.setItem('nano_notif_sound', this.isSoundOn ? 'on' : 'off');
+        this.updateButtons();
     }
 };
 
-window.toggleNotifSound = () => NotificationManager.toggleSound();
+// Global Exposure for Notifications (Required for HTML onclick)
 window.clearNotifications = () => NotificationManager.clearNotifications();
+window.toggleNotifSound = () => NotificationManager.toggleSound();
 
 // ==========================================
 // 2. SUPABASE CONFIGURATION
@@ -2146,5 +2121,55 @@ async function renderUserActivity() {
     }
 }
 
-// Start
+async function checkAppUpdate() {
+    try {
+        const res = await fetch('./version.json?t=' + Date.now());
+        const data = await res.json();
+        if (data && data.version && data.version !== APP_VERSION) {
+            console.log('[UPDATE] New version available:', data.version, '(Current:', APP_VERSION, ')');
+            if (typeof location !== 'undefined' && location.reload) {
+                console.log('Force updating...');
+                location.reload(true);
+            }
+        }
+    } catch (e) { }
+}
+
+// Final Export: Attach to window for inline HTML onclick/onchange handlers
+if (typeof window !== 'undefined') {
+    Object.assign(window, {
+        renderAll,
+        showDetail,
+        updateUserIntel,
+        openAccountModal,
+        closeAccountModal,
+        logout,
+        openAuthModal,
+        closeAuthModal,
+        toggleAuthMode,
+        openRecoveryModal,
+        closeRecoveryModal,
+        clearNotifications: window.clearNotifications || function () { NotificationManager.count = 0; NotificationManager.updateBadge(); }, // Safe fallback
+        toggleNotifSound: window.toggleNotifSound || function () { NotificationManager.isSoundOn = !NotificationManager.isSoundOn; localStorage.setItem('nano_notif_sound', NotificationManager.isSoundOn ? 'on' : 'off'); NotificationManager.updateButtons(); },
+        addSocialLink: window.addSocialLink || function () { /* assume defined above or add it if missing */ },
+        toggleOracleInsights: window.toggleOracleInsights || function () {
+            const view = document.getElementById('oracle-insights-view');
+            if (view) view.style.display = view.style.display === 'none' ? 'block' : 'none';
+        },
+        editPostAction: window.editPostAction || function (id) { openModal(posts.find(p => p.id == id)); },
+        deletePostAction: window.deletePostAction || async function (id) { if (confirm('삭제하시겠습니까?')) { if (supabase) await supabase.from('posts').delete().eq('id', id); else posts = posts.filter(p => p.id != id); await loadData(); renderAll(); } },
+        handleReaction,
+        openReplyForm,
+        closeReplyForm,
+        submitComment,
+        requestEditComment,
+        editComment,
+        deleteComment,
+        updateUserRole: window.updateUserRole || async function (uid, role) { if (supabase) { const { error } = await supabase.from('users').update({ role }).eq('username', uid); if (error) alert(error.message); else alert('권한이 변경되었습니다.'); await loadData(); renderUserManagement(); } },
+        deleteUser: window.deleteUser || async function (uid) { if (confirm('사용자를 삭제하시겠습니까?')) { if (supabase) { const { error } = await supabase.from('users').delete().eq('username', uid); if (error) alert(error.message); else { alert('삭제되었습니다.'); await loadData(); renderUserManagement(); } } } },
+        toggleMobileMore,
+        renderUserManagement
+    });
+}
+
 init();
