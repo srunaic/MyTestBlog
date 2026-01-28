@@ -314,9 +314,10 @@ const NotificationManager = {
         // OS notification: show when tab is not active (background)
         try {
             if ((document.hidden || !document.hasFocus()) && this.isOsNotifEnabled()) {
-                this.showOsNotification('Nanodoroshi / Anticode', {
-                    body: msg,
-                    tag: type === 'chat' ? ('anticode_chat_' + (data && data.channel_id ? data.channel_id : '')) : ('nano_' + type),
+                this.showOsNotification('Nanodoroshi / ROSAE HUB', {
+                    body: msg.content,
+                    icon: 'icon-512.png',
+                    tag: type === 'chat' ? `rosaehub_chat_${data?.channel_id || ''}` : `nano_${type}`,
                     renotify: false,
                     silent: false,
                     data: { kind: type, channel_id: (data && data.channel_id ? data.channel_id : null) }
@@ -342,7 +343,7 @@ const NotificationManager = {
         const el = document.getElementById('inapp-notif-toast');
         const body = document.getElementById('inapp-notif-toast-body');
         if (!el || !body) return;
-        body.textContent = `${text}  ·  (이 소리는 Nanodoroshi/Anticode 웹앱에서 울립니다)`;
+        body.textContent = `${text}  ·  (이 소리는 Nanodoroshi/ROSAE HUB 웹앱에서 울립니다)`;
         el.style.display = 'block';
         clearTimeout(this._toastTimer);
         this._toastTimer = setTimeout(() => { try { el.style.display = 'none'; } catch (_) { } }, 3500);
