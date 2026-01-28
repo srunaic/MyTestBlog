@@ -682,6 +682,10 @@
 /* Chat Input */
 .chat-input-container {
     padding: 0 16px 24px 16px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+    background-color: var(--chat-bg);
+    position: relative;
+    z-index: 100;
 }
 
 .input-wrapper {
@@ -1638,4 +1642,28 @@
     background: #ff3333;
     box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
     transform: scale(1.05);
+}
+
+/* PWA Standalone Mode Fixes */
+@media all and (display-mode: standalone) {
+    .anticode-body {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+    }
+
+    #anticode-container {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .chat-area {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .chat-input-container {
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        position: sticky;
+        bottom: 0;
+    }
 }
