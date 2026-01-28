@@ -1,14 +1,14 @@
-/* AntiCode Discord-inspired Cyberpunk Theme */
 :root {
-    --side-bg: #1e1f22;
-    --chat-bg: #313338;
-    --member-bg: #2b2d31;
-    --header-bg: #313338;
-    --text-primary: #dbdee1;
-    --text-muted: #949ba4;
-    --accent: #00f2ff;
-    --accent-hover: #00d4e0;
-    --border-color: rgba(0, 242, 255, 0.1);
+    /* Soft Pink Hub Palette */
+    --side-bg: #fff5f7;
+    --chat-bg: #ffffff;
+    --member-bg: #fff5f7;
+    --header-bg: #ffffff;
+    --text-primary: #4a4a4a;
+    --text-muted: #888888;
+    --accent: #ff69b4;
+    --accent-hover: #ff1493;
+    --border-color: rgba(255, 105, 180, 0.1);
 }
 
 .anticode-body {
@@ -19,6 +19,8 @@
     background-color: var(--chat-bg);
     color: var(--text-primary);
     font-family: 'Noto Sans KR', sans-serif;
+    background-image: radial-gradient(var(--accent-hover) 0.5px, transparent 0.5px);
+    background-size: 20px 20px;
 }
 
 #anticode-container {
@@ -39,19 +41,21 @@
 }
 
 .sidebar-header {
-    height: 48px;
-    padding: 0 16px;
+    height: 60px;
+    padding: 0 20px;
     display: flex;
     align-items: center;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+    background: #fff;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-header h2 {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 900;
     color: var(--accent);
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     margin: 0;
+    text-transform: uppercase;
 }
 
 .sidebar-close-btn {
@@ -117,17 +121,23 @@
 }
 
 .add-channel-btn {
-    background: transparent;
+    background: var(--accent);
     border: none;
-    color: var(--text-muted);
-    font-size: 1.2rem;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 1rem;
     cursor: pointer;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: 0.2s;
 }
 
 .add-channel-btn:hover {
-    color: var(--text-primary);
+    background: var(--accent-hover);
+    transform: scale(1.1);
 }
 
 #channel-list {
@@ -165,11 +175,11 @@
 
 .channel-voice-indicator.on {
     opacity: 1;
-    filter: drop-shadow(0 0 6px rgba(0, 242, 255, 0.35));
+    color: var(--accent);
 }
 
 .channel-voice-indicator.off {
-    opacity: 0.5;
+    opacity: 0.3;
 }
 
 .channel-name-label {
@@ -206,12 +216,12 @@
 }
 
 .channel-group-item:hover .edit-channel-btn {
-    opacity: 0.6;
+    opacity: 0.8;
 }
 
 .edit-channel-btn:hover {
     color: var(--accent) !important;
-    transform: scale(1.15);
+    transform: scale(1.1);
     opacity: 1 !important;
 }
 
@@ -227,18 +237,24 @@
 
 /* Notification Toggle Buttons in AntiCode */
 .notif-toggle-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(0, 242, 255, 0.2);
+    background: #fff;
+    border: 1px solid var(--accent-soft);
     color: var(--text-primary);
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-size: 0.75rem;
     font-weight: 700;
-    border-radius: 4px;
+    border-radius: 50px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 6px;
     transition: 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.notif-toggle-btn:hover {
+    border-color: var(--accent);
+    background: var(--side-bg);
 }
 
 /* Settings modal readability: add spacing + divider between groups */
@@ -305,9 +321,10 @@
 }
 
 .notif-toggle-btn.on {
-    color: var(--accent);
+    color: #fff;
+    background: var(--accent);
     border-color: var(--accent);
-    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+    box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3);
 }
 
 .sidebar-settings {
@@ -512,7 +529,7 @@
 }
 
 .friend-item:hover {
-    background-color: rgba(0, 242, 255, 0.05);
+    background-color: var(--accent-soft);
 }
 
 .avatar-sm-container {
@@ -569,6 +586,7 @@
     color: var(--accent);
     cursor: pointer;
     text-align: center;
+    font-weight: bold;
 }
 
 .view-all-friends:hover {
@@ -689,12 +707,14 @@
 }
 
 .input-wrapper {
-    background-color: #383a40;
-    border-radius: 8px;
-    padding: 11px 16px;
+    background-color: #fce4ec;
+    /* Very light pink background for input */
+    border-radius: 50px;
+    padding: 12px 20px;
     display: flex;
     align-items: center;
     position: relative;
+    border: 1px solid rgba(255, 105, 180, 0.1);
 }
 
 #chat-input {
@@ -711,18 +731,20 @@
 
 .input-actions button {
     background: var(--accent);
-    color: #444;
+    color: #fff;
     border: none;
-    padding: 6px 16px;
-    border-radius: 4px;
+    padding: 8px 20px;
+    border-radius: 50px;
     font-weight: 700;
     cursor: pointer;
     transition: 0.2s;
+    box-shadow: 0 2px 10px rgba(255, 105, 180, 0.3);
 }
 
 .input-actions button:hover {
     background: var(--accent-hover);
     transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(255, 105, 180, 0.5);
 }
 
 /* Message Item */
@@ -749,12 +771,31 @@
 }
 
 .modal-content {
-    background: #2b2d31;
-    padding: 30px;
-    border-radius: 8px;
-    width: 400px;
-    max-width: 90%;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 30px;
     border: 1px solid var(--border-color);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    width: 450px;
+    max-width: 90%;
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+    background: #fdf2f4;
+    border: 1px solid var(--accent-soft);
+    border-radius: 12px;
+    color: var(--text-primary);
+    padding: 12px 16px;
+    font-family: inherit;
+    transition: 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.1);
 }
 
 .modal-content h2 {
