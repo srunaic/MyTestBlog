@@ -2,20 +2,6 @@
 
 <a herf>https://mytestblog-d85.pages.dev/</a>
 
---채팅앱 일반 웹 접속 차단 게시판은 그대로 사용 가능합니다--
-
-## 📱 Anticode 안드로이드 앱 설치 (Android APK)
-현재 베타테스트 중이며, 초대받은 테스터 분들만 설치 및 입장이 가능합니다.
-- **설치 및 접속 정보**: 관리자로부터 전달받은 **개별 초대 링크**를 확인해 주세요.
-- *보안을 위해 다운로드 링크와 베타키는 공개적으로 노출하지 않습니다.*
-
-**⚠️ 설치 안내**
-1. 개별 초대 페이지에서 `.apk` 파일을 다운로드합니다.
-2. 설치 중 "출처를 알 수 없는 앱" 경고가 뜨면 **[무시하고 설치]**를 눌러주세요.
-3. 앱 실행 후 초대 페이지에 적힌 베타 인증 키를 입력하면 접속됩니다!
-
----
-
 # 🌌 Nanodoroshi | Futuristic Cyber-Minimalist Blog
 
 [![Live Demo](https://img.shields.io/badge/demo-live-00f2ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://srunaic.github.io/MyTestBlog/)
