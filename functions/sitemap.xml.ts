@@ -35,9 +35,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
         const supabase = createClient(env.SUPABASE_URL, supabaseKey);
 
         const { data: posts, error } = await supabase
+        const { data: posts, error } = await supabase
             .from('posts')
-            .select('*') // Select all to avoid column name errors initially
-            .order('updated_at', { ascending: false });
+            .select('*') // Select all to avoid column name errors
+            .order('created_at', { ascending: false });
 
         if (error) {
             return new Response(`Supabase Query Error: ${error.message} (${error.code})`, { status: 500 });
@@ -49,11 +50,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
         // Generate URLs for each post
         const postUrls = (posts || [])
             .map((post: Post) => {
-                const lastmod = post.updated_at
-                    ? new Date(post.updated_at).toISOString().split('T')[0]
-                    : post.created_at
-                        ? new Date(post.created_at).toISOString().split('T')[0]
-                        : today;
+                // Use created_at as the primary timestamp since updated_at might not exist
+                const lastmod = post.created_at
+                    ? new Date(post.created_at).toISOString().split('T')[0]
+                    : today;
 
                 return `  <url>
     <loc>${siteUrl}/?post=${post.id}</loc>
