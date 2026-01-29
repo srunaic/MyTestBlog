@@ -984,19 +984,15 @@ body {
 
 .modal-content h2 {
     font-family: 'Montserrat', sans-serif;
-    font-size: 8rem;
+    font-size: 1.8rem;
     font-weight: 950;
-    line-height: 0.85;
-    margin-bottom: 80px;
-    letter-spacing: -6px;
-    color: var(--futuristic-text);
+    line-height: 1.2;
+    margin-bottom: 25px;
+    letter-spacing: -1px;
+    color: var(--accent-main);
     text-transform: uppercase;
     word-break: keep-all;
-    background: linear-gradient(to bottom, #fff, var(--futuristic-accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    /* Added for lint fix */
-    -webkit-text-fill-color: transparent;
+    text-align: center;
 }
 
 /* Auth Modal Specific */

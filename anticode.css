@@ -788,6 +788,8 @@
     max-width: 90%;
     max-height: 90vh;
     overflow-y: auto;
+    padding-bottom: 60px;
+    /* Prevent button cutoff on mobile */
 }
 
 input[type="text"],
@@ -831,8 +833,8 @@ input:focus {
 .form-group input,
 .form-group select {
     width: 100%;
-    background-color: #1e1f22;
-    border: 1px solid rgba(0, 0, 0, 0.3);
+    background-color: #ffffff;
+    border: 1px solid var(--accent-soft);
     padding: 10px;
     color: var(--text-primary);
     border-radius: 4px;
