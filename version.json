@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.29.0125",
-    "message": "Final UI Polish: Unified Pink/White inputs, fixed blurry modal titles, and resolved mobile button cutoff."
+    "version": "2026.01.29.1227",
+    "message": "SEO: Added Supabase Edge Function for dynamic sitemap.xml generation."
 }

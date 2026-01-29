@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ROSAE HUB Static Sitemap (Fallback)
+  
+  For dynamic sitemap with all posts, use the Supabase Edge Function:
+  https://[YOUR-PROJECT-REF].supabase.co/functions/v1/sitemap
+  
+  Deploy command: supabase functions deploy sitemap --no-verify-jwt
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
   <url>
-    <loc>https://mytestblog-d85.pages.dev/</loc>
+    <loc>https://srunaic.github.io/MyTestBlog/</loc>
+    <lastmod>2026-01-29</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-
+  <url>
+    <loc>https://srunaic.github.io/MyTestBlog/anticode.html</loc>
+    <lastmod>2026-01-29</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
 </urlset>
