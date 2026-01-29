@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.29.1227",
-    "message": "SEO: Added Supabase Edge Function for dynamic sitemap.xml generation."
+    "version": "2026.01.29.1246",
+    "message": "SEO: Added Cloudflare Pages Function for native /sitemap.xml endpoint."
 }
