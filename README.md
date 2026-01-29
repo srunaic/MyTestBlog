@@ -1,30 +1,21 @@
-# [🚀 Anticode: 실시간 채팅 접속하기](https://mytestblog-d85.pages.dev/anticode.html)
+# [ROSAE HUB 실시간 채팅 접속하기](https://mytestblog-d85.pages.dev/anticode.html)
 
 <a herf>https://mytestblog-d85.pages.dev/</a>
 
-# 🌌 Nanodoroshi | Futuristic Cyber-Minimalist Blog
+# 🌌 ROSAE HUB | Futuristic 
 
 [![Live Demo](https://img.shields.io/badge/demo-live-00f2ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://srunaic.github.io/MyTestBlog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-> **"A Symphony of Digital Aesthetics and Intelligence"**
-> **"디지털 미학과 지능형 기술이 빚어내는 완벽한 조화"**
->
-> Nanodoroshi is a premium, high-performance blog platform that redefines digital documentation through a **Cyber-Minimalist** lens. It is a space designed for creators who value both technical precision and visual excellence.
-> 나노 도로시는 **사이버 미니멀리즘**의 시각으로 디지털 기록의 정의를 새롭게 정립하는 프리미엄 블로그 플랫폼입니다. 기술적 정교함과 시각적 완성도를 동시에 추구하는 크리에이터를 위한 특별한 공간입니다.
-
----
 
 ## ✨ Project Vision (프로젝트 비전)
 
-**Nanodoroshi** transcends the traditional blog format, offering a seamless intersection of art and engineering. It's built on a robust serverless architecture wrapped in a sophisticated "Glassmorphism 2.0" aesthetic.
-**나노 도로시**는 기존 블로그의 틀을 넘어 예술과 공학이 만나는 접점을 제안합니다. 견고한 서버리스 아키텍처 위에 구현된 '글래스모피즘 2.0' 미학은 사용자에게 차원이 다른 몰입감을 선사합니다.
+** ROSAE HUB ** transcends the traditional blog format, offering a seamless intersection of art and engineering. It's built on a robust serverless architecture wrapped in a sophisticated "Glassmorphism 2.0" aesthetic.
+** ROSAE HUB **는 기존 블로그의 틀을 넘어 예술과 공학이 만나는 접점을 제안합니다. 견고한 서버리스 아키텍처 위에 구현된 '글래스모피즘 2.0' 미학은 사용자에게 차원이 다른 몰입감을 선사합니다.
 
 ### 🎨 Design Ethos (디자인 정체성)
-- **Holographic Depth**: Multi-layered interfaces that feel alive. / 생동감 넘치는 다층 구조의 홀로그래픽 인터페이스.
-- **Electric Accents**: Vibrant neon energy that pulses through the design. / 디자인 전반에 활력을 불어넣는 강렬한 네온 포인트.
-- **Architectural Layout**: Asymmetric geometry for a bold, structural appeal. / 대담하고 구조적인 미학을 강조한 비대칭 기하학적 레이아웃.
-
+--- Emotional Tech: 차가운 기술 대신 따뜻한 감성(Soft Pink & Warm White) 추구
+--- Mobile-First: 모바일 중심의 유려한 경험과 퓨처리스틱 미니멀리즘 강조
 ---
 
 ## 🛠️ Core Technology Stack (핵심 기술 스택)
@@ -61,8 +52,6 @@ Built for speed and elegance using a modern, lightweight architecture.
 ### 📱 Next-Gen Mobile Experience (차세대 모바일 플랫폼)
 - **PWA Integration**: Experience a standalone app-like presence on any device. / 브라우저의 한계를 넘어 실제 앱과 같은 독립적인 사용 환경을 제공합니다.
 - **Instant Availability**: Optimized caching ensures high performance, even offline. / 영리한 캐싱 전략으로 언제 어디서나 초고속 로딩을 보장합니다.
-
----
 
 ---
 
