@@ -35,7 +35,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
         const supabase = createClient(env.SUPABASE_URL, supabaseKey);
 
         const { data: posts, error } = await supabase
-        const { data: posts, error } = await supabase
             .from('posts')
             .select('*') // Select all to avoid column name errors
             .order('created_at', { ascending: false });
