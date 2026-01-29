@@ -10,7 +10,8 @@ import { createClient } from '@supabase/supabase-js';
 
 interface Env {
     SUPABASE_URL: string;
-    SUPABASE_ANON_KEY: string;
+    SUPABASE_ANON_KEY?: string;
+    SUPABASE_KEY?: string;
     SITE_URL: string;
 }
 
@@ -23,16 +24,23 @@ interface Post {
 
 export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
     try {
-        const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+        const supabaseKey = env.SUPABASE_ANON_KEY || env.SUPABASE_KEY;
+        if (!supabaseKey) {
+            return new Response('Configuration Error: Missing SUPABASE_ANON_KEY or SUPABASE_KEY', { status: 500 });
+        }
+        if (!env.SUPABASE_URL) {
+            return new Response('Configuration Error: Missing SUPABASE_URL', { status: 500 });
+        }
+
+        const supabase = createClient(env.SUPABASE_URL, supabaseKey);
 
         const { data: posts, error } = await supabase
             .from('posts')
-            .select('id, title, updated_at, created_at')
+            .select('*') // Select all to avoid column name errors initially
             .order('updated_at', { ascending: false });
 
         if (error) {
-            console.error('Supabase error:', error);
-            return new Response('Sitemap generation error', { status: 500 });
+            return new Response(`Supabase Query Error: ${error.message} (${error.code})`, { status: 500 });
         }
 
         const siteUrl = env.SITE_URL || 'https://mytestblog-d85.pages.dev';
@@ -81,8 +89,8 @@ ${postUrls}
                 'Cache-Control': 'public, max-age=3600', // 1 hour cache
             },
         });
-    } catch (e) {
+    } catch (e: any) {
         console.error('Sitemap error:', e);
-        return new Response('Internal Server Error', { status: 500 });
+        return new Response(`Error: ${e.message || e.toString()}`, { status: 500 });
     }
 };

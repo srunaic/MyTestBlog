@@ -1,4 +1,4 @@
 {
-    "version": "2026.01.29.1246",
-    "message": "SEO: Added Cloudflare Pages Function for native /sitemap.xml endpoint."
+    "version": "2026.01.29.1354",
+    "message": "Fix: sitemap.xml comment syntax and function env var fallback."
 }

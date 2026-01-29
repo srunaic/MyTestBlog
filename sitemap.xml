@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ROSAE HUB Static Sitemap (Fallback)
   
   For dynamic sitemap with all posts, use the Supabase Edge Function:
   https://[YOUR-PROJECT-REF].supabase.co/functions/v1/sitemap
   
-  Deploy command: supabase functions deploy sitemap --no-verify-jwt
+  Deploy command: supabase functions deploy sitemap (no-verify-jwt flag required)
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
