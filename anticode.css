@@ -83,14 +83,20 @@
 .channel-page-select {
     flex: 1;
     min-width: 0;
-    background: #1e1f22;
-    color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 6px;
+    background: #fff;
+    /* High contrast background */
+    color: #111;
+    /* High contrast text */
+    border: 1px solid var(--accent-soft);
+    border-radius: 8px;
+    /* Slightly more rounded */
     padding: 8px 10px;
     font-size: 0.85rem;
-    /* Increased from 0.78rem */
-    font-weight: 600;
+    font-weight: 800;
+    /* Bolder text */
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .draggable-item {
@@ -1603,10 +1609,12 @@ input:focus {
 
     /* Input padding */
     .chat-input-container {
-        padding: 0 10px 15px 10px;
-        /* Slight increase padding bottom on mobile */
-        margin-bottom: 20px;
-        /* Extra space to prevent bottom UI overlap */
+        padding: 0 10px 30px 10px;
+        /* Increased from 15px */
+        margin-bottom: 35px;
+        /* Increased from 20px to lift it more */
+        position: relative;
+        z-index: 1000;
     }
 
     /* Mobile Dropdown Menu */
@@ -1882,7 +1890,8 @@ input:focus {
     }
 
     .chat-input-container {
-        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+        /* Increased from 24px */
         position: sticky;
         bottom: 0;
     }
