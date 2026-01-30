@@ -16,18 +16,21 @@ def remove_checkerboard(image_path):
         # threshold for "white/grey" background removal
         r, g, b, a = item
         
-        # Checkerboard patterns often use #FFFFFF and #CCCCCC (204, 204, 204)
-        # or #FEFEFE and #EDEDED. 
-        # We target pixels where R, G, B are high and very close to each other (grey/white)
-        # AND strictly avoid touching the character colors.
+        # Checkerboard patterns often use #FFFFFF (255,255,255) and #ECECEC (236,236,236)
+        # We target pixels where R, G, B are very close to each other (grey/white)
+        # and fall within the background color ranges detected.
         
-        is_white = r > 240 and g > 240 and b > 240
-        is_grey_grid = (190 < r < 215) and (190 < g < 215) and (190 < b < 215)
+        is_white = r > 245 and g > 245 and b > 245
         
-        # Refined grid check: colors are often exactly equal in checkerboards
-        is_exact_grey = (r == g == b) and (180 < r < 230)
+        # Catch the light grey squares (~236)
+        is_light_grey = (230 < r < 245) and (230 < g < 245) and (230 < b < 245)
         
-        if is_white or is_grey_grid or is_exact_grey:
+        # Check if R, G, B are nearly equal (typical for grey-scale background grids)
+        diff = max(r, g, b) - min(r, g, b)
+        is_grayscale = diff <= 3
+        
+        # Final background check
+        if is_white or (is_light_grey and is_grayscale):
             new_data.append((255, 255, 255, 0)) # Make fully transparent
         else:
             new_data.append(item)
