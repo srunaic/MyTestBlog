@@ -1629,6 +1629,9 @@ input:focus {
         gap: 0;
         align-items: center;
         margin-left: auto;
+        position: relative;
+        z-index: 2002;
+        /* Ensure dropdown is above chat input (1000) and sidebar (2000) */
     }
 
     .mobile-dropdown-content {
