@@ -4566,13 +4566,19 @@ class AntiCodeApp {
 
     initCustomEmoticons(container) {
         container.innerHTML = '';
-        // We know we have 36 emoticons
-        for (let i = 1; i <= 36; i++) {
-            const fileName = `emo_${String(i).padStart(2, '0')}.png`;
+        // Explicit list of the 20 available emoticons
+        const emos = [
+            'emo_01.png', 'emo_02.png', 'emo_03.png', 'emo_04.png', 'emo_08.png',
+            'emo_09.png', 'emo_10.png', 'emo_11.png', 'emo_12.png', 'emo_13.png',
+            'emo_14.png', 'emo_15.png', 'emo_20.png', 'emo_21.png', 'emo_22.png',
+            'emo_23.png', 'emo_25.png', 'emo_26.png', 'emo_27.png', 'emo_28.png'
+        ];
+
+        emos.forEach(fileName => {
             const div = document.createElement('div');
             div.className = 'emoticon-item';
-            // Use relative path and remove text labels
-            div.innerHTML = `<img src="assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
+            // Use absolute path starting from root /
+            div.innerHTML = `<img src="/assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
             div.onclick = (e) => {
                 e.stopPropagation();
                 // Immediately send the emoticon
@@ -4584,13 +4590,12 @@ class AntiCodeApp {
                     input.value = originalValue;
                     document.getElementById('emoji-picker').style.display = 'none';
                 } else {
-                    // Fallback if input not found
                     this.sendDirectEmoticon(fileName);
                     document.getElementById('emoji-picker').style.display = 'none';
                 }
             };
             container.appendChild(div);
-        }
+        });
     }
 
     async sendDirectEmoticon(fileName) {

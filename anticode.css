@@ -1700,16 +1700,18 @@ input:focus {
         position: sticky;
         bottom: 0;
     }
-}.  
- 
+}
+
+.     
+
 /* Emoticon Picker & Rendering */
 .emoji-picker-popover {
     display: none;
     position: absolute;
     bottom: 80px;
     right: 20px;
-    width: 340px; 
-    height: 400px; 
+    width: 340px;
+    height: 400px;
     background: #2b2d31;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -1787,11 +1789,15 @@ input:focus {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    aspect-ratio: 1;
+    /* Keep square */
 }
 
 .emoticon-item:hover {
     background: rgba(255, 255, 255, 0.1);
     transform: scale(1.1);
+    z-index: 10;
 }
 
 .emoticon-item img {
@@ -1801,15 +1807,23 @@ input:focus {
     display: block;
 }
 
+/* Ensure no text shows in the picker */
+.emoticon-item::after {
+    display: none !important;
+}
+
 .chat-emoticon {
     display: block;
-    max-width: 160px;
-    max-height: 160px;
+    /* Stickers are blocks */
+    max-width: 180px;
+    /* Slightly larger */
+    max-height: 180px;
     cursor: pointer;
-    margin: 8px 0;
+    margin: 12px 0;
     border-radius: 8px;
     transition: transform 0.2s;
 }
+
 
 .chat-emoticon:hover {
     transform: scale(1.03);
@@ -1822,6 +1836,7 @@ input:focus {
         left: 5vw;
         height: 350px;
     }
+
     .emoticon-grid {
         grid-template-columns: repeat(3, 1fr) !important;
     }
