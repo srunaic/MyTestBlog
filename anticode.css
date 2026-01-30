@@ -1402,7 +1402,8 @@ input:focus {
         position: absolute;
         left: -100%;
         top: 0;
-        z-index: 1000;
+        z-index: 2000;
+        /* Increased from 1000 to cover chat input */
         width: 280px;
         height: 100%;
         transition: left 0.3s ease;
@@ -1452,7 +1453,8 @@ input:focus {
         position: absolute;
         right: -100%;
         top: 0;
-        z-index: 1000;
+        z-index: 2000;
+        /* Increased from 1000 */
         width: 280px;
         height: 100%;
         transition: right 0.3s ease;
