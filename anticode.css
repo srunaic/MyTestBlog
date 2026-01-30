@@ -1619,6 +1619,12 @@ input:focus {
         z-index: 1000;
     }
 
+    /* Fix: Ensure header (and dropdown) is above chat input (1000) */
+    .chat-header {
+        position: relative;
+        z-index: 2001;
+    }
+
     /* Mobile Dropdown Menu */
     .header-right {
         position: relative;
