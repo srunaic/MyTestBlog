@@ -91,14 +91,25 @@ class Channel {
         this.is_public = data.is_public !== undefined ? data.is_public : true;
     }
 
+    _getTypeLabel() {
+        switch (this.type) {
+            case 'notice': return ' (공지)';
+            case 'secret': return ' (비밀)';
+            case 'open_hidden': return ' (오픈)';
+            case 'qna': return ' (질문)';
+            default: return '';
+        }
+    }
+
     renderHeader() {
         const hash = this.type === 'secret' ? '🔒' : '#';
         const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
+        const typeLabel = this._getTypeLabel();
         return `
             <div class="header-left">
                 <span class="channel-hash">${hash}</span>
                 <div class="header-title-group">
-                    <h1 id="current-channel-name">${this.name}</h1>
+                    <h1 id="current-channel-name">${this.name}${typeLabel}</h1>
                     <span class="header-category-label">${categoryLabel}</span>
                 </div>
                 <button id="copy-invite-link" class="icon-btn" title="초대 링크 복사" onclick="window.app.copyInviteLink()" style="margin-left: 12px; background: none; border: none; cursor: pointer; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); transition: all 0.2s;" onmouseover="this.style.filter='none'; this.style.opacity='1'" onmouseout="this.style.filter='grayscale(1) opacity(0.6)'">🔗</button>
@@ -109,6 +120,7 @@ class Channel {
     renderSidebarItem(isActive, currentUsername, isAdmin, voiceState = { show: false, on: false }) {
         const hash = this.type === 'secret' ? '🔒' : '#';
         const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
+        const typeLabel = this._getTypeLabel();
         const isOwner = currentUsername && String(this.owner_id) === String(currentUsername);
         const canManage = isAdmin || isOwner;
 
@@ -120,7 +132,7 @@ class Channel {
         return `
             <div class="channel-group-item ${isActive ? 'active' : ''}">
                 <div class="channel-name-row">
-                    <div class="channel-name-label">${hash} ${this.name}</div>
+                    <div class="channel-name-label">${hash} ${this.name}${typeLabel}</div>
                     <div class="channel-name-actions">
                         ${voiceHtml}
                         ${editHtml}
@@ -3456,7 +3468,6 @@ class AntiCodeApp {
             try { return JSON.parse(localStorage.getItem(collapseKey) || '{}') || {}; } catch (_) { return {}; }
         })();
 
-        // Use DocumentFragment for faster rendering
         const fragment = document.createDocumentFragment();
 
         orderedCats.forEach(catId => {
@@ -3466,6 +3477,47 @@ class AntiCodeApp {
 
             const group = document.createElement('div');
             group.className = 'channel-group' + (isCollapsed ? ' collapsed' : '');
+
+            // Sub-grouping logic
+            const typeGroups = {
+                notice: [],
+                qna: [],
+                general: [],
+                secret: [],
+                open_hidden: []
+            };
+
+            chans.forEach(ch => {
+                const t = ch.type || 'general';
+                if (!typeGroups[t]) typeGroups[t] = [];
+                typeGroups[t].push(ch);
+            });
+
+            const typeOrder = ['notice', 'qna', 'general', 'secret', 'open_hidden'];
+            const typeLabels = {
+                notice: '📢 공지 채널',
+                qna: '❓ Q&A 채널',
+                general: '💬 일반 채널',
+                secret: '🔒 비밀 채널',
+                open_hidden: '🌐 오픈 채널'
+            };
+
+            let channelsHtml = '';
+            typeOrder.forEach(t => {
+                const groupChans = typeGroups[t];
+                if (groupChans && groupChans.length > 0) {
+                    // Only add sub-header if there are multiple types in this category or if it's the 'chat' category
+                    if (catId === 'chat' || Object.values(typeGroups).filter(g => g.length > 0).length > 1) {
+                        channelsHtml += `<div class="channel-sub-group-label">${typeLabels[t] || t}</div>`;
+                    }
+                    channelsHtml += groupChans.map(c => {
+                        const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
+                        const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
+                        return c.renderSidebarItem(isActive, (this.currentUser && this.currentUser.username), this.isAdminMode, voiceState);
+                    }).join('');
+                }
+            });
+
             group.innerHTML = `
                 <div class="group-header" data-cat="${catId}" style="cursor:pointer;">
                     <span class="group-label">${isCollapsed ? '▸' : '▾'} ${CATEGORY_NAMES[catId] || ('#' + catId)}</span>
@@ -3479,16 +3531,7 @@ class AntiCodeApp {
                 })()}
                 </div>
                 <div class="sidebar-list" style="${isCollapsed ? 'display:none;' : ''}">
-            ${chans.map(c => {
-                    const isActive = !!(this.activeChannel && c.id === this.activeChannel.id);
-                    const voiceState = { show: isActive, on: isActive && !!this.voiceEnabled };
-                    // [MOD] Add visual indicator for hidden chat
-                    if (c.type === 'open_hidden') {
-                        // Maybe render a special icon or style, but requirement says "hidden" processing only.
-                        // The sidebar item render handles basic display.
-                    }
-                    return c.renderSidebarItem(isActive, (this.currentUser && this.currentUser.username), this.isAdminMode, voiceState);
-                }).join('')}
+                    ${channelsHtml}
                 </div>
             `;
 

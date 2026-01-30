@@ -150,6 +150,16 @@
     padding: 0 4px;
 }
 
+.channel-sub-group-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 14px 10px 6px 14px;
+    opacity: 0.6;
+    letter-spacing: 0.02rem;
+    text-transform: uppercase;
+}
+
 .channel-name-row {
     display: flex;
     justify-content: space-between;
