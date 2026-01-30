@@ -4588,7 +4588,8 @@ class AntiCodeApp {
         }
     }
 
-    switchEmojiTab(tab) {
+    switchEmojiTab(tab, event) {
+        if (event && event.stopPropagation) event.stopPropagation();
         const picker = document.getElementById('emoji-picker');
         if (!picker) return;
 
@@ -4758,10 +4759,14 @@ class AntiCodeApp {
         // Unicode Emoji Clicks
         emojiPicker.querySelectorAll('.emoji-item').forEach(em => {
             em.onclick = (e) => {
+                e.stopPropagation();
                 input.value += em.innerText;
                 input.focus();
             };
         });
+
+        // Prevent picker from closing when clicking inside
+        emojiPicker.onclick = (e) => e.stopPropagation();
 
         // Tab switching (exposed via window.app.switchEmojiTab)
         // Bind to instance

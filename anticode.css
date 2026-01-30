@@ -1858,28 +1858,31 @@ input:focus {
 
 .emoticon-item {
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    background: rgba(255, 255, 255, 0.03);
-    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     aspect-ratio: 1;
-    /* Keep square */
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .emoticon-item:hover {
     background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
-    z-index: 10;
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .emoticon-item img {
-    width: 64px;
-    height: 64px;
+    width: 100%;
+    height: 100%;
+    max-width: 56px;
+    max-height: 56px;
     object-fit: contain;
     display: block;
 }

@@ -234,9 +234,11 @@
                     <!-- Emoji Picker Popover -->
                     <div id="emoji-picker" class="emoji-picker-popover" style="display:none;">
                         <div class="emoji-picker-tabs">
-                            <div class="emoji-picker-tab active" onclick="window.app.switchEmojiTab('unicode')">이모지
+                            <div class="emoji-picker-tab active" onclick="window.app.switchEmojiTab('unicode', event)">
+                                이모지
                             </div>
-                            <div class="emoji-picker-tab" onclick="window.app.switchEmojiTab('custom')">이모티콘</div>
+                            <div class="emoji-picker-tab" onclick="window.app.switchEmojiTab('custom', event)">이모티콘
+                            </div>
                         </div>
                         <div id="emoji-content-unicode" class="emoji-content-area emoji-grid">
                             <span class="emoji-item">😀</span><span class="emoji-item">😂</span><span
