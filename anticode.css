@@ -4,11 +4,14 @@
     --chat-bg: #ffffff;
     --member-bg: #fff5f7;
     --header-bg: #ffffff;
-    --text-primary: #4a4a4a;
-    --text-muted: #888888;
+    --text-primary: #111111;
+    /* Darkened from #4a4a4a for better readability */
+    --text-muted: #555555;
+    /* Darkened from #888888 */
     --accent: #ff69b4;
     --accent-hover: #ff1493;
-    --border-color: rgba(255, 105, 180, 0.1);
+    --border-color: rgba(255, 105, 180, 0.2);
+    /* Slightly more visible */
 }
 
 .anticode-body {
@@ -19,6 +22,8 @@
     background-color: var(--chat-bg);
     color: var(--text-primary);
     font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 500;
+    /* Increased from default to prevent "faint" look */
     background-image: radial-gradient(var(--accent-hover) 0.5px, transparent 0.5px);
     background-size: 20px 20px;
 }
@@ -83,7 +88,9 @@
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 6px;
     padding: 8px 10px;
-    font-size: 0.78rem;
+    font-size: 0.85rem;
+    /* Increased from 0.78rem */
+    font-weight: 600;
 }
 
 .draggable-item {
@@ -113,8 +120,10 @@
 }
 
 .group-label {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.85rem;
+    /* Increased from 0.75rem */
+    font-weight: 800;
+    /* Bolder */
     color: var(--text-muted);
     text-transform: uppercase;
     padding-left: 8px;
@@ -222,9 +231,11 @@
 }
 
 .channel-name-label {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    /* Increased from 0.8rem */
     color: var(--text-muted);
-    font-weight: 700;
+    font-weight: 800;
+    /* Bolder */
     margin-bottom: 2px;
 }
 
@@ -1032,28 +1043,35 @@ input:focus {
 }
 
 .member-name {
-    font-weight: 700;
+    font-weight: 800;
+    /* Bolder */
+    font-size: 1.05rem;
+    /* Increased from default */
     color: var(--accent);
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 150px;
-    /* Prevent long names from pushing everything */
 }
 
 .timestamp {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    /* Increased from 0.75rem */
     color: var(--text-muted);
+    font-weight: 600;
+    /* Darkened/Bolder */
     white-space: nowrap;
     flex-shrink: 0;
 }
 
 .message-text {
-    line-height: 1.4;
+    line-height: 1.5;
     word-break: break-word;
-    /* Better than break-all for readability */
     color: var(--text-primary);
+    font-size: 1.1rem;
+    /* Increased from default */
+    font-weight: 500;
 }
 
 .message-image-content {
@@ -1562,7 +1580,10 @@ input:focus {
 
     /* Input padding */
     .chat-input-container {
-        padding: 0 10px 10px 10px;
+        padding: 0 10px 15px 10px;
+        /* Slight increase padding bottom on mobile */
+        margin-bottom: 20px;
+        /* Extra space to prevent bottom UI overlap */
     }
 
     /* Mobile Dropdown Menu */

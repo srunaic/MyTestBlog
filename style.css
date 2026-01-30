@@ -4,9 +4,12 @@
     --bg-surface: #ffffff;
     --accent-main: #ff69b4;
     --accent-soft: #ffb6c1;
-    --text-main: #4a4a4a;
-    --text-muted: #888888;
-    --border-soft: rgba(0, 0, 0, 0.05);
+    --text-main: #1a1a1a;
+    /* Darkened from #4a4a4a */
+    --text-muted: #555555;
+    /* Darkened from #888888 */
+    --border-soft: rgba(0, 0, 0, 0.1);
+    /* Slightly more visible border */
     --shadow-soft: 0 4px 15px rgba(255, 105, 180, 0.1);
 
     /* Legacy Sync */
@@ -38,6 +41,10 @@ body {
     font-family: 'Montserrat', sans-serif;
     color: var(--text-main);
     line-height: 1.6;
+    font-size: 1.05rem;
+    /* Increased from default */
+    font-weight: 500;
+    /* Increased from 400 */
     overflow-x: hidden;
     /* Mobile App Safe Area */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
