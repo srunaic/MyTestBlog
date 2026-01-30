@@ -14,7 +14,8 @@ self.onmessage = function (event) {
             break;
         case 'PROCESS_MESSAGE':
             const { text: profText, flagged } = filterProfanity(payload.text);
-            const contentHtml = linkify(profText);
+            let contentHtml = linkify(profText);
+            contentHtml = parseEmoticons(contentHtml);
             self.postMessage({ id, result: { contentHtml, flagged, text: profText } });
             break;
         case 'PING':
@@ -63,6 +64,15 @@ function linkify(escapedText) {
             return `${link}${preview}`;
         }
         return `<a href="${rawUrl}" target="_blank" rel="noopener noreferrer">${rawUrl}</a>`;
+    });
+}
+
+function parseEmoticons(text) {
+    if (!text) return '';
+    // Format: [[emo:emo_01.png]]
+    const emoRe = /\[\[emo:([\w.-]+\.png)\]\]/g;
+    return text.replace(emoRe, (match, fileName) => {
+        return `<img src="/assets/emoticons/${fileName}" class="chat-emoticon" title="${fileName}" loading="lazy">`;
     });
 }
 

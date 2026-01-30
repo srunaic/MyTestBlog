@@ -233,14 +233,32 @@
 
                     <!-- Emoji Picker Popover -->
                     <div id="emoji-picker" class="emoji-picker-popover" style="display:none;">
-                        <span class="emoji-item">😀</span><span class="emoji-item">😂</span><span
-                            class="emoji-item">🥰</span>
-                        <span class="emoji-item">😎</span><span class="emoji-item">🤔</span><span
-                            class="emoji-item">👍</span>
-                        <span class="emoji-item">❤️</span><span class="emoji-item">🔥</span><span
-                            class="emoji-item">✨</span>
-                        <span class="emoji-item">🎉</span><span class="emoji-item">😭</span><span
-                            class="emoji-item">👀</span>
+                        <div class="emoji-picker-tabs">
+                            <div class="emoji-picker-tab active" onclick="window.app.switchEmojiTab('unicode')">이모지
+                            </div>
+                            <div class="emoji-picker-tab" onclick="window.app.switchEmojiTab('custom')">이모티콘</div>
+                        </div>
+                        <div id="emoji-content-unicode" class="emoji-content-area emoji-grid">
+                            <span class="emoji-item">😀</span><span class="emoji-item">😂</span><span
+                                class="emoji-item">🥰</span>
+                            <span class="emoji-item">😎</span><span class="emoji-item">🤔</span><span
+                                class="emoji-item">👍</span>
+                            <span class="emoji-item">❤️</span><span class="emoji-item">🔥</span><span
+                                class="emoji-item">✨</span>
+                            <span class="emoji-item">🎉</span><span class="emoji-item">😭</span><span
+                                class="emoji-item">👀</span>
+                            <span class="emoji-item">🙏</span><span class="emoji-item">🙌</span><span
+                                class="emoji-item">🚀</span>
+                            <span class="emoji-item">💡</span><span class="emoji-item">💪</span><span
+                                class="emoji-item">👏</span>
+                            <span class="emoji-item">💯</span><span class="emoji-item">🌹</span><span
+                                class="emoji-item">✅</span>
+                            <span class="emoji-item">❌</span><span class="emoji-item">❓</span><span
+                                class="emoji-item">🎵</span>
+                        </div>
+                        <div id="emoji-content-custom" class="emoji-content-area emoticon-grid" style="display:none;">
+                            <!-- Filled dynamically by JS -->
+                        </div>
                     </div>
 
                     <div class="input-actions">

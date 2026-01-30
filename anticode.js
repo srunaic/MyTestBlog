@@ -4537,6 +4537,54 @@ class AntiCodeApp {
         }
     }
 
+    switchEmojiTab(tab) {
+        const picker = document.getElementById('emoji-picker');
+        if (!picker) return;
+
+        const unicodeBtn = picker.querySelector('.emoji-picker-tab:first-child');
+        const customBtn = picker.querySelector('.emoji-picker-tab:last-child');
+        const unicodeContent = document.getElementById('emoji-content-unicode');
+        const customContent = document.getElementById('emoji-content-custom');
+
+        if (tab === 'unicode') {
+            if (unicodeBtn) unicodeBtn.classList.add('active');
+            if (customBtn) customBtn.classList.remove('active');
+            if (unicodeContent) unicodeContent.style.display = 'grid';
+            if (customContent) customContent.style.display = 'none';
+        } else {
+            if (unicodeBtn) unicodeBtn.classList.remove('active');
+            if (customBtn) customBtn.classList.add('active');
+            if (unicodeContent) unicodeContent.style.display = 'none';
+            if (customContent) customContent.style.display = 'grid';
+
+            // Lazy populate custom emoticons if empty
+            if (customContent && customContent.children.length === 0) {
+                this.initCustomEmoticons(customContent);
+            }
+        }
+    }
+
+    initCustomEmoticons(container) {
+        container.innerHTML = '';
+        const input = document.getElementById('chat-input');
+        // We know we have 36 emoticons
+        for (let i = 1; i <= 36; i++) {
+            const fileName = `emo_${String(i).padStart(2, '0')}.png`;
+            const div = document.createElement('div');
+            div.className = 'emoticon-item';
+            div.innerHTML = `<img src="/assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
+            div.onclick = (e) => {
+                e.stopPropagation();
+                if (input) {
+                    input.value += ` [[emo:${fileName}]] `;
+                    input.focus();
+                    document.getElementById('emoji-picker').style.display = 'none';
+                }
+            };
+            container.appendChild(div);
+        }
+    }
+
     setupEventListeners() {
         const _safeBind = (id, event, fn) => {
             const el = typeof id === 'string' ? document.getElementById(id) : id;
@@ -4597,14 +4645,23 @@ class AntiCodeApp {
         // Emoji Picker
         const emojiBtn = document.getElementById('emoji-btn');
         const emojiPicker = document.getElementById('emoji-picker');
-        emojiBtn.onclick = (e) => { e.stopPropagation(); emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'grid' : 'none'; };
+        emojiBtn.onclick = (e) => {
+            e.stopPropagation();
+            emojiPicker.style.display = (emojiPicker.style.display === 'none' || emojiPicker.style.display === '') ? 'flex' : 'none';
+        };
         document.addEventListener('click', () => { emojiPicker.style.display = 'none'; });
+
+        // Unicode Emoji Clicks
         emojiPicker.querySelectorAll('.emoji-item').forEach(em => {
             em.onclick = (e) => {
                 input.value += em.innerText;
                 input.focus();
             };
         });
+
+        // Tab switching (exposed via window.app.switchEmojiTab)
+        // Bind to instance
+        this.switchEmojiTab = this.switchEmojiTab.bind(this);
 
         // Voice toggle (mic)
         _safeBind('voice-toggle-btn', 'onclick', async (e) => {
