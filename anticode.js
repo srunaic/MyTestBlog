@@ -3920,6 +3920,14 @@ class AntiCodeApp {
 
             // Offload profanity and linkify to the Logic Thread (with fallback)
             let contentHtml = msg.content || '';
+            if (isOptimistic) {
+                // Parse emoticons locally for immediate visual sticker
+                const emoRe = /\[\[emo:([\w.-]+\.png)\]\]/g;
+                contentHtml = contentHtml.replace(emoRe, (match, fileName) => {
+                    return `<img src="assets/emoticons/${fileName}" class="chat-emoticon" title="${fileName}" loading="lazy">`;
+                });
+            }
+
             if (!isOptimistic) {
                 try {
                     const res = await LogicWorker.execute('PROCESS_MESSAGE', { text: msg.content || '' });
@@ -4577,8 +4585,8 @@ class AntiCodeApp {
         emos.forEach(fileName => {
             const div = document.createElement('div');
             div.className = 'emoticon-item';
-            // Use absolute path starting from root /
-            div.innerHTML = `<img src="/assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
+            // Use relative path assets/emoticons/ for better compatibility
+            div.innerHTML = `<img src="assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
             div.onclick = (e) => {
                 e.stopPropagation();
                 // Immediately send the emoticon
