@@ -191,11 +191,15 @@
 }
 
 .channel-sub-group-label {
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    font-weight: 700;
+    font-size: 0.85rem;
+    /* Increased from 0.68rem */
+    color: var(--text-primary);
+    /* Darker than text-muted */
+    font-weight: 800;
+    /* Bolder */
     margin: 14px 10px 6px 14px;
-    opacity: 0.6;
+    opacity: 1;
+    /* Removed transparency */
     letter-spacing: 0.02rem;
     text-transform: uppercase;
 }
@@ -231,12 +235,17 @@
 }
 
 .channel-name-label {
-    font-size: 0.9rem;
-    /* Increased from 0.8rem */
-    color: var(--text-muted);
-    font-weight: 800;
-    /* Bolder */
+    font-size: 0.95rem;
+    /* Increased from 0.9rem */
+    color: var(--text-primary);
+    /* Much darker than text-muted */
+    font-weight: 900;
+    /* Max boldness */
     margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
 }
 
 .delete-channel-btn {
@@ -263,6 +272,20 @@
     transition: all 0.2s ease;
     opacity: 0.2;
     /* Slightly visible to owners */
+}
+
+/* Sub-link (Category) styling */
+.channel-sub-link {
+    padding: 2px 8px 6px 24px;
+    display: flex;
+    align-items: center;
+    opacity: 0.8;
+}
+
+.sub-link-icon {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
 .channel-group-item:hover .edit-channel-btn {
