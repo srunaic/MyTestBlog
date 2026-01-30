@@ -996,6 +996,7 @@ class AntiCodeApp {
         // Partial refresh only
         this._refreshPersonalPageItems();
         this._refreshPersonalSearchResults(true);
+        this._refreshOwnedChannelsList(); // NEW: Populate owned channels management list
     }
 
     _ensureChannelPagesModalBindings() {
@@ -3829,6 +3830,7 @@ class AntiCodeApp {
             if (!error) {
                 this.channels = this.channels.filter(c => String(c.id) !== String(channelId));
                 this.renderChannels();
+                this._refreshOwnedChannelsList(); // NEW: Refresh management list
 
                 if (this.activeChannel && String(this.activeChannel.id) === String(channelId)) {
                     if (this.channels.length > 0) {
@@ -3844,6 +3846,38 @@ class AntiCodeApp {
             console.error('deleteChannel failed:', e);
             alert('삭제에 실패했습니다: ' + (e && e.message || e));
         }
+    }
+
+    _refreshOwnedChannelsList() {
+        const listContainer = document.getElementById('pages-modal-owned-list');
+        if (!listContainer) return;
+
+        const myUsername = this.currentUser && this.currentUser.username;
+        if (!myUsername) {
+            listContainer.innerHTML = '<div style="padding:10px; color:var(--text-muted);">로그인이 필요합니다.</div>';
+            return;
+        }
+
+        const myChannels = (this.channels || []).filter(c => String(c.owner_id) === String(myUsername));
+
+        if (myChannels.length === 0) {
+            listContainer.innerHTML = '<div style="padding:15px; color:var(--text-muted); text-align:center;">생성한 채널이 없습니다.</div>';
+            return;
+        }
+
+        listContainer.innerHTML = myChannels.map(ch => {
+            const typeLabel = ch._getTypeLabel() || '';
+            const categoryLabel = ch.category || '채팅';
+            return `
+                <div class="owned-channel-item">
+                    <div class="owned-channel-info">
+                        <span class="owned-channel-name"># ${this.escapeHtml(ch.name)} ${this.escapeHtml(typeLabel)}</span>
+                        <span class="owned-channel-type">${this.escapeHtml(categoryLabel)}</span>
+                    </div>
+                    <button class="owned-channel-delete-btn" onclick="window.app.deleteChannel('${ch.id}')">삭제</button>
+                </div>
+            `;
+        }).join('');
     }
 
     async createChannel(name, type, category, password) {
