@@ -1702,3 +1702,127 @@ input:focus {
     }
 }.  
  
+/* Emoticon Picker & Rendering */
+.emoji-picker-popover {
+    display: none;
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    width: 340px; 
+    height: 400px; 
+    background: #2b2d31;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.emoji-picker-tabs {
+    display: flex;
+    background: #1e1f22;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.emoji-picker-tab {
+    flex: 1;
+    padding: 12px 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.emoji-picker-tab.active {
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+}
+
+.emoji-content-area {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+}
+
+.emoticon-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+}
+
+.emoji-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.emoji-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.15);
+}
+
+.emoticon-item {
+    cursor: pointer;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoticon-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.emoticon-item img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    display: block;
+}
+
+.chat-emoticon {
+    display: block;
+    max-width: 160px;
+    max-height: 160px;
+    cursor: pointer;
+    margin: 8px 0;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.chat-emoticon:hover {
+    transform: scale(1.03);
+}
+
+@media (max-width: 500px) {
+    .emoji-picker-popover {
+        width: 90vw;
+        right: 5vw;
+        left: 5vw;
+        height: 350px;
+    }
+    .emoticon-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}

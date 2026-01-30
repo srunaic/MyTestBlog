@@ -72,7 +72,7 @@ function parseEmoticons(text) {
     // Format: [[emo:emo_01.png]]
     const emoRe = /\[\[emo:([\w.-]+\.png)\]\]/g;
     return text.replace(emoRe, (match, fileName) => {
-        return `<img src="/assets/emoticons/${fileName}" class="chat-emoticon" title="${fileName}" loading="lazy">`;
+        return `<img src="assets/emoticons/${fileName}" class="chat-emoticon" title="${fileName}" loading="lazy">`;
     });
 }
 

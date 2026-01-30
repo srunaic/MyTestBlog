@@ -4566,23 +4566,71 @@ class AntiCodeApp {
 
     initCustomEmoticons(container) {
         container.innerHTML = '';
-        const input = document.getElementById('chat-input');
         // We know we have 36 emoticons
         for (let i = 1; i <= 36; i++) {
             const fileName = `emo_${String(i).padStart(2, '0')}.png`;
             const div = document.createElement('div');
             div.className = 'emoticon-item';
-            div.innerHTML = `<img src="/assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
+            // Use relative path and remove text labels
+            div.innerHTML = `<img src="assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
             div.onclick = (e) => {
                 e.stopPropagation();
+                // Immediately send the emoticon
+                const input = document.getElementById('chat-input');
                 if (input) {
-                    input.value += ` [[emo:${fileName}]] `;
-                    input.focus();
+                    const originalValue = input.value;
+                    input.value = `[[emo:${fileName}]]`;
+                    this.sendMessage();
+                    input.value = originalValue;
+                    document.getElementById('emoji-picker').style.display = 'none';
+                } else {
+                    // Fallback if input not found
+                    this.sendDirectEmoticon(fileName);
                     document.getElementById('emoji-picker').style.display = 'none';
                 }
             };
             container.appendChild(div);
         }
+    }
+
+    async sendDirectEmoticon(fileName) {
+        if (!this.activeChannel) return;
+        const content = `[[emo:${fileName}]]`;
+
+        const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
+        const newMessage = {
+            id: tempId,
+            channel_id: this.activeChannel.id,
+            user_id: this.currentUser.username,
+            author: this.currentUser.nickname,
+            content: content,
+            created_at: new Date().toISOString()
+        };
+
+        this.sentMessageCache.add(tempId);
+        this.queueMessage({ ...newMessage }, true);
+
+        if (this.messageSubscription) {
+            this.messageSubscription.send({
+                type: 'broadcast',
+                event: 'chat',
+                payload: newMessage
+            });
+        }
+
+        const { data, error } = await this.supabase.from('anticode_messages').insert([{
+            channel_id: this.activeChannel.id,
+            user_id: this.currentUser.username,
+            author: this.currentUser.nickname,
+            content: content
+        }]).select('id, created_at').single();
+
+        if (!error && data) {
+            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+            if (opt) this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data.id }));
+        }
+
+        this._sendPushForChatMessage({ channel_id: this.activeChannel.id, author: this.currentUser.nickname, content: "[이모티콘]" });
     }
 
     setupEventListeners() {
