@@ -1,3 +1,5 @@
+#구글 퍼블리싱 rosae hub 검색 시 웹사이트가 최상단에 뜹니다. 
+
 # 🌸 ROSAE HUB (Previously Anticode)
 > **A Next-Gen Emotional Community Platform**  
 > Where technology meets human warmth.
