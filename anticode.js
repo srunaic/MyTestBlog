@@ -4806,6 +4806,10 @@ class AntiCodeApp {
             btn.onclick = (e) => { e.stopPropagation(); toggleSidebar(false); };
         });
         _safeBind('mobile-members-toggle', 'onclick', (e) => { e.stopPropagation(); toggleMembers(); });
+        _safeBind('toggle-members-btn', 'onclick', (e) => {
+            if (e) e.stopPropagation();
+            if (membersSide) membersSide.classList.toggle('collapsed');
+        });
 
         _safeBind('mobile-more-btn', 'onclick', (e) => {
             e.stopPropagation();

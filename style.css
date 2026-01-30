@@ -465,24 +465,28 @@ body {
 }
 
 .big-admin-btn {
-    padding: 15px 40px;
+    padding: 16px 45px;
     font-size: 1rem;
     font-weight: 900;
-    border: 1px solid var(--futuristic-accent);
-    background: var(--futuristic-glass);
-    color: var(--futuristic-accent);
+    border: 1px solid rgba(0, 242, 255, 0.4);
+    background: linear-gradient(135deg, rgba(20, 20, 40, 0.8), rgba(10, 10, 20, 0.9));
+    color: #00f2ff;
     cursor: pointer;
     transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     text-transform: uppercase;
-    clip-path: polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%);
+    clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 .big-admin-btn:hover {
-    background: var(--futuristic-accent);
-    color: var(--futuristic-bg);
-    box-shadow: 0 0 30px var(--futuristic-accent-glow);
-    transform: translateY(-3px);
+    background: #00f2ff;
+    color: #050510;
+    box-shadow: 0 0 35px rgba(0, 242, 255, 0.5);
+    transform: translateY(-3px) scale(1.02);
+    text-shadow: none;
 }
 
 .big-admin-btn.danger {
@@ -637,33 +641,37 @@ body {
 }
 
 .list-admin-btn {
-    padding: 8px 16px;
+    padding: 10px 20px;
     font-size: 0.75rem;
-    font-weight: 700;
-    border: 1px solid var(--futuristic-border);
+    font-weight: 800;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
     color: var(--futuristic-text);
     cursor: pointer;
-    transition: 0.3s;
-    backdrop-filter: blur(5px);
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
 }
 
 .list-admin-btn.edit:hover {
-    background: var(--futuristic-accent);
-    color: var(--futuristic-bg);
-    border-color: var(--futuristic-accent);
+    background: #00f2ff;
+    color: #050510;
+    border-color: #00f2ff;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    transform: translateY(-2px);
 }
 
 .list-admin-btn.delete {
-    color: var(--futuristic-secondary);
+    color: #ff007a;
     border-color: rgba(255, 0, 122, 0.2);
 }
 
 .list-admin-btn.delete:hover {
-    background: var(--futuristic-secondary);
+    background: #ff007a;
     color: white;
-    border-color: var(--futuristic-secondary);
+    border-color: #ff007a;
     box-shadow: 0 0 15px rgba(255, 0, 122, 0.4);
+    transform: translateY(-2px);
 }
 
 /* Detail View */
@@ -684,20 +692,26 @@ body {
 }
 
 .back-btn {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     font-weight: 900;
     font-size: 0.75rem;
     letter-spacing: 2px;
     cursor: pointer;
     color: var(--modern-muted);
     margin-bottom: 60px;
-    transition: 0.3s;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-transform: uppercase;
 }
 
 .back-btn:hover {
-    color: var(--modern-accent);
+    color: var(--futuristic-accent);
+    border-color: var(--futuristic-accent);
+    background: rgba(0, 242, 255, 0.05);
     transform: translateX(-10px);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
 }
 
 .detail-header {
@@ -891,25 +905,36 @@ body {
 
 .bgm-btn {
     width: 100%;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--futuristic-border);
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--futuristic-text);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 900;
     letter-spacing: 2px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 12px;
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.bgm-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--futuristic-accent);
+    color: var(--futuristic-accent);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .bgm-btn.playing {
-    background: var(--futuristic-accent);
-    color: var(--futuristic-bg);
-    border-color: var(--futuristic-accent);
+    background: linear-gradient(135deg, #00f2ff, #00d4ff);
+    color: #050510;
+    border-color: #00f2ff;
+    box-shadow: 0 0 25px rgba(0, 242, 255, 0.4);
 }
 
 .bgm-btn.playing .music-icon {
