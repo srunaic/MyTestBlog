@@ -579,18 +579,78 @@
 
     <script type="module" src="anticode.js?v=2026.01.28.2015"></script>
     <script>
+        // [ANTI-GRAVITY] Robust PWA Update Logic
+        let currentVersion = null; // Will store local version from version.json if possible, or script tag
+
+        async function checkForUpdate() {
+            try {
+                // 1. Fetch remote version.json (bypass cache)
+                const res = await fetch('./version.json?t=' + Date.now());
+                if (!res.ok) return;
+                const data = await res.json();
+                const latestVersion = data.version;
+
+                // 2. Get local version (from meta tag or initial fetch)
+                // For now, we assume if we have a version mismatch, we update.
+                // You might store the "current" version in localStorage on load.
+                const storedVersion = localStorage.getItem('app_version');
+
+                if (storedVersion && storedVersion !== latestVersion) {
+                    console.log(`Update detected: ${storedVersion} -> ${latestVersion}`);
+                    showUpdateNotification();
+                }
+
+                // Update local storage to latest after check (so we don't loop forever unless page reloads)
+                if (!storedVersion) {
+                    localStorage.setItem('app_version', latestVersion);
+                }
+            } catch (e) {
+                console.warn('Update check failed:', e);
+            }
+        }
+
+        function showUpdateNotification() {
+            const el = document.getElementById('update-notification');
+            if (el) {
+                el.style.display = 'flex';
+                // Click handler is already inline: onclick="location.reload()"
+                // But let's make it robust by clearing cache just in case
+                const btn = el.querySelector('button');
+                if (btn) btn.onclick = () => {
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        // Signal SW to skip waiting
+                        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                    // Hard reload
+                    window.location.reload(true);
+                };
+            }
+        }
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => {
                         console.log('PWA Service Worker registered');
-                        reg.update();
+
+                        // Check for updates periodically
+                        setInterval(() => reg.update(), 60 * 60 * 1000); // Check SW every hour
+                        setInterval(checkForUpdate, 5 * 60 * 1000); // Check version.json every 5 mins
+
+                        // Initial check
+                        checkForUpdate();
+
                         reg.onupdatefound = () => {
                             const installingWorker = reg.installing;
                             installingWorker.onstatechange = () => {
-                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('New SW version! Reloading...');
-                                    location.reload(true);
+                                if (installingWorker.state === 'installed') {
+                                    if (navigator.serviceWorker.controller) {
+                                        // New update available
+                                        console.log('New SW version installed (waiting to activate)');
+                                        showUpdateNotification();
+                                    } else {
+                                        console.log('Content is cached for offline use.');
+                                    }
                                 }
                             };
                         };
