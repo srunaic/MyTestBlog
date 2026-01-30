@@ -1,7 +1,7 @@
 {
   "name": "ROSAE HUB",
   "short_name": "ROSAE HUB",
-  "description": "A high-tech digital archive for art and technology.",
+  "description": "ROSAE HUB - Chat & Blog Platform for Digital Art & AI.",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#050510",

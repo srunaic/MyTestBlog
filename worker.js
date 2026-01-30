@@ -1,4 +1,4 @@
-// worker.js - The "Logic Thread" for Nanodoroshi / ROSAE HUB
+// worker.js - The "Logic Thread" for ROSAE HUB
 self.onmessage = function (event) {
     const { type, payload, id } = event.data;
 
