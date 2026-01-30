@@ -3772,7 +3772,11 @@ class AntiCodeApp {
         const isOwner = (this.currentUser && this.currentUser.username) && String(ch.owner_id) === String(this.currentUser.username);
         if (!this.isAdminMode && !isOwner) return alert('관리자나 방장만 수정할 수 있습니다.');
 
-        const newName = prompt('채널 이름', ch.name);
+        const newName = prompt('채널 이름 (삭제하려면 "삭제" 입력)', ch.name);
+        if (newName === '삭제') {
+            await this.deleteChannel(channelId);
+            return;
+        }
         if (newName == null) return;
         const newCategory = prompt('카테고리 ID (예: chat / notice / voice / karaoke / game 또는 임의 문자열)', ch.category || 'chat');
         if (newCategory == null) return;
@@ -3812,22 +3816,33 @@ class AntiCodeApp {
     async deleteChannel(channelId) {
         if (!confirm('정말로 이 채널을 삭제하시겠습니까? 채널의 모든 메시지 기록이 영구적으로 삭제됩니다.')) return;
 
-        // 1. Delete associated messages
-        await this.supabase.from('anticode_messages').delete().eq('channel_id', channelId);
+        try {
+            // 1. Delete mapping from channel pages (directory items)
+            await this.supabase.from('anticode_channel_page_items').delete().eq('channel_id', channelId);
 
-        // 2. Delete the channel itself
-        const { error } = await this.supabase.from('anticode_channels').delete().eq('id', channelId);
-        if (!error) {
-            this.channels = this.channels.filter(c => c.id !== channelId);
-            this.renderChannels();
+            // 2. Delete associated messages
+            await this.supabase.from('anticode_messages').delete().eq('channel_id', channelId);
 
-            if (this.channels.length > 0) {
-                await this.switchChannel(this.channels[0].id);
+            // 3. Delete the channel itself
+            const { error } = await this.supabase.from('anticode_channels').delete().eq('id', channelId);
+
+            if (!error) {
+                this.channels = this.channels.filter(c => String(c.id) !== String(channelId));
+                this.renderChannels();
+
+                if (this.activeChannel && String(this.activeChannel.id) === String(channelId)) {
+                    if (this.channels.length > 0) {
+                        await this.switchChannel(this.channels[0].id);
+                    } else {
+                        location.reload();
+                    }
+                }
             } else {
-                location.reload();
+                throw error;
             }
-        } else {
-            alert('삭제에 실패했습니다: ' + error.message);
+        } catch (e) {
+            console.error('deleteChannel failed:', e);
+            alert('삭제에 실패했습니다: ' + (e && e.message || e));
         }
     }
 
