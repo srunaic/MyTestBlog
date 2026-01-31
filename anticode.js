@@ -130,7 +130,7 @@ class Channel {
             ? `<span class="channel-voice-indicator ${voiceState.on ? 'on' : 'off'}" title="보이스 톡 ${voiceState.on ? 'ON' : 'OFF'}">${voiceState.on ? '🎙️' : '🎤'}</span>`
             : '';
         return `
-            <div class="channel-group-item ${isActive ? 'active' : ''}">
+            <div class="channel-group-item ${isActive ? 'active' : ''}" data-id="${this.id}">
                 <div class="channel-name-row">
                     <div class="channel-name-label">${hash} ${this.name}${typeLabel}</div>
                     <div class="channel-name-actions">
@@ -138,9 +138,6 @@ class Channel {
                         ${editHtml}
                     ${deleteHtml}
                     </div>
-                </div>
-                <div class="channel-sub-link" data-id="${this.id}">
-                    <span class="sub-link-icon">${categoryLabel}</span>
                 </div>
             </div>
         `;
@@ -3565,8 +3562,11 @@ class AntiCodeApp {
         container.appendChild(fragment);
 
         // Bind channel clicks
-        container.querySelectorAll('.channel-sub-link').forEach(item => {
-            item.onclick = () => this.handleChannelSwitch(item.dataset.id);
+        container.querySelectorAll('.channel-group-item').forEach(item => {
+            item.onclick = (e) => {
+                // Safety: actions inside stopPropagation, but good to be sure
+                this.handleChannelSwitch(item.dataset.id);
+            };
         });
     }
 

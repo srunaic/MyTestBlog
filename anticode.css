@@ -1516,31 +1516,30 @@ input:focus {
         opacity: 0.8;
     }
 
-    /* Sidebar Interaction Refactor */
+    /* Sidebar Interaction Refactor - Cleaned Up */
     .channel-group-item {
-        margin: 8px 0;
-        padding: 0 8px;
+        margin: 4px 0;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+
+    .channel-group-item:hover {
+        background: rgba(255, 255, 255, 0.05);
     }
 
     .channel-name-label {
-        font-size: 0.75rem;
+        font-size: 0.9rem;
         color: var(--text-muted);
-        font-weight: 700;
-        margin-bottom: 4px;
+        /* Or primary? user surely wants to see it clearly */
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0;
         pointer-events: none;
-        /* Just a label */
     }
 
-    .channel-sub-link {
-        padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 6px;
-        cursor: pointer;
-        transition: 0.2s;
-        border: 1px solid transparent;
-        display: inline-flex;
-        align-items: center;
-    }
+    /* Deleted channel-sub-link styles */
 
     .channel-name-row {
         display: flex;
