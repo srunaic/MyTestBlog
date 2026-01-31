@@ -3716,28 +3716,6 @@ class AntiCodeApp {
             headerLeft.outerHTML = channel.renderHeader();
         }
 
-        // Handle delete button in the "More Options" dropdown
-        const dropdown = document.getElementById('mobile-dropdown-menu');
-        let delBtn = document.getElementById('menu-delete-channel');
-
-        if (channel.owner_id === this.currentUser.username) {
-            if (!delBtn && dropdown) {
-                const btn = document.createElement('button');
-                btn.id = 'menu-delete-channel';
-                btn.className = 'menu-item-danger';
-                btn.textContent = '❌ 채널 삭제';
-                dropdown.appendChild(btn);
-                delBtn = btn;
-            }
-            if (delBtn) delBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (dropdown) dropdown.style.display = 'none';
-                this.deleteChannel(channel.id);
-            };
-        } else if (delBtn) {
-            delBtn.remove();
-        }
-
         // Load channel members first (needed for secret-channel access checks)
         await this.loadChannelMembers(channel.id);
         await this.loadChannelBlocks(channel.id);
@@ -4094,7 +4072,7 @@ class AntiCodeApp {
     setupMessageSubscription(channelId) {
         if (this.messageSubscription) this.supabase.removeChannel(this.messageSubscription);
 
-        console.log(`Subscribing to real - time messages for channel: ${channelId} `);
+        console.log(`Subscribing to real-time messages for channel: ${channelId}`);
         this.messageSubscription = this.supabase
             .channel(`channel_${channelId} `, {
                 config: {
@@ -4121,7 +4099,7 @@ class AntiCodeApp {
             }, payload => {
                 const id = (payload.old && payload.old.id);
                 if (!id) return;
-                const el = document.getElementById(`msg - ${id} `);
+                const el = document.getElementById(`msg-${id}`);
                 if (el) {
                     el.style.opacity = '0';
                     setTimeout(() => el.remove(), 300);
@@ -4144,7 +4122,7 @@ class AntiCodeApp {
                     var state = (this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState());
                     await this.updateChannelMemberPanel(state || {});
 
-                    const msgs = document.querySelectorAll(`[data - author= "${data.target}"]`);
+                    const msgs = document.querySelectorAll(`[data-author="${data.target}"]`);
                     msgs.forEach(el => el.remove());
                 } catch (_) { }
             })
@@ -4365,7 +4343,7 @@ class AntiCodeApp {
 
         // ✅ Finalize immediately on insert success (don't wait for realtime)
         try {
-            const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
+            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
             if (opt && typeof this.finalizeOptimistic === 'function') {
                 this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data ? data.id : null }));
             }
@@ -4415,8 +4393,8 @@ class AntiCodeApp {
                 // Priority: Try to find and finalize an existing optimistic placeholder
                 const tempId = msg.tempId || null;
                 const selector = tempId
-                    ? `.message - item[data - temp - id="${tempId}"]`
-                    : `.message - item[data - optimistic="true"][data - author - id="${msg.user_id}"]`;
+                    ? `.message-item[data-temp-id="${tempId}"]`
+                    : `.message-item[data-optimistic="true"][data-author-id="${msg.user_id}"]`;
 
                 const existing = container.querySelector(selector);
                 if (existing && typeof this.finalizeOptimistic === 'function') {
@@ -4468,7 +4446,7 @@ class AntiCodeApp {
     }
 
     async finalizeOptimistic(el, realMsg) {
-        el.id = `msg - ${realMsg.id} `;
+        el.id = `msg-${realMsg.id}`;
         el.style.opacity = '1';
         el.removeAttribute('data-optimistic');
         // Keep data-temp-id but mark it as finalized so we don't accidentally match it again 
@@ -4553,7 +4531,7 @@ class AntiCodeApp {
             if (error) throw error;
 
             // Update local DOM immediately
-            const el = document.getElementById(`msg - ${messageId} `);
+            const el = document.getElementById(`msg-${messageId}`);
             if (el) {
                 const textEl = el.querySelector('.message-text');
                 if (textEl) {
@@ -4572,7 +4550,7 @@ class AntiCodeApp {
 
     _markOptimisticFailed(tempId, reason = '') {
         try {
-            const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
+            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
             if (!opt) return;
             opt.setAttribute('data-send-failed', 'true');
             const statusText = opt.querySelector('.sending-status');
@@ -4586,7 +4564,7 @@ class AntiCodeApp {
         if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
 
         // Instant UI: Remove from DOM immediately
-        const el = document.getElementById(`msg - ${messageId} `);
+        const el = document.getElementById(`msg-${messageId}`);
         const parent = (el && el.parentElement);
         const nextSibling = (el && el.nextSibling);
         if (el) el.remove();
@@ -4747,7 +4725,7 @@ class AntiCodeApp {
         }]).select('id, created_at').single();
 
         if (!error && data) {
-            const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
+            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
             if (opt) this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data.id }));
         }
 
@@ -5332,7 +5310,7 @@ class AntiCodeApp {
                     }
 
                     try {
-                        const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
+                        const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
                         if (opt) this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data ? data.id : null }));
                     } catch (_) { }
 
