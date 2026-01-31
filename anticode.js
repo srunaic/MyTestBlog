@@ -867,6 +867,7 @@ class AntiCodeApp {
         if (this.activeChannelPageId === id) this._setActiveChannelPageId('all');
         await this.loadChannelPages();
         this.renderChannelPageSelector();
+        this._refreshPersonalCategoryList(); // Refresh modal list
         return true;
     }
 
@@ -993,7 +994,8 @@ class AntiCodeApp {
         // Partial refresh only
         this._refreshPersonalPageItems();
         this._refreshPersonalSearchResults(true);
-        this._refreshOwnedChannelsList(); // NEW: Populate owned channels management list
+        this._refreshOwnedChannelsList();
+        this._refreshPersonalCategoryList();
     }
 
     _ensureChannelPagesModalBindings() {
@@ -1208,6 +1210,51 @@ class AntiCodeApp {
                 `;
             }
         }).join('');
+    }
+
+    _refreshOwnedChannelsList() {
+        const list = document.getElementById('pages-modal-owned-list');
+        if (!list) return;
+        const me = this.currentUser && this.currentUser.username;
+        const ownedChans = this.channels.filter(ch => me && String(ch.owner_id) === String(me));
+
+        if (ownedChans.length === 0) {
+            list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">내가 만든 채팅방이 없습니다.</div>';
+            return;
+        }
+
+        list.innerHTML = ownedChans.map(ch => `
+            <div class="member-card" style="margin-bottom:8px;">
+                <div class="member-info">
+                    <span class="member-name-text">#${this.escapeHtml(ch.name)}</span>
+                    <span class="member-status-sub">${this.escapeHtml(this._channelLabel(ch))}</span>
+                </div>
+                <div class="member-actions">
+                    <button class="notif-toggle-btn" style="color:#ff4d4d;" onclick="window.app.deleteChannel('${ch.id}')">삭제</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    _refreshPersonalCategoryList() {
+        const list = document.getElementById('pages-modal-personal-list');
+        if (!list) return;
+
+        if (!this.channelPages || this.channelPages.length === 0) {
+            list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">내가 만든 채널 목록(카테고리)이 없습니다.</div>';
+            return;
+        }
+
+        list.innerHTML = this.channelPages.map(p => `
+            <div class="member-card" style="margin-bottom:8px;">
+                <div class="member-info">
+                    <span class="member-name-text">📂 ${this.escapeHtml(p.name)}</span>
+                </div>
+                <div class="member-actions">
+                    <button class="notif-toggle-btn" style="color:#ff4d4d;" onclick="if(confirm('이 채널 목록을 삭제하시겠습니까? 안의 채팅방은 사라지지 않습니다.')) window.app.deleteChannelPage('${p.id}')">삭제</button>
+                </div>
+            </div>
+        `).join('');
     }
 
     async loadGlobalPageIntoCurrentView(pageId) {
@@ -3839,6 +3886,7 @@ class AntiCodeApp {
                         location.reload();
                     }
                 }
+                this._refreshOwnedChannelsList(); // Ensure modal list is updated
             } else {
                 throw error;
             }
@@ -3848,37 +3896,6 @@ class AntiCodeApp {
         }
     }
 
-    _refreshOwnedChannelsList() {
-        const listContainer = document.getElementById('pages-modal-owned-list');
-        if (!listContainer) return;
-
-        const myUsername = this.currentUser && this.currentUser.username;
-        if (!myUsername) {
-            listContainer.innerHTML = '<div style="padding:10px; color:var(--text-muted);">로그인이 필요합니다.</div>';
-            return;
-        }
-
-        const myChannels = (this.channels || []).filter(c => String(c.owner_id) === String(myUsername));
-
-        if (myChannels.length === 0) {
-            listContainer.innerHTML = '<div style="padding:15px; color:var(--text-muted); text-align:center;">생성한 채널이 없습니다.</div>';
-            return;
-        }
-
-        listContainer.innerHTML = myChannels.map(ch => {
-            const typeLabel = ch._getTypeLabel() || '';
-            const categoryLabel = ch.category || '채팅';
-            return `
-                <div class="owned-channel-item">
-                    <div class="owned-channel-info">
-                        <span class="owned-channel-name"># ${this.escapeHtml(ch.name)} ${this.escapeHtml(typeLabel)}</span>
-                        <span class="owned-channel-type">${this.escapeHtml(categoryLabel)}</span>
-                    </div>
-                    <button class="owned-channel-delete-btn" onclick="window.app.deleteChannel('${ch.id}')">삭제</button>
-                </div>
-            `;
-        }).join('');
-    }
 
     async createChannel(name, type, category, password) {
         var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
@@ -3894,7 +3911,7 @@ class AntiCodeApp {
 
         // [MOD] Admin bypasses channel limits (ex_1)
         if (!this._isAdmin() && owned >= limit) {
-            alert(`채널 생성 제한에 도달했습니다. (내 채널 최대 ${limit}개)\n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
+            alert(`채널 생성 제한에 도달했습니다. (내 채널 최대 ${limit}개) \n\n더 만들려면 기존 채널을 정리하거나 Pro 플랜으로 업그레이드가 필요합니다.`);
             return false;
         }
         // If in 'all' view, it's public (admins only). If in a page, it's private to that page/owner.
@@ -3994,7 +4011,7 @@ class AntiCodeApp {
             msgEl.className = 'message-item';
             msgEl.setAttribute('data-author-id', msg.user_id);
             msgEl.setAttribute('data-author', msg.author);
-            if (msg.id) msgEl.id = `msg-${msg.id}`;
+            if (msg.id) msgEl.id = `msg - ${msg.id} `;
             if (isOptimistic) {
                 msgEl.style.opacity = '0.7';
                 msgEl.setAttribute('data-optimistic', 'true');
@@ -4004,11 +4021,11 @@ class AntiCodeApp {
             const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const initial = (info.nickname || msg.author || '?')[0];
             const avatarHtml = `
-            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0; cursor:pointer;" onclick="openProfileCard('${msg.user_id}')">
-                ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-                <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
-            </div>
-        `;
+    < div class="avatar-wrapper" style = "width:32px; height:32px; position:relative; flex-shrink:0; cursor:pointer;" onclick = "openProfileCard('${msg.user_id}')" >
+        ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+<div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
+            </div >
+    `;
 
             // Offload profanity and linkify to the Logic Thread (with fallback)
             let contentHtml = msg.content || '';
@@ -4016,7 +4033,7 @@ class AntiCodeApp {
                 // Parse emoticons locally for immediate visual sticker
                 const emoRe = /\[\[emo:([\w.-]+\.png)\]\]/g;
                 contentHtml = contentHtml.replace(emoRe, (match, fileName) => {
-                    return `<img src="assets/emoticons/${fileName}" class="chat-emoticon" title="${fileName}" loading="lazy">`;
+                    return `< img src = "assets/emoticons/${fileName}" class="chat-emoticon" title = "${fileName}" loading = "lazy" > `;
                 });
             }
 
@@ -4033,20 +4050,20 @@ class AntiCodeApp {
 
             msgEl.innerHTML = `
                 ${avatarHtml}
-                <div class="message-content-wrapper">
-                    <div class="message-meta">
-                        <span class="member-name">${info.nickname}</span>
-                        <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
-                        <div class="message-meta-actions">
-                           ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
-                        </div>
-                    </div>
-                    <div class="message-text">
-                        ${contentHtml || (msg.image_url ? '' : '<span style="color:red; font-size:0.8rem;">[내용 없음]</span>')}
-                        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')" onerror="this.onerror=null; this.parentNode.innerHTML='<span style=\\'color:red; font-size:0.8rem;\\'>❌ 이미지 로드 실패</span>'"></div>` : ''}
-                    </div>
-                </div>
-            `;
+<div class="message-content-wrapper">
+    <div class="message-meta">
+        <span class="member-name">${info.nickname}</span>
+        <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
+        <div class="message-meta-actions">
+            ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
+        </div>
+    </div>
+    <div class="message-text">
+        ${contentHtml || (msg.image_url ? '' : '<span style="color:red; font-size:0.8rem;">[내용 없음]</span>')}
+        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')" onerror="this.onerror=null; this.parentNode.innerHTML='<span style=\\'color:red; font-size:0.8rem;\\'>❌ 이미지 로드 실패</span>'"></div>` : ''}
+    </div>
+</div>
+`;
 
             // [NEW] Editing capability (Step 1)
             if (isMyMessage && !isOptimistic) {
@@ -4079,9 +4096,9 @@ class AntiCodeApp {
     setupMessageSubscription(channelId) {
         if (this.messageSubscription) this.supabase.removeChannel(this.messageSubscription);
 
-        console.log(`Subscribing to real-time messages for channel: ${channelId}`);
+        console.log(`Subscribing to real - time messages for channel: ${channelId} `);
         this.messageSubscription = this.supabase
-            .channel(`channel_${channelId}`, {
+            .channel(`channel_${channelId} `, {
                 config: {
                     broadcast: { self: false }
                 }
@@ -4093,7 +4110,7 @@ class AntiCodeApp {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'anticode_messages',
-                filter: `channel_id=eq.${channelId}`
+                filter: `channel_id = eq.${channelId} `
             }, payload => {
                 this.queueMessage(payload.new);
             })
@@ -4106,7 +4123,7 @@ class AntiCodeApp {
             }, payload => {
                 const id = (payload.old && payload.old.id);
                 if (!id) return;
-                const el = document.getElementById(`msg-${id}`);
+                const el = document.getElementById(`msg - ${id} `);
                 if (el) {
                     el.style.opacity = '0';
                     setTimeout(() => el.remove(), 300);
@@ -4129,12 +4146,12 @@ class AntiCodeApp {
                     var state = (this.channelPresenceChannel && this.channelPresenceChannel.presenceState && this.channelPresenceChannel.presenceState());
                     await this.updateChannelMemberPanel(state || {});
 
-                    const msgs = document.querySelectorAll(`[data-author="${data.target}"]`);
+                    const msgs = document.querySelectorAll(`[data - author= "${data.target}"]`);
                     msgs.forEach(el => el.remove());
                 } catch (_) { }
             })
             .subscribe((status) => {
-                console.log(`Subscription status for ${channelId}:`, status);
+                console.log(`Subscription status for ${channelId}: `, status);
             });
     }
 
@@ -4248,7 +4265,7 @@ class AntiCodeApp {
         let html = onlineUsers.map(user => {
             const isFriend = friendUsernames.has(user.username);
             return `
-                <div class="member-card online">
+    < div class="member-card online" >
                     <div class="avatar-wrapper">
                         ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                         <div class="avatar-sm" style="${user.avatar_url ? 'display:none;' : ''}">${user.nickname[0]}</div>
@@ -4258,12 +4275,12 @@ class AntiCodeApp {
                         <span class="member-name-text">${user.nickname} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
                         <span class="member-status-sub">온라인</span>
                     </div>
-                </div>
-            `;
+                </div >
+    `;
         }).join('');
 
         html += offlineFriends.map(f => `
-            <div class="member-card offline">
+    < div class="member-card offline" >
                 <div class="avatar-wrapper">
                     ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                     <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${f.nickname[0]}</div>
@@ -4272,8 +4289,8 @@ class AntiCodeApp {
                     <span class="member-name-text">${f.nickname} <span class="friend-badge">[친구]</span></span>
                     <span class="member-status-sub">${formatDistanceToNow(f.last_seen)}</span>
                 </div>
-            </div>
-        `).join('');
+            </div >
+    `).join('');
 
         memberList.innerHTML = html;
     }
@@ -4350,7 +4367,7 @@ class AntiCodeApp {
 
         // ✅ Finalize immediately on insert success (don't wait for realtime)
         try {
-            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+            const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
             if (opt && typeof this.finalizeOptimistic === 'function') {
                 this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data ? data.id : null }));
             }
@@ -4400,8 +4417,8 @@ class AntiCodeApp {
                 // Priority: Try to find and finalize an existing optimistic placeholder
                 const tempId = msg.tempId || null;
                 const selector = tempId
-                    ? `.message-item[data-temp-id="${tempId}"]`
-                    : `.message-item[data-optimistic="true"][data-author-id="${msg.user_id}"]`;
+                    ? `.message - item[data - temp - id="${tempId}"]`
+                    : `.message - item[data - optimistic="true"][data - author - id="${msg.user_id}"]`;
 
                 const existing = container.querySelector(selector);
                 if (existing && typeof this.finalizeOptimistic === 'function') {
@@ -4453,7 +4470,7 @@ class AntiCodeApp {
     }
 
     async finalizeOptimistic(el, realMsg) {
-        el.id = `msg-${realMsg.id}`;
+        el.id = `msg - ${realMsg.id} `;
         el.style.opacity = '1';
         el.removeAttribute('data-optimistic');
         // Keep data-temp-id but mark it as finalized so we don't accidentally match it again 
@@ -4493,7 +4510,7 @@ class AntiCodeApp {
             textEl.innerHTML = `
                 ${contentHtml}
                 ${realMsg.image_url ? `<div class="message-image-content"><img src="${realMsg.image_url}" class="chat-img" onclick="window.open('${realMsg.image_url}')"></div>` : ''}
-            `;
+`;
         }
 
         // Ensure editing listeners are attached to the finalized element
@@ -4538,7 +4555,7 @@ class AntiCodeApp {
             if (error) throw error;
 
             // Update local DOM immediately
-            const el = document.getElementById(`msg-${messageId}`);
+            const el = document.getElementById(`msg - ${messageId} `);
             if (el) {
                 const textEl = el.querySelector('.message-text');
                 if (textEl) {
@@ -4557,7 +4574,7 @@ class AntiCodeApp {
 
     _markOptimisticFailed(tempId, reason = '') {
         try {
-            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+            const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
             if (!opt) return;
             opt.setAttribute('data-send-failed', 'true');
             const statusText = opt.querySelector('.sending-status');
@@ -4571,7 +4588,7 @@ class AntiCodeApp {
         if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
 
         // Instant UI: Remove from DOM immediately
-        const el = document.getElementById(`msg-${messageId}`);
+        const el = document.getElementById(`msg - ${messageId} `);
         const parent = (el && el.parentElement);
         const nextSibling = (el && el.nextSibling);
         if (el) el.remove();
@@ -4599,16 +4616,16 @@ class AntiCodeApp {
     renderUserInfo() {
         const info = document.getElementById('current-user-info');
         if (!info) return;
-        const avatarHtml = this.currentUser.avatar_url ? `<img src="${this.currentUser.avatar_url}" class="avatar-img">` : `<div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>`;
+        const avatarHtml = this.currentUser.avatar_url ? `< img src = "${this.currentUser.avatar_url}" class="avatar-img" > ` : ` < div class="user-avatar" style = "width:32px; height:32px;" > ${this.currentUser.nickname[0]}</div > `;
 
         // [New] Badge logic
         const pendingCount = this.pendingInvites ? this.pendingInvites.length : 0;
         const badgeHtml = pendingCount > 0
-            ? `<div class="invite-badge" id="profile-invite-badge" title="초대 ${pendingCount}건">${pendingCount > 99 ? '99+' : pendingCount}</div>`
+            ? `< div class="invite-badge" id = "profile-invite-badge" title = "초대 ${pendingCount}건" > ${pendingCount > 99 ? '99+' : pendingCount}</div > `
             : '';
 
         info.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px; position:relative;">
+    < div style = "display:flex; align-items:center; gap:10px; position:relative;" >
             <div style="position:relative;">
                 ${avatarHtml}
                 ${badgeHtml}
@@ -4620,7 +4637,7 @@ class AntiCodeApp {
                     <button class="uid-copy-btn" title="UID 복사" data-uid="${this.currentUser.uid}">📋</button>
                 </div>
             </div>
-        </div>
+        </div >
     `;
 
         const copyBtn = info.querySelector('.uid-copy-btn');
@@ -4679,14 +4696,14 @@ class AntiCodeApp {
             const div = document.createElement('div');
             div.className = 'emoticon-item';
             // Use relative path assets/emoticons/ for better compatibility
-            div.innerHTML = `<img src="assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
+            div.innerHTML = `< img src = "assets/emoticons/${fileName}" title = "${fileName}" loading = "lazy" > `;
             div.onclick = (e) => {
                 e.stopPropagation();
                 // Immediately send the emoticon
                 const input = document.getElementById('chat-input');
                 if (input) {
                     const originalValue = input.value;
-                    input.value = `[[emo:${fileName}]]`;
+                    input.value = `[[emo: ${fileName}]]`;
                     this.sendMessage();
                     input.value = originalValue;
                     document.getElementById('emoji-picker').style.display = 'none';
@@ -4701,7 +4718,7 @@ class AntiCodeApp {
 
     async sendDirectEmoticon(fileName) {
         if (!this.activeChannel) return;
-        const content = `[[emo:${fileName}]]`;
+        const content = `[[emo: ${fileName}]]`;
 
         const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
         const newMessage = {
@@ -4732,7 +4749,7 @@ class AntiCodeApp {
         }]).select('id, created_at').single();
 
         if (!error && data) {
-            const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+            const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
             if (opt) this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data.id }));
         }
 
@@ -5054,7 +5071,7 @@ class AntiCodeApp {
                     toggleBtn.classList.toggle('on', settings.enabled);
                     toggleBtn.textContent = settings.enabled ? '🔔 ON' : '🔕 OFF';
                 }
-                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
+                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())} `;
             }
 
             // Voice mic selector: populate list and restore saved selection
@@ -5071,7 +5088,7 @@ class AntiCodeApp {
                 if (gainEl) {
                     const pct = Math.round((this.micGain || 1) * 100);
                     gainEl.value = String(pct);
-                    if (gainValEl) gainValEl.textContent = `${pct}%`;
+                    if (gainValEl) gainValEl.textContent = `${pct}% `;
                 }
             } catch (_) { }
 
@@ -5083,7 +5100,7 @@ class AntiCodeApp {
                 if (nEl) {
                     const pct = Math.round((NotificationManager.volume !== undefined ? NotificationManager.volume : 0.8) * 100);
                     nEl.value = String(pct);
-                    if (nValEl) nValEl.textContent = `${pct}%`;
+                    if (nValEl) nValEl.textContent = `${pct}% `;
                 }
             } catch (_) { }
 
@@ -5153,7 +5170,7 @@ class AntiCodeApp {
         const nVolEl = document.getElementById('notif-volume');
         const nVolValEl = document.getElementById('notif-volume-value');
         if (nVolEl) {
-            const setUi = (pct) => { if (nVolValEl) nVolValEl.textContent = `${pct}%`; };
+            const setUi = (pct) => { if (nVolValEl) nVolValEl.textContent = `${pct}% `; };
             nVolEl.oninput = () => {
                 const pct = Number(nVolEl.value);
                 setUi(pct);
@@ -5164,7 +5181,7 @@ class AntiCodeApp {
         const gainEl = document.getElementById('voice-mic-gain');
         const gainValEl = document.getElementById('voice-mic-gain-value');
         const updateGainUi = (pct) => {
-            if (gainValEl) gainValEl.textContent = `${pct}%`;
+            if (gainValEl) gainValEl.textContent = `${pct}% `;
         };
         if (gainEl) {
             // init from stored preference
@@ -5208,7 +5225,7 @@ class AntiCodeApp {
                 alert('정리 실패: ' + (e && e.message || e));
             } finally {
                 if (btn) { btn.disabled = false; btn.textContent = '지금 실행'; }
-                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())}`;
+                if (lastRun) lastRun.textContent = `마지막 실행: ${this._formatDateTime(this._getLastCleanupRunMs())} `;
             }
         });
 
@@ -5268,7 +5285,7 @@ class AntiCodeApp {
                         const maxBytes = isPro ? (50 * 1024 * 1024) : (isZip ? (1 * 1024 * 1024) : (200 * 1024));
                         if (file.size > maxBytes) {
                             const limitText = isPro ? "50MB+" : (isZip ? "1MB" : "200KB");
-                            alert(`파일 용량이 너무 큽니다.\\n현재 등급 최대 ${limitText}`);
+                            alert(`파일 용량이 너무 큽니다.\\n현재 등급 최대 ${limitText} `);
                             return;
                         }
                     }
@@ -5280,7 +5297,7 @@ class AntiCodeApp {
 
                     // Use same optimistic + finalize flow as text messages
                     const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
-                    const fileLabel = isImage ? '' : `📎 ${file.name}\\n${url}`;
+                    const fileLabel = isImage ? '' : `📎 ${file.name} \\n${url} `;
                     const newMessage = {
                         id: tempId,
                         channel_id: this.activeChannel.id,
@@ -5317,7 +5334,7 @@ class AntiCodeApp {
                     }
 
                     try {
-                        const opt = document.querySelector(`.message-item[data-optimistic="true"][data-temp-id="${tempId}"]`);
+                        const opt = document.querySelector(`.message - item[data - optimistic="true"][data - temp - id="${tempId}"]`);
                         if (opt) this.finalizeOptimistic(opt, Object.assign({}, newMessage, { id: data ? data.id : null }));
                     } catch (_) { }
 
@@ -5383,7 +5400,7 @@ class AntiCodeApp {
 
         const header = document.createElement('div');
         header.className = 'invite-dropdown-header';
-        header.innerHTML = `<span>초대 목록 (${this.pendingInvites.length})</span><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;">✕</button>`;
+        header.innerHTML = `< span > 초대 목록(${this.pendingInvites.length})</span > <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;">✕</button>`;
         menu.appendChild(header);
 
         const list = document.createElement('div');
@@ -5408,15 +5425,15 @@ class AntiCodeApp {
             const item = document.createElement('div');
             item.className = 'invite-item';
             item.innerHTML = `
-                <div class="invite-info">
+    < div class="invite-info" >
                     <span class="invite-channel-name"># ${this.escapeHtml(chName)}</span>
                     <span class="invite-sender">Invited by ${this.escapeHtml(inviter)}</span>
-                </div>
-                <div class="invite-actions">
-                    <button class="invite-accept-btn" onclick="window.app.acceptChannelInvite('${inv.channel_id}')">수락</button>
-                    <button class="invite-reject-btn" onclick="window.app.rejectChannelInvite('${inv.channel_id}')">거절</button>
-                </div>
-            `;
+                </div >
+    <div class="invite-actions">
+        <button class="invite-accept-btn" onclick="window.app.acceptChannelInvite('${inv.channel_id}')">수락</button>
+        <button class="invite-reject-btn" onclick="window.app.rejectChannelInvite('${inv.channel_id}')">거절</button>
+    </div>
+`;
             list.appendChild(item);
         }
         menu.appendChild(list);
@@ -5509,7 +5526,7 @@ class AntiCodeApp {
                 avatarEl.onerror = () => { avatarEl.src = ''; avatarEl.alt = userData.nickname ? userData.nickname[0] : '?'; };
             }
             if (nicknameEl) nicknameEl.textContent = userData.nickname || username;
-            if (uidEl) uidEl.textContent = `UID: ${userData.uid || '------'}`;
+            if (uidEl) uidEl.textContent = `UID: ${userData.uid || '------'} `;
             if (bioEl) {
                 bioEl.value = userData.bio || '';
                 // Check if viewing own profile
