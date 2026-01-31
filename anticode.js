@@ -3877,8 +3877,6 @@ class AntiCodeApp {
             if (!error) {
                 this.channels = this.channels.filter(c => String(c.id) !== String(channelId));
                 this.renderChannels();
-                this._refreshOwnedChannelsList(); // NEW: Refresh management list
-
                 if (this.activeChannel && String(this.activeChannel.id) === String(channelId)) {
                     if (this.channels.length > 0) {
                         await this.switchChannel(this.channels[0].id);
@@ -4011,7 +4009,7 @@ class AntiCodeApp {
             msgEl.className = 'message-item';
             msgEl.setAttribute('data-author-id', msg.user_id);
             msgEl.setAttribute('data-author', msg.author);
-            if (msg.id) msgEl.id = `msg - ${msg.id} `;
+            if (msg.id) msgEl.id = `msg-${msg.id}`;
             if (isOptimistic) {
                 msgEl.style.opacity = '0.7';
                 msgEl.setAttribute('data-optimistic', 'true');
@@ -4021,11 +4019,11 @@ class AntiCodeApp {
             const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const initial = (info.nickname || msg.author || '?')[0];
             const avatarHtml = `
-    < div class="avatar-wrapper" style = "width:32px; height:32px; position:relative; flex-shrink:0; cursor:pointer;" onclick = "openProfileCard('${msg.user_id}')" >
-        ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
-<div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
-            </div >
-    `;
+            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0; cursor:pointer;" onclick="openProfileCard('${msg.user_id}')">
+                ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
+            </div>
+            `;
 
             // Offload profanity and linkify to the Logic Thread (with fallback)
             let contentHtml = msg.content || '';
@@ -4033,7 +4031,7 @@ class AntiCodeApp {
                 // Parse emoticons locally for immediate visual sticker
                 const emoRe = /\[\[emo:([\w.-]+\.png)\]\]/g;
                 contentHtml = contentHtml.replace(emoRe, (match, fileName) => {
-                    return `< img src = "assets/emoticons/${fileName}" class="chat-emoticon" title = "${fileName}" loading = "lazy" > `;
+                    return `<img src="assets/emoticons/${fileName}" class="chat-emoticon" title="${fileName}" loading="lazy">`;
                 });
             }
 
@@ -4265,7 +4263,7 @@ class AntiCodeApp {
         let html = onlineUsers.map(user => {
             const isFriend = friendUsernames.has(user.username);
             return `
-    < div class="member-card online" >
+            <div class="member-card online">
                     <div class="avatar-wrapper">
                         ${user.avatar_url ? `<img src="${user.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                         <div class="avatar-sm" style="${user.avatar_url ? 'display:none;' : ''}">${user.nickname[0]}</div>
@@ -4275,12 +4273,12 @@ class AntiCodeApp {
                         <span class="member-name-text">${user.nickname} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
                         <span class="member-status-sub">온라인</span>
                     </div>
-                </div >
-    `;
+                </div>
+            `;
         }).join('');
 
         html += offlineFriends.map(f => `
-    < div class="member-card offline" >
+            <div class="member-card offline">
                 <div class="avatar-wrapper">
                     ${f.avatar_url ? `<img src="${f.avatar_url}" class="avatar-sm" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                     <div class="avatar-sm" style="${f.avatar_url ? 'display:none;' : ''}">${f.nickname[0]}</div>
@@ -4289,8 +4287,8 @@ class AntiCodeApp {
                     <span class="member-name-text">${f.nickname} <span class="friend-badge">[친구]</span></span>
                     <span class="member-status-sub">${formatDistanceToNow(f.last_seen)}</span>
                 </div>
-            </div >
-    `).join('');
+            </div>
+        `).join('');
 
         memberList.innerHTML = html;
     }
@@ -4616,16 +4614,16 @@ class AntiCodeApp {
     renderUserInfo() {
         const info = document.getElementById('current-user-info');
         if (!info) return;
-        const avatarHtml = this.currentUser.avatar_url ? `< img src = "${this.currentUser.avatar_url}" class="avatar-img" > ` : ` < div class="user-avatar" style = "width:32px; height:32px;" > ${this.currentUser.nickname[0]}</div > `;
+        const avatarHtml = this.currentUser.avatar_url ? `<img src="${this.currentUser.avatar_url}" class="avatar-img">` : `<div class="user-avatar" style="width:32px; height:32px;">${this.currentUser.nickname[0]}</div>`;
 
         // [New] Badge logic
         const pendingCount = this.pendingInvites ? this.pendingInvites.length : 0;
         const badgeHtml = pendingCount > 0
-            ? `< div class="invite-badge" id = "profile-invite-badge" title = "초대 ${pendingCount}건" > ${pendingCount > 99 ? '99+' : pendingCount}</div > `
+            ? `<div class="invite-badge" id="profile-invite-badge" title="초대 ${pendingCount}건">${pendingCount > 99 ? '99+' : pendingCount}</div>`
             : '';
 
         info.innerHTML = `
-    < div style = "display:flex; align-items:center; gap:10px; position:relative;" >
+        <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div style="position:relative;">
                 ${avatarHtml}
                 ${badgeHtml}
@@ -4637,8 +4635,8 @@ class AntiCodeApp {
                     <button class="uid-copy-btn" title="UID 복사" data-uid="${this.currentUser.uid}">📋</button>
                 </div>
             </div>
-        </div >
-    `;
+        </div>
+        `;
 
         const copyBtn = info.querySelector('.uid-copy-btn');
         if (copyBtn) {
@@ -4696,14 +4694,14 @@ class AntiCodeApp {
             const div = document.createElement('div');
             div.className = 'emoticon-item';
             // Use relative path assets/emoticons/ for better compatibility
-            div.innerHTML = `< img src = "assets/emoticons/${fileName}" title = "${fileName}" loading = "lazy" > `;
+            div.innerHTML = `<img src="assets/emoticons/${fileName}" title="${fileName}" loading="lazy">`;
             div.onclick = (e) => {
                 e.stopPropagation();
                 // Immediately send the emoticon
                 const input = document.getElementById('chat-input');
                 if (input) {
                     const originalValue = input.value;
-                    input.value = `[[emo: ${fileName}]]`;
+                    input.value = `[[emo:${fileName}]]`;
                     this.sendMessage();
                     input.value = originalValue;
                     document.getElementById('emoji-picker').style.display = 'none';
@@ -4718,7 +4716,7 @@ class AntiCodeApp {
 
     async sendDirectEmoticon(fileName) {
         if (!this.activeChannel) return;
-        const content = `[[emo: ${fileName}]]`;
+        const content = `[[emo:${fileName}]]`;
 
         const tempId = 'msg_' + Date.now() + Math.random().toString(36).substring(7);
         const newMessage = {
@@ -5400,7 +5398,7 @@ class AntiCodeApp {
 
         const header = document.createElement('div');
         header.className = 'invite-dropdown-header';
-        header.innerHTML = `< span > 초대 목록(${this.pendingInvites.length})</span > <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;">✕</button>`;
+        header.innerHTML = `<span>초대 목록(${this.pendingInvites.length})</span><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;">✕</button>`;
         menu.appendChild(header);
 
         const list = document.createElement('div');
@@ -5425,15 +5423,15 @@ class AntiCodeApp {
             const item = document.createElement('div');
             item.className = 'invite-item';
             item.innerHTML = `
-    < div class="invite-info" >
+                <div class="invite-info">
                     <span class="invite-channel-name"># ${this.escapeHtml(chName)}</span>
                     <span class="invite-sender">Invited by ${this.escapeHtml(inviter)}</span>
-                </div >
-    <div class="invite-actions">
-        <button class="invite-accept-btn" onclick="window.app.acceptChannelInvite('${inv.channel_id}')">수락</button>
-        <button class="invite-reject-btn" onclick="window.app.rejectChannelInvite('${inv.channel_id}')">거절</button>
-    </div>
-`;
+                </div>
+                <div class="invite-actions">
+                    <button class="invite-accept-btn" onclick="window.app.acceptChannelInvite('${inv.channel_id}')">수락</button>
+                    <button class="invite-reject-btn" onclick="window.app.rejectChannelInvite('${inv.channel_id}')">거절</button>
+                </div>
+            `;
             list.appendChild(item);
         }
         menu.appendChild(list);
