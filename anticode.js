@@ -4797,6 +4797,24 @@ class AntiCodeApp {
         };
 
         // Emoji Picker
+        // Helper to close all floating/overlay UI elements
+        const closeAllOverlays = () => {
+            // Close Modals
+            document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
+            // Close Sidebars
+            const sidebar = document.querySelector('.anticode-sidebar');
+            const membersSide = document.querySelector('.anticode-members');
+            if (sidebar) sidebar.classList.remove('open');
+            if (membersSide) membersSide.classList.remove('open');
+            if (membersSide) membersSide.classList.remove('collapsed'); // Reset state
+            // Close Dropdowns
+            const dropdown = document.getElementById('mobile-dropdown-menu');
+            if (dropdown) dropdown.style.display = 'none';
+            const picker = document.getElementById('emoji-picker');
+            if (picker) picker.style.display = 'none';
+        };
+        this.closeAllOverlays = closeAllOverlays;
+
         const emojiBtn = document.getElementById('emoji-btn');
         const emojiPicker = document.getElementById('emoji-picker');
         emojiBtn.onclick = (e) => {
@@ -4846,20 +4864,22 @@ class AntiCodeApp {
             if (membersSide) membersSide.classList.remove('open');
             if (dropdown) dropdown.style.display = 'none';
         };
-        const toggleMembers = (open) => {
-            if (membersSide) {
-                if (typeof open === 'boolean') membersSide.classList.toggle('open', open);
-                else membersSide.classList.toggle('open');
-            }
-            if (sidebar) sidebar.classList.remove('open');
-            if (dropdown) dropdown.style.display = 'none';
-        };
 
-        _safeBind('mobile-menu-toggle', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(); });
+        // Mobile Menu Toggles with Auto-Close
+        _safeBind('mobile-menu-toggle', 'onclick', (e) => {
+            e.stopPropagation();
+            // If opening, close others first
+            if (!sidebar || !sidebar.classList.contains('open')) closeAllOverlays();
+            toggleSidebar();
+        });
         document.querySelectorAll('.sidebar-close-btn').forEach(btn => {
             btn.onclick = (e) => { e.stopPropagation(); toggleSidebar(false); };
         });
-        _safeBind('mobile-members-toggle', 'onclick', (e) => { e.stopPropagation(); toggleMembers(); });
+        _safeBind('mobile-members-toggle', 'onclick', (e) => {
+            e.stopPropagation();
+            if (!membersSide || !membersSide.classList.contains('open')) closeAllOverlays();
+            toggleMembers();
+        });
         _safeBind('toggle-members-btn', 'onclick', (e) => {
             if (e) e.stopPropagation();
             if (membersSide) membersSide.classList.toggle('collapsed');
@@ -4870,45 +4890,33 @@ class AntiCodeApp {
             if (dropdown) dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'flex' : 'none';
         });
 
-        _safeBind('menu-channels', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
-        _safeBind('menu-friends', 'onclick', (e) => { e.stopPropagation(); toggleSidebar(true); });
-        _safeBind('menu-members', 'onclick', (e) => { e.stopPropagation(); toggleMembers(true); });
-        const menuAdd = document.getElementById('menu-add');
-        if (menuAdd) {
-            const updateMenuAddVisibility = () => {
-                var page = this.channelPages.find(function (p) { return p.id === this.activeChannelPageId; }.bind(this));
-                const pageOwner = page ? page.username : null;
-                const isPageOwner = pageOwner && String(pageOwner) === String((this.currentUser && this.currentUser.username));
-                if (this.isAdminMode || isPageOwner) {
-                    menuAdd.style.display = 'flex';
-                    menuAdd.onclick = (e) => {
-                        e.stopPropagation();
-                        if (dropdown) dropdown.style.display = 'none';
-                        const m = document.getElementById('create-channel-modal');
-                        if (m) m.style.display = 'flex';
-                    };
-                } else {
-                    menuAdd.style.display = 'none';
-                }
-            };
-            updateMenuAddVisibility();
-            // Store as a method so it can be re-run on page switch if needed
-            this._updateMenuAddVisibility = updateMenuAddVisibility;
-        }
+        _safeBind('menu-channels', 'onclick', (e) => { e.stopPropagation(); closeAllOverlays(); toggleSidebar(true); });
+        _safeBind('menu-friends', 'onclick', (e) => { e.stopPropagation(); closeAllOverlays(); toggleSidebar(true); });
+        _safeBind('menu-members', 'onclick', (e) => { e.stopPropagation(); closeAllOverlays(); toggleMembers(true); });
+
+        // Removed menu-add logic as requested by user
+
         _safeBind('menu-profile', 'onclick', (e) => {
             e.stopPropagation();
-            if (dropdown) dropdown.style.display = 'none';
+            closeAllOverlays();
             const mod = document.getElementById('profile-modal');
             if (mod) mod.style.display = 'flex';
         });
         _safeBind('menu-blocked-list', 'onclick', (e) => {
             e.stopPropagation();
-            if (dropdown) dropdown.style.display = 'none';
+            closeAllOverlays();
             this.openBlockedListModal();
         });
         _safeBind('close-blocked-modal', 'onclick', () => {
             const m = document.getElementById('blocked-list-modal');
             if (m) m.style.display = 'none';
+        });
+
+        // Also bind closeAllOverlays to other triggers
+        _safeBind('menu-pages', 'onclick', (e) => {
+            e.stopPropagation();
+            closeAllOverlays();
+            this.openChannelPagesModal();
         });
 
         document.addEventListener('click', () => {

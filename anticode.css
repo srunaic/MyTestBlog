@@ -1608,6 +1608,21 @@ input:focus {
         width: 95%;
     }
 
+    /* Fix: Modal Overlay Z-Index must be higher than sidebar (3000) */
+    .modal-overlay {
+        z-index: 4000;
+    }
+
+    /* Emoji Picker Z-Index */
+    .emoji-picker-popover {
+        z-index: 4001;
+    }
+
+    /* Toast/Notification Z-Index */
+    .inapp-notif-toast {
+        z-index: 5000;
+    }
+
     /* Input padding */
     .chat-input-container {
         padding: 0 10px 30px 10px;
