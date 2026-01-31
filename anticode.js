@@ -4864,6 +4864,14 @@ class AntiCodeApp {
             if (membersSide) membersSide.classList.remove('open');
             if (dropdown) dropdown.style.display = 'none';
         };
+        const toggleMembers = (open) => {
+            if (membersSide) {
+                if (typeof open === 'boolean') membersSide.classList.toggle('open', open);
+                else membersSide.classList.toggle('open');
+            }
+            if (sidebar) sidebar.classList.remove('open');
+            if (dropdown) dropdown.style.display = 'none';
+        };
 
         // Mobile Menu Toggles with Auto-Close
         _safeBind('mobile-menu-toggle', 'onclick', (e) => {
