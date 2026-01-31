@@ -4004,7 +4004,7 @@ class AntiCodeApp {
             const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const initial = (info.nickname || msg.author || '?')[0];
             const avatarHtml = `
-            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0;">
+            <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0; cursor:pointer;" onclick="openProfileCard('${msg.user_id}')">
                 ${info.avatar_url ? `<img src="${info.avatar_url}" class="message-avatar" style="width:100%; height:100%; border-radius:50%;" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
                 <div class="user-avatar" style="width:100%; height:100%; display:${info.avatar_url ? 'none' : 'flex'}; align-items:center; justify-content:center; background:var(--accent-glow); color:var(--accent); border-radius:50%; font-weight:bold;">${initial}</div>
             </div>
@@ -5472,6 +5472,113 @@ class AntiCodeApp {
             alert('초대 거절 실패: ' + e.message);
         }
     }
+
+    // =============================================
+    // PROFILE CARD FEATURE
+    // =============================================
+    async openProfileCard(username) {
+        const modal = document.getElementById('profile-card-modal');
+        if (!modal) return;
+
+        // Close other overlays first
+        if (this.closeAllOverlays) this.closeAllOverlays();
+
+        try {
+            // Fetch user data from Supabase
+            const { data: userData, error } = await this.supabase
+                .from('anticode_users')
+                .select('username, nickname, avatar_url, uid, bio')
+                .eq('username', username)
+                .single();
+
+            if (error) throw error;
+            if (!userData) {
+                alert('사용자를 찾을 수 없습니다.');
+                return;
+            }
+
+            // Populate modal
+            const avatarEl = document.getElementById('profile-card-avatar');
+            const nicknameEl = document.getElementById('profile-card-nickname');
+            const uidEl = document.getElementById('profile-card-uid');
+            const bioEl = document.getElementById('profile-card-bio');
+            const actionsEl = document.getElementById('profile-card-actions');
+
+            if (avatarEl) {
+                avatarEl.src = userData.avatar_url || '';
+                avatarEl.onerror = () => { avatarEl.src = ''; avatarEl.alt = userData.nickname ? userData.nickname[0] : '?'; };
+            }
+            if (nicknameEl) nicknameEl.textContent = userData.nickname || username;
+            if (uidEl) uidEl.textContent = `UID: ${userData.uid || '------'}`;
+            if (bioEl) {
+                bioEl.value = userData.bio || '';
+                // Check if viewing own profile
+                const isOwnProfile = this.currentUser && this.currentUser.username === username;
+                bioEl.readOnly = !isOwnProfile;
+                if (actionsEl) actionsEl.style.display = isOwnProfile ? 'flex' : 'none';
+            }
+
+            // Store current profile username for save
+            this._profileCardUsername = username;
+
+            modal.style.display = 'flex';
+        } catch (e) {
+            console.error('Failed to load profile:', e);
+            alert('프로필을 불러오지 못했습니다.');
+        }
+    }
+
+    async saveProfileBio() {
+        const bioEl = document.getElementById('profile-card-bio');
+        const modal = document.getElementById('profile-card-modal');
+        if (!bioEl || !this._profileCardUsername) return;
+
+        const newBio = bioEl.value.trim().substring(0, 500); // Limit to 500 chars
+
+        try {
+            const { error } = await this.supabase
+                .from('anticode_users')
+                .update({ bio: newBio })
+                .eq('username', this._profileCardUsername);
+
+            if (error) throw error;
+
+            alert('자기소개가 저장되었습니다!');
+            if (modal) modal.style.display = 'none';
+        } catch (e) {
+            console.error('Failed to save bio:', e);
+            alert('저장 실패: ' + (e.message || e));
+        }
+    }
+
+    setupProfileCardEvents() {
+        const _safeBind = (id, event, fn) => {
+            const el = typeof id === 'string' ? document.getElementById(id) : id;
+            if (el) el[event] = fn;
+        };
+
+        // Close button
+        _safeBind('close-profile-card', 'onclick', () => {
+            const modal = document.getElementById('profile-card-modal');
+            if (modal) modal.style.display = 'none';
+        });
+
+        // Save button
+        _safeBind('profile-card-save', 'onclick', () => this.saveProfileBio());
+
+        // Click on own profile in sidebar
+        const userInfo = document.getElementById('current-user-info');
+        if (userInfo) {
+            const avatarEl = userInfo.querySelector('.avatar-img, .user-avatar');
+            if (avatarEl) {
+                avatarEl.style.cursor = 'pointer';
+                avatarEl.onclick = (e) => {
+                    e.stopPropagation();
+                    if (this.currentUser) this.openProfileCard(this.currentUser.username);
+                };
+            }
+        }
+    }
 }
 const app = new AntiCodeApp();
 window.app = app;
@@ -5497,8 +5604,14 @@ if (typeof window !== 'undefined') {
         handleRoleChange: (channelId, username, role) => app.handleRoleChange(channelId, username, role),
         acceptChannelInvite: (cid) => app.acceptChannelInvite(cid),
         rejectChannelInvite: (cid) => app.rejectChannelInvite(cid),
-        checkAppUpdate: () => app.checkAppUpdate()
+        checkAppUpdate: () => app.checkAppUpdate(),
+        openProfileCard: (username) => app.openProfileCard(username)
     });
 }
 
 app.init();
+
+// Setup profile card events after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    app.setupProfileCardEvents();
+});
