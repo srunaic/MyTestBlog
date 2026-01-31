@@ -690,7 +690,7 @@ function updateUserNav() {
     if (currentUser) {
         userNav.innerHTML = `
             <a href="javascript:void(0)" onclick="renderAll()" class="active">기록소</a>
-            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">ROSAE HUB</a>
+            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">💬 채팅하기</a>
             <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">일지</a>
             <span class="user-info-text">${currentUser.nickname}님</span>
             <a href="javascript:void(0)" onclick="openAccountModal()" class="user-action-link">계정 관리</a>
@@ -703,7 +703,7 @@ function updateUserNav() {
     } else {
         userNav.innerHTML = `
             <a href="javascript:void(0)" onclick="renderAll()" class="active">기록소</a>
-            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">ROSAE HUB</a>
+            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">💬 채팅하기</a>
             <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">일지</a>
             <a href="javascript:void(0)" onclick="openAuthModal('login')">로그인</a>
             <a href="javascript:void(0)" onclick="openAuthModal('signup')">회원가입</a>
