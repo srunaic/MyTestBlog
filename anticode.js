@@ -3622,8 +3622,12 @@ class AntiCodeApp {
     }
 
     async handleChannelSwitch(channelId) {
-        const channel = this.channels.find(c => c.id === channelId);
-        if (!channel) return;
+        if (!channelId) return;
+        const channel = this.channels.find(c => String(c.id) === String(channelId));
+        if (!channel) {
+            console.warn(`Channel not found for ID: ${channelId} (Current channels: ${this.channels.length})`);
+            return;
+        }
 
         // Remember last visited channel for this user
         try {
@@ -5464,7 +5468,10 @@ class AntiCodeApp {
             const dd = document.getElementById('invite-dropdown-menu');
             if (dd) dd.remove();
 
-            this.handleChannelSwitch(channelId);
+            // [MOD] Small delay to ensure loadChannels (and render) is complete before switching
+            setTimeout(() => {
+                this.handleChannelSwitch(channelId);
+            }, 300);
 
         } catch (e) {
             alert('초대 수락 실패: ' + e.message);
