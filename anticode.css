@@ -1762,18 +1762,18 @@ input:focus {
 }
 
 .invite-dropdown {
-    position: absolute;
-    bottom: 70px;
-    /* Above sidebar profile */
+    position: fixed;
+    bottom: 80px;
     left: 20px;
     background: #111214;
     border: 1px solid var(--accent);
     border-radius: 8px;
     width: 280px;
-    z-index: 9999;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    z-index: 999999 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
     display: none;
     flex-direction: column;
+    pointer-events: auto !important;
 }
 
 .invite-dropdown-header {
@@ -1828,11 +1828,12 @@ input:focus {
     background: #23a559;
     color: white;
     border: none;
-    padding: 6px;
+    padding: 8px;
     border-radius: 4px;
     font-weight: bold;
-    cursor: pointer;
-    font-size: 0.8rem;
+    cursor: pointer !important;
+    font-size: 0.85rem;
+    pointer-events: auto !important;
 }
 
 .invite-reject-btn {
@@ -1840,11 +1841,12 @@ input:focus {
     background: #da373c;
     color: white;
     border: none;
-    padding: 6px;
+    padding: 8px;
     border-radius: 4px;
     font-weight: bold;
-    cursor: pointer;
-    font-size: 0.8rem;
+    cursor: pointer !important;
+    font-size: 0.85rem;
+    pointer-events: auto !important;
 }
 
 /* Blocked List Modal */

@@ -5448,10 +5448,16 @@ class AntiCodeApp {
             list.appendChild(item);
         }
         menu.appendChild(list);
+        document.body.appendChild(menu);
 
+        // Adjust position dynamically to be above the profile area
         const info = document.getElementById('current-user-info');
-        if (info) info.appendChild(menu);
-        else document.body.appendChild(menu);
+        if (info) {
+            const rect = info.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.left = (rect.left + 10) + 'px';
+            menu.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        }
     }
 
     async acceptChannelInvite(channelId) {
