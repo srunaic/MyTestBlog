@@ -3345,14 +3345,18 @@ class AntiCodeApp {
         if (!target) return false;
         if (!confirm(`${target} 님을 친구에서 삭제할까요?`)) return false;
         try {
+            // [MOD] Bidirectional deletion: ensure both directions are cleared
             await this.supabase
                 .from('anticode_friends')
                 .delete()
-                .eq('user_username', this.currentUser.username)
-                .eq('friend_username', target);
+                .or(`and(user_username.eq.${this.currentUser.username},friend_username.eq.${target}),and(user_username.eq.${target},friend_username.eq.${this.currentUser.username})`);
 
             this.friends = this.friends.filter(f => f.username !== target);
             this.renderFriends();
+            // [NEW] Immediately refresh the management modal if it's open
+            if (typeof this.renderFriendModalList === 'function') {
+                try { this.renderFriendModalList(); } catch (_) { }
+            }
             return true;
         } catch (e) {
             console.error(e);
@@ -5400,16 +5404,38 @@ class AntiCodeApp {
             const inviter = inv.invited_by || 'Unknown';
             const item = document.createElement('div');
             item.className = 'invite-item';
-            item.innerHTML = `
-                <div class="invite-info">
-                    <span class="invite-channel-name"># ${this.escapeHtml(chName)}</span>
-                    <span class="invite-sender">Invited by ${this.escapeHtml(inviter)}</span>
-                </div>
-                <div class="invite-actions">
-                    <button class="invite-accept-btn" onclick="window.app.acceptChannelInvite('${inv.channel_id}')">수락</button>
-                    <button class="invite-reject-btn" onclick="window.app.rejectChannelInvite('${inv.channel_id}')">거절</button>
-                </div>
+
+            // Use button references instead of inline onclick for better reliability
+            const acceptBtn = document.createElement('button');
+            acceptBtn.className = 'invite-accept-btn';
+            acceptBtn.textContent = '수락';
+            acceptBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.acceptChannelInvite(inv.channel_id);
+            };
+
+            const rejectBtn = document.createElement('button');
+            rejectBtn.className = 'invite-reject-btn';
+            rejectBtn.textContent = '거절';
+            rejectBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.rejectChannelInvite(inv.channel_id);
+            };
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'invite-info';
+            infoDiv.innerHTML = `
+                <span class="invite-channel-name"># ${this.escapeHtml(chName)}</span>
+                <span class="invite-sender">Invited by ${this.escapeHtml(inviter)}</span>
             `;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'invite-actions';
+            actionsDiv.appendChild(acceptBtn);
+            actionsDiv.appendChild(rejectBtn);
+
+            item.appendChild(infoDiv);
+            item.appendChild(actionsDiv);
             list.appendChild(item);
         }
         menu.appendChild(list);
