@@ -3623,11 +3623,16 @@ class AntiCodeApp {
 
     async handleChannelSwitch(channelId) {
         if (!channelId) return;
-        const channel = this.channels.find(c => String(c.id) === String(channelId));
+        const channelIdStr = String(channelId);
+        console.log(`[handleChannelSwitch] Target: ${channelIdStr}`);
+
+        const channel = this.channels.find(c => String(c.id) === channelIdStr);
         if (!channel) {
-            console.warn(`Channel not found for ID: ${channelId} (Current channels: ${this.channels.length})`);
+            console.warn(`[handleChannelSwitch] FAILED: Channel ${channelIdStr} not found in this.channels. Available IDs:`, this.channels.map(c => c.id));
             return;
         }
+
+        console.log(`[handleChannelSwitch] Found channel: ${channel.name} (${channel.type})`);
 
         // Remember last visited channel for this user
         try {
@@ -5450,6 +5455,7 @@ class AntiCodeApp {
     }
 
     async acceptChannelInvite(channelId) {
+        console.log(`[acceptChannelInvite] Start for channel: ${channelId}`);
         try {
             const { error } = await this.supabase
                 .from('anticode_channel_members')
@@ -5457,23 +5463,45 @@ class AntiCodeApp {
                 .eq('channel_id', channelId)
                 .eq('username', this.currentUser.username);
 
-            if (error) throw error;
+            if (error) {
+                console.error('[acceptChannelInvite] DB update error:', error);
+                throw error;
+            }
 
+            console.log('[acceptChannelInvite] DB update success. Procedding to reload...');
             alert('초대를 수락했습니다!');
+
+            // Essential: reload everything to update local state
             await this.loadMyChannelMemberships();
-            await this.loadChannels(); // Reload channels to ensure full visibility (esp hidden ones)
+            await this.loadChannels();
             this.renderChannels();
             this.renderUserInfo();
 
             const dd = document.getElementById('invite-dropdown-menu');
             if (dd) dd.remove();
 
-            // [MOD] Small delay to ensure loadChannels (and render) is complete before switching
-            setTimeout(() => {
-                this.handleChannelSwitch(channelId);
-            }, 300);
+            // Resilient switch: try to find the channel first
+            console.log('[acceptChannelInvite] Verification check before switch...');
+            let target = this.channels.find(c => String(c.id) === String(channelId));
+
+            if (!target) {
+                console.warn('[acceptChannelInvite] Channel not found in list yet, retrying loadChannels once more...');
+                await this.loadChannels(); // One more hard refresh
+                target = this.channels.find(c => String(c.id) === String(channelId));
+            }
+
+            if (target) {
+                console.log(`[acceptChannelInvite] Channel verified: ${target.name}. Switching...`);
+                setTimeout(() => {
+                    this.handleChannelSwitch(channelId);
+                }, 100);
+            } else {
+                console.error(`[acceptChannelInvite] CRITICAL: Channel ${channelId} still not found after multiple reloads.`);
+                alert('초대된 채널 정보를 불러올 수 없습니다. 페이지를 새로고침 해보세요.');
+            }
 
         } catch (e) {
+            console.error('[acceptChannelInvite] Unexpected error:', e);
             alert('초대 수락 실패: ' + e.message);
         }
     }
