@@ -4884,13 +4884,30 @@ class AntiCodeApp {
 
     async requestBankDeposit() {
         const amount = document.getElementById('bank-charge-amount').value;
+        const senderBank = document.getElementById('bank-sender-bank').value;
+        const senderAccount = document.getElementById('bank-sender-account').value;
 
-        if (!confirm(`${parseInt(amount).toLocaleString()} 코인\n입금 신청하시겠습니까?`)) return;
+        if (!senderBank || !senderAccount) {
+            alert('보내시는 분의 은행명과 입금자명을 입력해주세요.');
+            return;
+        }
+
+        const confirmMsg = `[입금 신청 내역 확인]
+신청 금액: ${parseInt(amount).toLocaleString()} 코인
+입금 은행: ${senderBank}
+입금자명: ${senderAccount}
+
+위 내용으로 입금 신청하시겠습니까? 
+(입금 확인 후 관리자가 승인합니다.)`;
+
+        if (!confirm(confirmMsg)) return;
 
         try {
             const { data, error } = await this.supabase.rpc('request_bank_deposit', {
                 p_amount: parseInt(amount),
-                p_username: this.currentUser.username
+                p_username: this.currentUser.username,
+                p_sender_bank: senderBank,
+                p_sender_account: senderAccount
             });
 
             if (error) throw error;
@@ -4953,20 +4970,26 @@ class AntiCodeApp {
         }
 
         if (!data || data.length === 0) {
-            listEl.innerHTML = '<div style="padding:20px; text-align:center;">대기 중인 입금 내역이 없습니다.</div>';
+            listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#888;">대기 중인 요청이 없습니다.</div>';
             return;
         }
 
         listEl.innerHTML = '';
         data.forEach(item => {
             const div = document.createElement('div');
-            div.className = 'deposit-req-item';
+            div.style.cssText = 'padding: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;';
             div.innerHTML = `
-                <div class="deposit-req-info">
-                    <div class="deposit-req-user">${item.depositor_name} (UID: ${item.user_id})</div>
-                    <div class="deposit-req-detail">${item.amount.toLocaleString()} 코인 / ${new Date(item.created_at).toLocaleString()}</div>
+                <div style="flex: 1;">
+                    <div style="font-weight: bold; margin-bottom: 4px;">${item.user_id} (${item.depositor_name})</div>
+                    <div style="font-size: 0.8rem; color: #888;">
+                        금액: <span style="color: #ffb6c1;">${item.amount.toLocaleString()} 코인</span><br>
+                        송금: ${item.sender_bank || '미입력'} / ${item.sender_account || '미입력'}
+                    </div>
                 </div>
-                <button class="deposit-approve-btn" onclick="window.app.approveDeposit('${item.merchant_uid}')">승인</button>
+                <button class="deposit-approve-btn" onclick="window.app.approveDeposit('${item.merchant_uid}')" 
+                    style="padding: 6px 12px; background: #ffb6c1; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: bold; font-size: 0.8rem;">
+                    승인
+                </button>
             `;
             listEl.appendChild(div);
         });
