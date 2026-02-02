@@ -4823,63 +4823,72 @@ class AntiCodeApp {
         }
     }
 
-    // --- PortOne Payment Integration ---
-    requestPayment(amount, price) {
-        if (!window.IMP) {
+    // --- PortOne Payment Integration (V2) ---
+    async requestPayment(amount, price) {
+        if (!window.PortOne) {
             alert('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
             return;
         }
 
-        const IMP = window.IMP;
-        IMP.init("imp40254067"); // Example Merchant ID (Use yours in production)
+        const paymentId = "ORD-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
 
-        // Generate unique Merchant UID
-        const merchant_uid = "ORD-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
-
-        IMP.request_pay({
-            pg: "html5_inicis", // PG Provider (KG Inicis)
-            pay_method: "card", // Payment Method
-            merchant_uid: merchant_uid,
-            name: `Coin Charge (${amount} Coins)`,
-            amount: price,
-            buyer_email: "test@rosaehub.com",
-            buyer_name: this.currentUser.nickname,
-            buyer_tel: "010-0000-0000",
-        }, async (rsp) => {
-            if (rsp.success) {
-                // Payment Succeeded -> Verify on Server
-                // alert('결제 성공! 서버 검증을 시작합니다.');
-
-                try {
-                    const { data, error } = await this.supabase.functions.invoke('verify-payment', {
-                        body: {
-                            imp_uid: rsp.imp_uid,
-                            merchant_uid: rsp.merchant_uid,
-                            user_id: this.currentUser.username,
-                            amount: amount // In real logic, amount should be verified by price
-                        }
-                    });
-
-                    if (error) throw error;
-
-                    if (data && data.status === 'success') {
-                        alert(`충전 완료! ${amount} 코인이 지급되었습니다.`);
-                        // Refresh Balance
-                        const balanceEl = document.getElementById('shop-user-balance');
-                        // We can re-fetch or just parse data if returned
-                        this.openShop(); // Re-open to refresh
-                        document.getElementById('charge-modal').style.display = 'none';
-                    } else {
-                        alert('결제 검증 실패: ' + (data ? data.message : 'Unknown error'));
-                    }
-                } catch (err) {
-                    console.error('Verification Error:', err);
-                    alert('서버 검증 중 오류가 발생했습니다. 고객센터에 문의해주세요.\n' + rsp.imp_uid);
+        try {
+            const response = await PortOne.requestPayment({
+                // Store ID (From User)
+                storeId: "store-2030677d-1686-4d93-b861-da5996208bf7",
+                // Channel Key (From User)
+                channelKey: "channel-key-0e5519ec-1ffe-4bff-a3bd-ace75f8ede54",
+                paymentId: paymentId,
+                orderName: `Coin Charge (${amount} Coins)`,
+                totalAmount: price,
+                currency: "CURRENCY_KRW",
+                payMethod: "CARD",
+                customer: {
+                    fullName: this.currentUser.nickname,
+                    phoneNumber: "010-0000-0000",
+                    email: "test@rosaehub.com",
                 }
-            } else {
-                alert(`결제 실패: ${rsp.error_msg}`);
+            });
+
+            if (response.code != null) {
+                // Error occurred (User cancel or failure)
+                return alert(`결제 실패: ${response.message}`);
             }
-        });
+
+            // Payment Success -> Verify on Server
+            // PortOne V2 returns paymentId on success
+            const verifiedPaymentId = response.paymentId;
+
+            try {
+                const { data, error } = await this.supabase.functions.invoke('verify-payment', {
+                    body: {
+                        imp_uid: verifiedPaymentId, // V2 uses paymentId as unique identifier
+                        merchant_uid: paymentId,    // Our generated order ID
+                        user_id: this.currentUser.username,
+                        amount: amount
+                    }
+                });
+
+                if (error) throw error;
+
+                if (data && data.status === 'success') {
+                    alert(`충전 완료! ${amount} 코인이 지급되었습니다.`);
+                    // Refresh Balance
+                    const balanceEl = document.getElementById('shop-user-balance');
+                    this.openShop(); // Re-open to refresh
+                    document.getElementById('charge-modal').style.display = 'none';
+                } else {
+                    alert('결제 검증 실패: ' + (data ? data.message : 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Verification Error:', err);
+                alert('서버 검증 중 오류가 발생했습니다. 고객센터에 문의해주세요.\n' + verifiedPaymentId);
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("결제 요청 중 오류가 발생했습니다.");
+        }
     }
 
     async sendDirectEmoticon(fileName) {
