@@ -4749,6 +4749,20 @@ class AntiCodeApp {
 
         if (balanceEl) balanceEl.innerText = wallet ? wallet.balance.toLocaleString() : '0';
 
+        // Admin Check
+        try {
+            const { data: adminData } = await this.supabase
+                .from('anticode_admins')
+                .select('username')
+                .eq('username', this.currentUser.username)
+                .single();
+
+            const adminBtn = document.getElementById('admin-open-deposit-btn');
+            if (adminBtn) adminBtn.style.display = adminData ? 'inline-block' : 'none';
+        } catch (e) {
+            // Silently fail if not admin or table doesn't exist yet
+        }
+
         // Fetch Products & Purchases
         const { data: products } = await this.supabase
             .from('anticode_products')
