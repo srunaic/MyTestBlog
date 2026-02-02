@@ -3139,6 +3139,16 @@ class AntiCodeApp {
             this.currentUser = { ...this.currentUser, ...data };
         }
 
+        // [Self-Healing] Ensure UID is synced with actual Auth ID if missing or incorrect
+        const authUser = (await this.supabase.auth.getUser()).data.user;
+        if (authUser && (!this.currentUser.uid || this.currentUser.uid.length < 10)) {
+            await this.supabase
+                .from('anticode_users')
+                .update({ uid: authUser.id })
+                .eq('username', this.currentUser.username);
+            this.currentUser.uid = authUser.id;
+        }
+
         // Resolve plan tier after we have merged server-side user metadata
         this._refreshPlanTier();
 
