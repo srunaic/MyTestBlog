@@ -2348,3 +2348,20 @@ input:focus {
     font-size: 0.8rem;
     font-weight: bold;
 }
+/* Shop Button in Emoji Picker */
+.emoji-shop-btn {
+    background: transparent;
+    border: none;
+    color: #ffb92f;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 12px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+    height: 100%;
+}
+
+.emoji-shop-btn:hover {
+    background: rgba(255, 185, 47, 0.1);
+    transform: scale(1.1);
+}
