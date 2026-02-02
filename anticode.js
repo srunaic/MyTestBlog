@@ -3141,7 +3141,7 @@ class AntiCodeApp {
 
         // [Self-Healing] Ensure UID is synced with actual Auth ID if missing or incorrect
         const authUser = (await this.supabase.auth.getUser()).data.user;
-        if (authUser && (!this.currentUser.uid || this.currentUser.uid.length < 10)) {
+        if (authUser && (!this.currentUser.uid || this.currentUser.uid.length < 10 || this.currentUser.uid === 'RE-SYNC-NEEDED')) {
             await this.supabase
                 .from('anticode_users')
                 .update({ uid: authUser.id })
