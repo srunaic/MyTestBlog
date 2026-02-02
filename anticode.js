@@ -4889,7 +4889,8 @@ class AntiCodeApp {
 
         try {
             const { data, error } = await this.supabase.rpc('request_bank_deposit', {
-                p_amount: parseInt(amount)
+                p_amount: parseInt(amount),
+                p_username: this.currentUser.username
             });
 
             if (error) throw error;
