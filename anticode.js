@@ -3139,9 +3139,9 @@ class AntiCodeApp {
             this.currentUser = { ...this.currentUser, ...data };
         }
 
-        // [Self-Healing] Ensure UID is synced with actual Auth ID if missing or incorrect
+        // [Self-Healing] Disable auto-sync if UID is already '687924' (Manual Admin UID)
         const authUser = (await this.supabase.auth.getUser()).data.user;
-        if (authUser && (!this.currentUser.uid || this.currentUser.uid.length < 10 || this.currentUser.uid === 'RE-SYNC-NEEDED')) {
+        if (authUser && this.currentUser.uid !== '687924' && (!this.currentUser.uid || this.currentUser.uid.length < 10 || this.currentUser.uid === 'RE-SYNC-NEEDED')) {
             await this.supabase
                 .from('anticode_users')
                 .update({ uid: authUser.id })
@@ -4762,18 +4762,11 @@ class AntiCodeApp {
         // Load Bank Info
         this.loadBankInfo();
 
-        // Admin Check
-        try {
-            const { data: adminData } = await this.supabase
-                .from('anticode_admins')
-                .select('username')
-                .eq('username', this.currentUser.username)
-                .single();
-
-            const adminBtn = document.getElementById('admin-open-deposit-btn');
-            if (adminBtn) adminBtn.style.display = adminData ? 'inline-block' : 'none';
-        } catch (e) {
-            // Silently fail if not admin or table doesn't exist yet
+        // Simplified Admin Check (Hardcoded UID & Nickname)
+        const adminBtn = document.getElementById('admin-open-deposit-btn');
+        if (adminBtn) {
+            const isAdmin = this.currentUser.uid === '687924' && this.currentUser.nickname === '나노 도로시';
+            adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
         }
 
         // Fetch Products & Purchases
