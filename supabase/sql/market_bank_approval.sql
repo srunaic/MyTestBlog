@@ -1,7 +1,12 @@
 -- [ANTICODE] Bank Transfer Manual Approval System
 -- Run this in Supabase SQL Editor.
 
--- 1. Update Payment History Table
+-- 1. [CRITICAL] Drop existing functions to avoid parameter/return type conflicts
+DROP FUNCTION IF EXISTS public.request_bank_deposit(int, text, text, text);
+DROP FUNCTION IF EXISTS public.get_pending_deposits();
+DROP FUNCTION IF EXISTS public.approve_bank_deposit(text);
+
+-- 2. Update Payment History Table
 DO $$ 
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'anticode_payment_history' AND column_name = 'sender_bank') THEN
@@ -12,10 +17,7 @@ BEGIN
   END IF;
 END $$;
 
--- 2. Refined Request Bank Deposit (User - Pending Status, No Immediate Grant)
-DROP FUNCTION IF EXISTS public.request_bank_deposit(int);
-DROP FUNCTION IF EXISTS public.request_bank_deposit(int, text);
-
+-- 3. Refined Request Bank Deposit (User - Pending Status)
 CREATE OR REPLACE FUNCTION public.request_bank_deposit(
   p_amount int,
   p_username text,
@@ -50,7 +52,7 @@ BEGIN
 END;
 $$;
 
--- 3. Get Pending Deposits (Admin Only)
+-- 4. Get Pending Deposits (Admin Only)
 CREATE OR REPLACE FUNCTION public.get_pending_deposits()
 RETURNS TABLE (
   id bigint,
@@ -86,7 +88,7 @@ BEGIN
 END;
 $$;
 
--- 4. Approve Bank Deposit (Admin Only)
+-- 5. Approve Bank Deposit (Admin Only)
 CREATE OR REPLACE FUNCTION public.approve_bank_deposit(
   p_merchant_uid text
 )
