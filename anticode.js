@@ -4823,71 +4823,90 @@ class AntiCodeApp {
         }
     }
 
-    // --- PortOne Payment Integration (V2) ---
-    async requestPayment(amount, price) {
-        if (!window.PortOne) {
-            alert('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+    // --- Bank Transfer System ---
+    async requestBankDeposit() {
+        const amount = document.getElementById('bank-charge-amount').value;
+        const depositorName = document.getElementById('bank-depositor-name').value;
+
+        if (!depositorName || depositorName.trim() === '') {
+            alert('입금자명을 입력해주세요.');
             return;
         }
 
-        const paymentId = "ORD-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
+        if (!confirm(`${parseInt(amount).toLocaleString()} 코인 (입금자명: ${depositorName})\n입금 신청하시겠습니까?`)) return;
 
         try {
-            const response = await PortOne.requestPayment({
-                // Store ID (From User)
-                storeId: "store-2030677d-1686-4d93-b861-da5996208bf7",
-                // Channel Key (From User)
-                channelKey: "channel-key-0e5519ec-1ffe-4bff-a3bd-ace75f8ede54",
-                paymentId: paymentId,
-                orderName: `Coin Charge (${amount} Coins)`,
-                totalAmount: price,
-                currency: "CURRENCY_KRW",
-                payMethod: "CARD",
-                customer: {
-                    fullName: this.currentUser.nickname,
-                    phoneNumber: "010-0000-0000",
-                    email: "test@rosaehub.com",
-                }
+            const { data, error } = await this.supabase.rpc('request_bank_deposit', {
+                p_amount: parseInt(amount),
+                p_depositor_name: depositorName
             });
 
-            if (response.code != null) {
-                // Error occurred (User cancel or failure)
-                return alert(`결제 실패: ${response.message}`);
+            if (error) throw error;
+
+            if (data.status === 'success') {
+                alert(data.message);
+                document.getElementById('charge-modal').style.display = 'none';
+            } else {
+                alert('신청 실패: ' + data.message);
             }
+        } catch (err) {
+            console.error('Deposit Error:', err);
+            alert('입금 신청 중 오류가 발생했습니다.');
+        }
+    }
 
-            // Payment Success -> Verify on Server
-            // PortOne V2 returns paymentId on success
-            const verifiedPaymentId = response.paymentId;
+    // Admin: Open Deposit Management
+    async openAdminDepositModal() {
+        document.getElementById('admin-deposit-modal').style.display = 'flex';
+        this.loadPendingDeposits();
+    }
 
-            try {
-                const { data, error } = await this.supabase.functions.invoke('verify-payment', {
-                    body: {
-                        imp_uid: verifiedPaymentId, // V2 uses paymentId as unique identifier
-                        merchant_uid: paymentId,    // Our generated order ID
-                        user_id: this.currentUser.username,
-                        amount: amount
-                    }
-                });
+    // Admin: Load Pending Deposits
+    async loadPendingDeposits() {
+        const listEl = document.getElementById('admin-deposit-list');
+        listEl.innerHTML = '<div style="padding:20px; text-align:center;">로딩 중...</div>';
 
-                if (error) throw error;
+        const { data, error } = await this.supabase.rpc('get_pending_deposits');
 
-                if (data && data.status === 'success') {
-                    alert(`충전 완료! ${amount} 코인이 지급되었습니다.`);
-                    // Refresh Balance
-                    const balanceEl = document.getElementById('shop-user-balance');
-                    this.openShop(); // Re-open to refresh
-                    document.getElementById('charge-modal').style.display = 'none';
-                } else {
-                    alert('결제 검증 실패: ' + (data ? data.message : 'Unknown error'));
-                }
-            } catch (err) {
-                console.error('Verification Error:', err);
-                alert('서버 검증 중 오류가 발생했습니다. 고객센터에 문의해주세요.\n' + verifiedPaymentId);
-            }
+        if (error) {
+            console.error(error);
+            listEl.innerHTML = '<div style="padding:20px; text-align:center; color:red;">권한이 없거나 오류가 발생했습니다.</div>';
+            return;
+        }
 
-        } catch (e) {
-            console.error(e);
-            alert("결제 요청 중 오류가 발생했습니다: " + (e.message || e));
+        if (!data || data.length === 0) {
+            listEl.innerHTML = '<div style="padding:20px; text-align:center;">대기 중인 입금 내역이 없습니다.</div>';
+            return;
+        }
+
+        listEl.innerHTML = '';
+        data.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'deposit-req-item';
+            div.innerHTML = `
+                <div class="deposit-req-info">
+                    <div class="deposit-req-user">${item.depositor_name} (UID: ${item.user_id})</div>
+                    <div class="deposit-req-detail">${item.amount.toLocaleString()} 코인 / ${new Date(item.created_at).toLocaleString()}</div>
+                </div>
+                <button class="deposit-approve-btn" onclick="window.app.approveDeposit('${item.merchant_uid}')">승인</button>
+            `;
+            listEl.appendChild(div);
+        });
+    }
+
+    // Admin: Approve Deposit
+    async approveDeposit(merchantUid) {
+        if (!confirm('정말 승인하시겠습니까? 해당 유저에게 코인이 지급됩니다.')) return;
+
+        const { data, error } = await this.supabase.rpc('approve_bank_deposit', {
+            p_merchant_uid: merchantUid
+        });
+
+        if (error) {
+            alert('오류 발생: ' + error.message);
+        } else {
+            alert(data.message);
+            this.loadPendingDeposits(); // Refresh list
         }
     }
 

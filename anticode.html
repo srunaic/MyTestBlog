@@ -501,6 +501,11 @@
                     보유 코인: <span id="shop-user-balance">0</span> 🪙
                     <button class="shop-charge-btn"
                         onclick="document.getElementById('charge-modal').style.display='flex'">충전하기</button>
+                    <!-- Admin Button: Visible only if functionality supports it or logic unhides it. 
+                         For now, we can manually unhide it via console or logic if we implement admin check. -->
+                    <button id="admin-open-deposit-btn" class="shop-charge-btn"
+                        style="background:#ff4757; display:none;"
+                        onclick="window.app.openAdminDepositModal()">관리자</button>
                 </div>
                 <button id="close-shop-modal" class="close-btn">&times;</button>
             </div>
@@ -515,37 +520,58 @@
     </div>
     </div>
 
-    <!-- Coin Charge Modal -->
+    <!-- Bank Transfer Charge Modal -->
     <div id="charge-modal" class="modal-overlay" style="display:none; z-index: 10002;">
         <div class="modal-content" style="width: 400px; text-align: center;">
             <div class="modal-header">
-                <h2>🪙 코인 충전</h2>
+                <h2>🏦 무통장 입금 충전</h2>
                 <button onclick="document.getElementById('charge-modal').style.display='none'"
                     class="close-btn">&times;</button>
             </div>
-            <div class="charge-options-grid"
-                style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:20px;">
-                <button class="charge-opt-btn" onclick="window.app.requestPayment(1000, 1000)">
-                    <div class="coin-amt">1,000 🪙</div>
-                    <div class="money-amt">₩1,000</div>
-                </button>
-                <button class="charge-opt-btn" onclick="window.app.requestPayment(5000, 5000)">
-                    <div class="coin-amt">5,000 🪙</div>
-                    <div class="money-amt">₩5,000</div>
-                </button>
-                <button class="charge-opt-btn" onclick="window.app.requestPayment(10000, 10000)">
-                    <div class="coin-amt">10,000 🪙</div>
-                    <div class="money-amt">₩10,000</div>
-                </button>
-                <button class="charge-opt-btn" onclick="window.app.requestPayment(30000, 30000)">
-                    <div class="coin-amt">30,000 🪙</div>
-                    <div class="money-amt">₩30,000</div>
-                </button>
+            <div class="bank-transfer-container" style="padding: 20px; text-align: left;">
+                <div class="bank-info-box">
+                    <p class="bank-label">입금 계좌</p>
+                    <p class="bank-account"><strong>카카오뱅크 3333-00-0000000</strong></p>
+                    <p class="bank-owner">예금주: 홍길동</p>
+                </div>
+
+                <div class="charge-amount-selector">
+                    <label>충전 금액 선택</label>
+                    <select id="bank-charge-amount" class="bank-input">
+                        <option value="1000">1,000 코인 (₩1,000)</option>
+                        <option value="5000">5,000 코인 (₩5,000)</option>
+                        <option value="10000">10,000 코인 (₩10,000)</option>
+                        <option value="30000">30,000 코인 (₩30,000)</option>
+                    </select>
+                </div>
+
+                <div class="depositor-input-group">
+                    <label>입금자명 (실제 입금 이름)</label>
+                    <input type="text" id="bank-depositor-name" class="bank-input" placeholder="예: 홍길동">
+                </div>
+
+                <button class="submit-btn" style="width:100%; margin-top:20px;"
+                    onclick="window.app.requestBankDeposit()">입금 신청하기</button>
+
+                <p class="bank-note">
+                    * 입금 확인 후 코인이 지급됩니다.<br>
+                    * 반드시 신청자와 동일한 이름으로 입금해 주세요.
+                </p>
             </div>
-            <p style="margin-top:20px; font-size:0.8rem; color:#888;">
-                * 테스트 모드: 실제 결제되지만 자정 전 <b>자동 환불</b> 처리됩니다.<br>
-                (PG사 정책에 따라 다를 수 있음)
-            </p>
+        </div>
+    </div>
+
+    <!-- Admin Deposit Manage Modal -->
+    <div id="admin-deposit-modal" class="modal-overlay" style="display:none; z-index: 10003;">
+        <div class="modal-content" style="width: 500px;">
+            <div class="modal-header">
+                <h2>관리자: 입금 승인</h2>
+                <button onclick="document.getElementById('admin-deposit-modal').style.display='none'"
+                    class="close-btn">&times;</button>
+            </div>
+            <div id="admin-deposit-list" class="admin-deposit-list">
+                <div style="padding:20px; text-align:center;">로딩 중...</div>
+            </div>
         </div>
     </div>
 
@@ -665,7 +691,7 @@
         preload="auto"></audio>
 
     <!-- PortOne SDK Removed -->
-    <script type="module" src="anticode.js?v=2026.01.28.2017"></script>
+    <script type="module" src="anticode.js?v=2026.01.28.2018"></script>
     <script>
         // [ANTI-GRAVITY] Robust PWA Update Logic
         let currentVersion = null; // Will store local version from version.json if possible, or script tag
