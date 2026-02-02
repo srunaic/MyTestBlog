@@ -1,0 +1,90 @@
+
+/* Bank Transfer UI */
+.bank-info-box {
+    background: #1e1e24;
+    border: 1px solid #ffb92f;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.bank-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.bank-account {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ffb92f;
+    margin-bottom: 5px;
+}
+
+.bank-owner {
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.bank-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #111;
+    color: white;
+    font-size: 1rem;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+.bank-note {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #888;
+    line-height: 1.4;
+}
+
+/* Admin Deposit List */
+.admin-deposit-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.deposit-req-item {
+    background: #1e1e24;
+    padding: 15px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.deposit-req-info {
+    text-align: left;
+}
+
+.deposit-req-user {
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.deposit-req-detail {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.deposit-approve-btn {
+    background: #23a559;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.deposit-approve-btn:hover {
+    opacity: 0.9;
+}
