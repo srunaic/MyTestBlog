@@ -531,8 +531,9 @@
             <div class="bank-transfer-container" style="padding: 20px; text-align: left;">
                 <div class="bank-info-box">
                     <p class="bank-label">입금 계좌</p>
-                    <p class="bank-account"><strong>카카오뱅크 3333-00-0000000</strong></p>
-                    <p class="bank-owner">예금주: 홍길동</p>
+                    <p class="bank-account"><strong id="bank-display-name">로딩 중...</strong> <span
+                            id="bank-display-number"></span></p>
+                    <p class="bank-owner">예금주: <span id="bank-display-owner"></span></p>
                 </div>
 
                 <div class="charge-amount-selector">
@@ -545,17 +546,12 @@
                     </select>
                 </div>
 
-                <div class="depositor-input-group">
-                    <label>입금자명 (실제 입금 이름)</label>
-                    <input type="text" id="bank-depositor-name" class="bank-input" placeholder="예: 홍길동">
-                </div>
-
-                <button class="submit-btn" style="width:100%; margin-top:20px;"
+                <button class="submit-btn" style="width:100%; margin-top:10px;"
                     onclick="window.app.requestBankDeposit()">입금 신청하기</button>
 
                 <p class="bank-note">
                     * 입금 확인 후 코인이 지급됩니다.<br>
-                    * 반드시 신청자와 동일한 이름으로 입금해 주세요.
+                    * 반드시 <strong>닉네임</strong>과 동일한 이름으로 입금해 주세요.
                 </p>
             </div>
         </div>
@@ -569,8 +565,30 @@
                 <button onclick="document.getElementById('admin-deposit-modal').style.display='none'"
                     class="close-btn">&times;</button>
             </div>
-            <div id="admin-deposit-list" class="admin-deposit-list">
-                <div style="padding:20px; text-align:center;">로딩 중...</div>
+            <div class="admin-deposit-list" style="border-bottom: 1px solid #333; margin-bottom: 20px;">
+                <div style="padding: 10px; font-weight: bold; background: #222;">📥 대기 중인 입금 요청</div>
+                <div id="admin-deposit-list">
+                    <div style="padding:20px; text-align:center;">로딩 중...</div>
+                </div>
+            </div>
+
+            <div class="admin-bank-settings" style="padding: 15px;">
+                <div style="padding: 10px; font-weight: bold; background: #222; margin-bottom:10px;">🏦 계좌 정보 관리</div>
+                <div class="settings-grid" style="display:grid; gap:10px;">
+                    <div>
+                        <label style="font-size:0.8rem; color:#888;">은행명</label>
+                        <input type="text" id="admin-bank-name" class="bank-input" style="margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:#888;">계좌번호</label>
+                        <input type="text" id="admin-account-number" class="bank-input" style="margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:#888;">예금주</label>
+                        <input type="text" id="admin-account-owner" class="bank-input" style="margin:0;">
+                    </div>
+                    <button class="submit-btn" onclick="window.app.saveBankSettings()">계좌 정보 저장</button>
+                </div>
             </div>
         </div>
     </div>

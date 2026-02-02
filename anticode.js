@@ -4749,6 +4749,9 @@ class AntiCodeApp {
 
         if (balanceEl) balanceEl.innerText = wallet ? wallet.balance.toLocaleString() : '0';
 
+        // Load Bank Info
+        this.loadBankInfo();
+
         // Admin Check
         try {
             const { data: adminData } = await this.supabase
@@ -4811,7 +4814,8 @@ class AntiCodeApp {
     }
 
     async buyProduct(productId, price) {
-        if (!confirm(`${price > 0 ? price + ' 코인을 사용하여 ' : ''}상품을 구매하시겠습니까?`)) return;
+        const warningMsg = `[구매 경고]\n이 상품은 구매 후 환불이 불가능합니다.\n${price > 0 ? price.toLocaleString() + ' 코인을 사용하여 ' : ''}정말 구매하시겠습니까?`;
+        if (!confirm(warningMsg)) return;
 
         const { data, error } = await this.supabase.rpc('purchase_product', { p_product_id: productId });
 
@@ -4838,21 +4842,44 @@ class AntiCodeApp {
     }
 
     // --- Bank Transfer System ---
+    async loadBankInfo() {
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_bank_settings')
+                .select('*')
+                .eq('id', 1)
+                .single();
+
+            if (error) throw error;
+            if (data) {
+                const nameEl = document.getElementById('bank-display-name');
+                const numEl = document.getElementById('bank-display-number');
+                const ownerEl = document.getElementById('bank-display-owner');
+                if (nameEl) nameEl.innerText = data.bank_name;
+                if (numEl) numEl.innerText = data.account_number;
+                if (ownerEl) ownerEl.innerText = data.account_owner;
+
+                // Also populate admin inputs
+                const adminBank = document.getElementById('admin-bank-name');
+                const adminNum = document.getElementById('admin-account-number');
+                const adminOwner = document.getElementById('admin-account-owner');
+                if (adminBank) adminBank.value = data.bank_name;
+                if (adminNum) adminNum.value = data.account_number;
+                if (adminOwner) adminOwner.value = data.account_owner;
+            }
+        } catch (e) {
+            console.warn('Bank info load failed:', e);
+        }
+    }
+
     async requestBankDeposit() {
         const amount = document.getElementById('bank-charge-amount').value;
-        const depositorName = document.getElementById('bank-depositor-name').value;
 
-        if (!depositorName || depositorName.trim() === '') {
-            alert('입금자명을 입력해주세요.');
-            return;
-        }
-
-        if (!confirm(`${parseInt(amount).toLocaleString()} 코인 (입금자명: ${depositorName})\n입금 신청하시겠습니까?`)) return;
+        if (!confirm(`${parseInt(amount).toLocaleString()} 코인\n입금 신청하시겠습니까?`)) return;
 
         try {
             const { data, error } = await this.supabase.rpc('request_bank_deposit', {
-                p_amount: parseInt(amount),
-                p_depositor_name: depositorName
+                p_amount: parseInt(amount)
             });
 
             if (error) throw error;
@@ -4873,6 +4900,32 @@ class AntiCodeApp {
     async openAdminDepositModal() {
         document.getElementById('admin-deposit-modal').style.display = 'flex';
         this.loadPendingDeposits();
+        this.loadBankInfo(); // Also load bank info for editing
+    }
+
+    // Admin: Save Bank Settings
+    async saveBankSettings() {
+        const bankName = document.getElementById('admin-bank-name').value;
+        const accountNum = document.getElementById('admin-account-number').value;
+        const accountOwner = document.getElementById('admin-account-owner').value;
+
+        if (!bankName || !accountNum || !accountOwner) {
+            alert('모든 정보를 입력해주세요.');
+            return;
+        }
+
+        const { data, error } = await this.supabase.rpc('update_bank_settings', {
+            p_bank_name: bankName,
+            p_account_number: accountNum,
+            p_account_owner: accountOwner
+        });
+
+        if (error) {
+            alert('저장 실패: ' + error.message);
+        } else {
+            alert(data.message);
+            this.loadBankInfo(); // Refresh display
+        }
     }
 
     // Admin: Load Pending Deposits
