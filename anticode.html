@@ -499,6 +499,8 @@
                 <h2>🛍️ 이모티콘 상점</h2>
                 <div class="shop-balance-display">
                     보유 코인: <span id="shop-user-balance">0</span> 🪙
+                    <button class="shop-charge-btn"
+                        onclick="document.getElementById('charge-modal').style.display='flex'">충전하기</button>
                 </div>
                 <button id="close-shop-modal" class="close-btn">&times;</button>
             </div>
@@ -509,6 +511,41 @@
                 <!-- Products loaded via JS -->
                 <div class="shop-loading">상품을 불러오는 중...</div>
             </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Coin Charge Modal -->
+    <div id="charge-modal" class="modal-overlay" style="display:none; z-index: 10002;">
+        <div class="modal-content" style="width: 400px; text-align: center;">
+            <div class="modal-header">
+                <h2>🪙 코인 충전</h2>
+                <button onclick="document.getElementById('charge-modal').style.display='none'"
+                    class="close-btn">&times;</button>
+            </div>
+            <div class="charge-options-grid"
+                style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:20px;">
+                <button class="charge-opt-btn" onclick="window.app.requestPayment(1000, 1000)">
+                    <div class="coin-amt">1,000 🪙</div>
+                    <div class="money-amt">₩1,000</div>
+                </button>
+                <button class="charge-opt-btn" onclick="window.app.requestPayment(5000, 5000)">
+                    <div class="coin-amt">5,000 🪙</div>
+                    <div class="money-amt">₩5,000</div>
+                </button>
+                <button class="charge-opt-btn" onclick="window.app.requestPayment(10000, 10000)">
+                    <div class="coin-amt">10,000 🪙</div>
+                    <div class="money-amt">₩10,000</div>
+                </button>
+                <button class="charge-opt-btn" onclick="window.app.requestPayment(30000, 30000)">
+                    <div class="coin-amt">30,000 🪙</div>
+                    <div class="money-amt">₩30,000</div>
+                </button>
+            </div>
+            <p style="margin-top:20px; font-size:0.8rem; color:#888;">
+                * 테스트 모드: 실제 결제되지만 자정 전 <b>자동 환불</b> 처리됩니다.<br>
+                (PG사 정책에 따라 다를 수 있음)
+            </p>
         </div>
     </div>
 
@@ -627,6 +664,8 @@
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
         preload="auto"></audio>
 
+    <!-- PortOne SDK -->
+    <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
     <script type="module" src="anticode.js?v=2026.01.28.2015"></script>
     <script>
         // [ANTI-GRAVITY] Robust PWA Update Logic

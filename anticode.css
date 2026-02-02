@@ -2375,3 +2375,49 @@ input:focus {
     font-size: 0.9rem;
     border: 1px solid rgba(255, 185, 47, 0.3);
 }
+/* Coin Charge UI */
+.shop-charge-btn {
+    background: #23a559;
+    border: none;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.shop-charge-btn:hover {
+    opacity: 0.9;
+}
+
+.charge-opt-btn {
+    background: #1e1e24;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.charge-opt-btn:hover {
+    transform: translateY(-2px);
+    border-color: #ffb92f;
+    background: rgba(255, 185, 47, 0.05);
+}
+
+.coin-amt {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ffb92f;
+}
+
+.money-amt {
+    font-size: 0.9rem;
+    color: #ccc;
+}

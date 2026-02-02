@@ -4823,6 +4823,65 @@ class AntiCodeApp {
         }
     }
 
+    // --- PortOne Payment Integration ---
+    requestPayment(amount, price) {
+        if (!window.IMP) {
+            alert('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
+        const IMP = window.IMP;
+        IMP.init("imp40254067"); // Example Merchant ID (Use yours in production)
+
+        // Generate unique Merchant UID
+        const merchant_uid = "ORD-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
+
+        IMP.request_pay({
+            pg: "html5_inicis", // PG Provider (KG Inicis)
+            pay_method: "card", // Payment Method
+            merchant_uid: merchant_uid,
+            name: `Coin Charge (${amount} Coins)`,
+            amount: price,
+            buyer_email: "test@rosaehub.com",
+            buyer_name: this.currentUser.nickname,
+            buyer_tel: "010-0000-0000",
+        }, async (rsp) => {
+            if (rsp.success) {
+                // Payment Succeeded -> Verify on Server
+                // alert('결제 성공! 서버 검증을 시작합니다.');
+
+                try {
+                    const { data, error } = await this.supabase.functions.invoke('verify-payment', {
+                        body: {
+                            imp_uid: rsp.imp_uid,
+                            merchant_uid: rsp.merchant_uid,
+                            user_id: this.currentUser.username,
+                            amount: amount // In real logic, amount should be verified by price
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    if (data && data.status === 'success') {
+                        alert(`충전 완료! ${amount} 코인이 지급되었습니다.`);
+                        // Refresh Balance
+                        const balanceEl = document.getElementById('shop-user-balance');
+                        // We can re-fetch or just parse data if returned
+                        this.openShop(); // Re-open to refresh
+                        document.getElementById('charge-modal').style.display = 'none';
+                    } else {
+                        alert('결제 검증 실패: ' + (data ? data.message : 'Unknown error'));
+                    }
+                } catch (err) {
+                    console.error('Verification Error:', err);
+                    alert('서버 검증 중 오류가 발생했습니다. 고객센터에 문의해주세요.\n' + rsp.imp_uid);
+                }
+            } else {
+                alert(`결제 실패: ${rsp.error_msg}`);
+            }
+        });
+    }
+
     async sendDirectEmoticon(fileName) {
         if (!this.activeChannel) return;
         const content = `[[emo:${fileName}]]`;
