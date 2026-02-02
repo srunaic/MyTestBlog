@@ -2365,3 +2365,13 @@ input:focus {
     background: rgba(255, 185, 47, 0.1);
     transform: scale(1.1);
 }
+.shop-notice {
+    background: rgba(255, 185, 47, 0.1);
+    color: #ffb92f;
+    padding: 10px;
+    margin: 0 15px 10px 15px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255, 185, 47, 0.3);
+}
