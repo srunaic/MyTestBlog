@@ -143,6 +143,7 @@
                 <!-- User info & UID rendered here by JS -->
             </div>
             <div class="sidebar-settings">
+                <button id="open-shop-btn" class="settings-cog-btn" title="상점" style="margin-right:8px;">🛒</button>
                 <button id="open-settings-btn" class="settings-cog-btn" title="설정">⚙️</button>
             </div>
 
@@ -486,6 +487,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content shop-modal-content">
+            <div class="modal-header">
+                <h2>🛍️ 이모티콘 상점</h2>
+                <div class="shop-balance-display">
+                    보유 코인: <span id="shop-user-balance">0</span> 🪙
+                </div>
+                <button id="close-shop-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="shop-container" id="shop-product-list">
+                <!-- Products loaded via JS -->
+                <div class="shop-loading">상품을 불러오는 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
     <!-- App Settings Modal -->
     <div id="app-settings-modal" class="modal-overlay" style="display:none;">
         <div class="modal-content">

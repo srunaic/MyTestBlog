@@ -4671,17 +4671,43 @@ class AntiCodeApp {
         }
     }
 
-    initCustomEmoticons(container) {
-        container.innerHTML = '';
-        // Explicit list of the 20 available emoticons
-        const emos = [
+    async initCustomEmoticons(container) {
+        container.innerHTML = '<div style="color:#888; padding:10px;">로딩 중...</div>';
+
+        // 1. Default Free Emoticons
+        const defaultEmos = [
             'emo_01.png', 'emo_02.png', 'emo_03.png', 'emo_04.png', 'emo_08.png',
             'emo_09.png', 'emo_10.png', 'emo_11.png', 'emo_12.png', 'emo_13.png',
             'emo_14.png', 'emo_15.png', 'emo_20.png', 'emo_21.png', 'emo_22.png',
             'emo_23.png', 'emo_25.png', 'emo_26.png', 'emo_27.png', 'emo_28.png'
         ];
 
-        emos.forEach(fileName => {
+        let allEmos = [...defaultEmos];
+
+        // 2. Fetch Purchased Emoticon Packs
+        try {
+            const { data: purchases, error } = await this.supabase
+                .from('anticode_purchases')
+                .select('product_id, anticode_products(content_data)')
+                .eq('user_id', this.currentUser.username);
+
+            if (!error && purchases) {
+                purchases.forEach(p => {
+                    const content = p.anticode_products.content_data;
+                    if (content && content.images && Array.isArray(content.images)) {
+                        allEmos = [...allEmos, ...content.images];
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Error loading purchased emoticons:', err);
+        }
+
+        // Remove duplicates just in case
+        allEmos = [...new Set(allEmos)];
+
+        container.innerHTML = '';
+        allEmos.forEach(fileName => {
             const div = document.createElement('div');
             div.className = 'emoticon-item';
             // Use relative path assets/emoticons/ for better compatibility
@@ -4703,6 +4729,98 @@ class AntiCodeApp {
             };
             container.appendChild(div);
         });
+    }
+
+    // --- Shop System Methods ---
+
+    async openShop() {
+        const modal = document.getElementById('shop-modal');
+        if (modal) modal.style.display = 'flex';
+
+        const balanceEl = document.getElementById('shop-user-balance');
+        const listEl = document.getElementById('shop-product-list');
+
+        // Fetch Wallet Balance
+        const { data: wallet } = await this.supabase
+            .from('anticode_wallets')
+            .select('balance')
+            .eq('user_id', this.currentUser.username)
+            .single();
+
+        if (balanceEl) balanceEl.innerText = wallet ? wallet.balance.toLocaleString() : '0';
+
+        // Fetch Products & Purchases
+        const { data: products } = await this.supabase
+            .from('anticode_products')
+            .select('*')
+            .eq('is_public', true)
+            .order('price', { ascending: true });
+
+        const { data: myPurchases } = await this.supabase
+            .from('anticode_purchases')
+            .select('product_id')
+            .eq('user_id', this.currentUser.username);
+
+        const ownedIds = new Set(myPurchases ? myPurchases.map(p => p.product_id) : []);
+
+        if (listEl && products) {
+            listEl.innerHTML = '';
+            products.forEach(prod => {
+                const isOwned = ownedIds.has(prod.id);
+                const content = prod.content_data || {};
+                const previewImg = (content.images && content.images[0])
+                    ? `assets/emoticons/${content.images[0]}`
+                    : 'assets/emoticons/emo_01.png';
+
+                const card = document.createElement('div');
+                card.className = 'shop-product-card';
+                card.innerHTML = `
+                    <div class="shop-product-preview">
+                        <img src="${previewImg}">
+                        ${content.images && content.images[1] ? `<img src="assets/emoticons/${content.images[1]}">` : ''}
+                        ${content.images && content.images[2] ? `<img src="assets/emoticons/${content.images[2]}">` : ''}
+                    </div>
+                    <div class="shop-product-info">
+                        <div class="shop-product-title">${prod.title}</div>
+                        <div class="shop-product-desc">${prod.description || ''}</div>
+                    </div>
+                    ${isOwned
+                        ? `<div class="shop-owned-badge">보유중</div>`
+                        : `<button class="shop-buy-btn" onclick="window.app.buyProduct(${prod.id}, ${prod.price})">${prod.price > 0 ? prod.price.toLocaleString() + ' 코인' : '무료 받기'}</button>`
+                    }
+                `;
+                listEl.appendChild(card);
+            });
+        } else {
+            if (listEl) listEl.innerHTML = '<div style="padding:20px; text-align:center;">판매 중인 상품이 없습니다.</div>';
+        }
+    }
+
+    async buyProduct(productId, price) {
+        if (!confirm(`${price > 0 ? price + ' 코인을 사용하여 ' : ''}상품을 구매하시겠습니까?`)) return;
+
+        const { data, error } = await this.supabase.rpc('purchase_product', { p_product_id: productId });
+
+        if (error) {
+            alert('구매 중 오류가 발생했습니다: ' + error.message);
+            return;
+        }
+
+        if (data.status === 'success') {
+            alert('구매 성공! 이모티콘 탭에서 확인할 수 있습니다.');
+            // Refresh Shop & Balance
+            const balanceEl = document.getElementById('shop-user-balance');
+            if (balanceEl && data.balance !== undefined) balanceEl.innerText = data.balance.toLocaleString();
+
+            // Re-render shop to show "Owned"
+            this.openShop();
+
+            // Clear cached emoticons so they reload
+            const customContent = document.getElementById('emoji-content-custom');
+            if (customContent) customContent.innerHTML = '';
+        } else {
+            alert('구매 실패: ' + data.message);
+        }
     }
 
     async sendDirectEmoticon(fileName) {
@@ -4790,6 +4908,13 @@ class AntiCodeApp {
 
         _safeBind('close-profile-modal', 'onclick', () => {
             const mod = document.getElementById('profile-modal');
+            if (mod) mod.style.display = 'none';
+        });
+
+        // Shop Modal Listeners
+        _safeBind('open-shop-btn', 'onclick', () => this.openShop());
+        _safeBind('close-shop-modal', 'onclick', () => {
+            const mod = document.getElementById('shop-modal');
             if (mod) mod.style.display = 'none';
         });
         document.getElementById('profile-form').onsubmit = async (e) => {
