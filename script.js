@@ -334,8 +334,7 @@ window.openAuthModal = (mode) => openAuthModal(mode);
 window.closeAuthModal = () => closeAuthModal();
 window.toggleAuthMode = () => toggleAuthMode();
 window.logout = () => logout();
-window.editPostAction = (id) => editPostAction(id);
-window.deletePostAction = (id) => deletePostAction(id);
+window.loginWithOAuth = (provider) => loginWithOAuth(provider);
 window.openAccountModal = () => openAccountModal();
 window.closeAccountModal = () => closeAccountModal();
 window.openModal = (post) => openModal(post);
@@ -656,8 +655,40 @@ async function checkAppUpdate() {
 // ==========================================
 // 6. AUTHENTICATION
 // ==========================================
-function checkSession() {
+async function checkSession() {
+    // 1. Check local session first
     currentUser = SessionManager.getAuth();
+
+    // 2. [OAuth Sync] If no local session, check Supabase Auth
+    if (!currentUser && supabase) {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session && session.user) {
+                console.log('OAuth Session detected, syncing...');
+                const user = session.user;
+                const nickname = user.user_metadata.full_name || user.user_metadata.name || user.email.split('@')[0];
+
+                // Construct session user object
+                const syncUser = {
+                    username: user.email,
+                    nickname: nickname,
+                    role: 'user', // Default, trigger will handle database role
+                    uid: user.id
+                };
+
+                // Check DB for actual role (Admin Check)
+                const { data: dbUser } = await supabase.from('users').select('role').eq('username', user.email).single();
+                if (dbUser) syncUser.role = dbUser.role;
+
+                SessionManager.saveAuth(syncUser);
+                currentUser = syncUser;
+                console.log('OAuth Session synced successfully.');
+            }
+        } catch (e) {
+            console.error('OAuth sync error:', e);
+        }
+    }
+
     isAdminMode = currentUser && currentUser.role === 'admin';
     updateUserNav();
 }
@@ -731,15 +762,42 @@ function updateUserNav() {
     updateBulkUI();
 }
 
-window.logout = () => {
-    if (confirm('로그아웃 하시겠습니까?')) {
-        SessionManager.clearAuth();
-        currentUser = null;
-        isAdminMode = false;
-        checkSession();
-        renderAll();
+async function logout() {
+    if (!confirm('로그아웃 하시겠습니까?')) return;
+
+    // 1. Clear Local Auth
+    SessionManager.clearAuth();
+    currentUser = null;
+    isAdminMode = false;
+
+    // 2. Supabase Logout (if initialized)
+    if (supabase) {
+        try {
+            await supabase.auth.signOut();
+        } catch (e) {
+            console.warn('Supabase logout error:', e);
+        }
     }
-};
+
+    checkSession();
+    renderAll();
+}
+
+async function loginWithOAuth(provider) {
+    if (!supabase) return alert('Supabase 서비스가 활성화되지 않았습니다.');
+
+    console.log(`Initiating OAuth login with ${provider}...`);
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+            redirectTo: window.location.origin
+        }
+    });
+
+    if (error) {
+        alert(`${provider} 로그인 중 오류가 발생했습니다: ${error.message}`);
+    }
+}
 
 // Auth Handlers
 let authMode = 'login';

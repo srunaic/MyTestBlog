@@ -536,6 +536,24 @@
                     </div>
                     <button type="button" class="cancel-btn full" onclick="closeAuthModal()"
                         style="margin-top: 20px;">CLOSE</button>
+
+                    <!-- OAuth Login Options -->
+                    <div class="oauth-divider"
+                        style="margin: 25px 0 15px; display: flex; align-items: center; gap: 10px; opacity: 0.5; font-size: 0.7rem;">
+                        <span style="flex: 1; height: 1px; background: var(--futuristic-border);"></span>
+                        <span>OR CONTINUE WITH</span>
+                        <span style="flex: 1; height: 1px; background: var(--futuristic-border);"></span>
+                    </div>
+                    <div class="oauth-buttons" style="display: flex; flex-direction: column; gap: 10px;">
+                        <button type="button" class="oauth-btn google" onclick="loginWithOAuth('google')">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                            Google로 계속하기
+                        </button>
+                        <button type="button" class="oauth-btn naver" onclick="loginWithOAuth('naver')">
+                            <span class="naver-icon">N</span>
+                            Naver로 계속하기
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
