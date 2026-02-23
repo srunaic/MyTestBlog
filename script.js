@@ -503,7 +503,7 @@ async function init() {
 
     // 4. Initial Render (Placeholder/Skeleton)
     restoreUIState();
-    checkSession();
+    await checkSession();
     renderAll();
     restoreDrafts();
     initChatbot();
@@ -532,8 +532,22 @@ async function init() {
                 updateSubscriberCount()
             ]);
 
-            checkSession();
+            await checkSession();
             renderAll();
+
+            // [NEW] Setup Realtime Auth Listener for OAuth Sync
+            supabase.auth.onAuthStateChange(async (event, session) => {
+                console.log(`Auth event: ${event}`);
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    await checkSession();
+                    renderAll();
+                } else if (event === 'SIGNED_OUT') {
+                    SessionManager.clearAuth();
+                    currentUser = null;
+                    isAdminMode = false;
+                    renderAll();
+                }
+            });
 
             // Success indicator (Simplified & Admin Only)
             const statusDiv = document.getElementById('db-status-indicator');
