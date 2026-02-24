@@ -1,7 +1,7 @@
 {
   "name": "ROSAE HUB",
   "short_name": "ROSAE HUB",
-  "description": "ROSAE HUB - Chat & Blog Platform for Digital Art & AI.",
+  "description": "ROSAE HUB - A Next-Gen Emotional Community Platform.",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#050510",
@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-512.png",
+      "src": "icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
