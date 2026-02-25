@@ -601,20 +601,10 @@
                     <input type="file" id="acc-avatar-file-input" accept="image/*" style="display:none;">
                     <input type="hidden" id="acc-avatar-url"> <!-- Stores uploaded URL -->
                 </div>
-                <div class="form-group"
-                    style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-                    <label
-                        style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; color: #fff;">
-                        <input type="checkbox" id="acc-consent-location" style="width: auto; margin: 0;">
-                        <span style="font-weight: 700;">위치 정보 수집 동의</span>
-                    </label>
-                    <p style="font-size: 0.7rem; color: #888; margin-top: 5px; line-height: 1.4;">
-                        구글 플레이 데이터 보안 규정에 따라, 위치 정보를 활용한 기능을 사용하시려면 동의가 필요합니다.
-                    </p>
-                </div>
                 <div class="modal-btns">
-                    <button type="submit" class="submit-btn">UPDATE</button>
-                    <button type="button" class="cancel-btn" onclick="closeAccountModal()">CLOSE</button>
+                    <button type="submit" class="submit-btn" style="flex: 2;">UPDATE</button>
+                    <button type="button" class="cancel-btn" onclick="closeAccountModal()"
+                        style="flex: 1;">CLOSE</button>
                 </div>
             </form>
 
@@ -624,13 +614,18 @@
                 <span id="activity-chevron">▾</span>
             </div>
 
-            <div id="account-activity-section" class="account-activity" style="display: none; margin-top: 10px;">
+            <div id="account-activity-section" class="account-activity"
+                style="display: none; margin-top: 10px; overflow: hidden; transition: max-height 0.3s ease-out;">
                 <div class="activity-tabs">
                     <button class="tab-btn active" data-tab="my-posts">내가 쓴 글</button>
                     <button class="tab-btn" data-tab="my-comments">댓글 단 글</button>
                 </div>
                 <div id="activity-content" class="activity-content">
                     <!-- Activity items rendered here -->
+                </div>
+                <div id="activity-pagination" class="activity-pagination"
+                    style="display: flex; justify-content: center; gap: 20px; margin-top: 15px;">
+                    <!-- Pagination buttons here -->
                 </div>
             </div>
         </div>

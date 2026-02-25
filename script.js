@@ -1530,13 +1530,11 @@ if (accountForm) {
         }
 
         if (supabase) {
-            const locConsent = document.getElementById('acc-consent-location') ? document.getElementById('acc-consent-location').checked : false;
             const { error } = await supabase.from('users').update({
                 nickname: newN,
                 username: newU,
                 password: newP,
-                avatar_url: newA,
-                location_allowed: locConsent
+                avatar_url: newA
             }).eq('id', currentUser.id);
             if (error) { alert('수정 실패: ' + error.message); }
             else { alert('정보 수정 완료. 다시 로그인해주세요.'); logout(); closeAccountModal(); }
@@ -1764,24 +1762,26 @@ window.openAccountModal = () => {
     document.getElementById('acc-nickname').value = currentUser.nickname;
     document.getElementById('acc-username').value = currentUser.username;
     document.getElementById('acc-password').value = currentUser.password;
+
+    // [MOD] Hidden avatar URL input update
     const avatarInput = document.getElementById('acc-avatar-url');
     if (avatarInput) avatarInput.value = currentUser.avatar_url || '';
-
-    // [NEW] Set location consent checkbox
-    const consentCb = document.getElementById('acc-consent-location');
-    if (consentCb) consentCb.checked = !!currentUser.location_allowed;
 
     // [NEW] Set avatar preview
     const avatarPreview = document.querySelector('#acc-avatar-preview img');
     if (avatarPreview) avatarPreview.src = currentUser.avatar_url || 'https://via.placeholder.com/150';
 
-    // [NEW] Reset activity section
+    // [NEW] Reset activity section (Slide hide)
     const activitySection = document.getElementById('account-activity-section');
     const chevron = document.getElementById('activity-chevron');
-    if (activitySection) activitySection.style.display = 'none';
+    if (activitySection) {
+        activitySection.style.display = 'none';
+        activitySection.style.maxHeight = '0';
+    }
     if (chevron) chevron.textContent = '▾';
 
-    // Initial activity render
+    // Initial activity render (Reset page)
+    activityPage = 1;
     renderUserActivity();
 };
 
@@ -1792,9 +1792,12 @@ window.toggleAccountActivity = () => {
 
     if (section.style.display === 'none') {
         section.style.display = 'block';
+        section.style.maxHeight = '1000px'; // Allow expansion
         if (chevron) chevron.textContent = '▴';
+        renderUserActivity(); // Ensure fresh render
     } else {
-        section.style.display = 'none';
+        section.style.maxHeight = '0';
+        setTimeout(() => { if (section.style.maxHeight === '0px') section.style.display = 'none'; }, 300);
         if (chevron) chevron.textContent = '▾';
     }
 };
@@ -2238,6 +2241,9 @@ async function deleteComment(id) {
 // ==========================================
 // 14. ACCOUNT ACTIVITY
 // ==========================================
+var activityPage = 1;
+const activityPerPage = 3;
+
 function setupActivityTabs() {
     const tabs = document.querySelectorAll('.tab-btn');
     tabs.forEach(t => {
@@ -2245,6 +2251,7 @@ function setupActivityTabs() {
             tabs.forEach(item => item.classList.remove('active'));
             t.classList.add('active');
             currentTab = t.dataset.tab;
+            activityPage = 1; // Reset to page 1
             renderUserActivity();
         };
     });
@@ -2252,17 +2259,11 @@ function setupActivityTabs() {
 
 async function renderUserActivity() {
     if (!currentUser || !activityContent) return;
-    activityContent.innerHTML = '<p style="padding:10px; opacity:0.5;">분석 중...</p>';
+    const paginationEl = document.getElementById('activity-pagination');
 
-    let items = [];
+    let rawItems = [];
     if (currentTab === 'my-posts') {
-        items = posts.filter(p => p.author === currentUser.nickname);
-        activityContent.innerHTML = items.length ? items.map(p => `
-            <div class="activity-item" onclick="closeAccountModal(); showDetail(${p.id});">
-                <h4>${p.title}</h4>
-                <p>${p.date} | 조회 ${p.views || 0}</p>
-            </div>
-        `).join('') : '<p style="padding:10px; opacity:0.3;">작성한 글이 없습니다.</p>';
+        rawItems = posts.filter(p => p.author === currentUser.nickname);
     } else {
         let allComments = [];
         if (supabase) {
@@ -2271,19 +2272,45 @@ async function renderUserActivity() {
         } else {
             allComments = JSON.parse(localStorage.getItem('LOCAL_COMMENTS') || '[]').filter(c => c.user_id === currentUser.username);
         }
-
-        // Get unique post IDs from comments
         const commentedPostIds = [...new Set(allComments.map(c => c.post_id))];
-        const commentedPosts = posts.filter(p => commentedPostIds.includes(p.id));
+        rawItems = posts.filter(p => commentedPostIds.includes(p.id));
+    }
 
-        activityContent.innerHTML = commentedPosts.length ? commentedPosts.map(p => `
-            <div class="activity-item" onclick="closeAccountModal(); showDetail(${p.id});">
-                <h4>${p.title}</h4>
-                <p>${p.author}의 글에 댓글을 남겼습니다.</p>
+    // Pagination Logic
+    const totalPages = Math.ceil(rawItems.length / activityPerPage);
+    const start = (activityPage - 1) * activityPerPage;
+    const items = rawItems.slice(start, start + activityPerPage);
+
+    // Render Content
+    if (items.length === 0) {
+        activityContent.innerHTML = `<p style="padding:20px; text-align:center; opacity:0.3;">${currentTab === 'my-posts' ? '작성한 글이 없습니다.' : '댓글을 단 글이 없습니다.'}</p>`;
+    } else {
+        activityContent.innerHTML = items.map(p => `
+            <div class="activity-item" onclick="closeAccountModal(); showDetail(${p.id});" style="margin-bottom: 10px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s;">
+                <h4 style="font-size: 0.85rem; margin-bottom: 5px; color: var(--futuristic-accent);">${p.title}</h4>
+                <p style="font-size: 0.7rem; opacity: 0.6;">${p.date} | ${currentTab === 'my-posts' ? '조회 ' + (p.views || 0) : '댓글 작성'}</p>
             </div>
-        `).join('') : '<p style="padding:10px; opacity:0.3;">댓글을 단 글이 없습니다.</p>';
+        `).join('');
+    }
+
+    // Render Pagination Controls
+    if (paginationEl) {
+        if (totalPages > 1) {
+            paginationEl.innerHTML = `
+                <button onclick="changeActivityPage(-1)" class="sm-btn" ${activityPage === 1 ? 'disabled style="opacity:0.3;"' : ''}>PREV</button>
+                <span style="font-size: 0.7rem; align-self: center; opacity: 0.8;">${activityPage} / ${totalPages}</span>
+                <button onclick="changeActivityPage(1)" class="sm-btn" ${activityPage === totalPages ? 'disabled style="opacity:0.3;"' : ''}>NEXT</button>
+            `;
+        } else {
+            paginationEl.innerHTML = '';
+        }
     }
 }
+
+window.changeActivityPage = (dir) => {
+    activityPage += dir;
+    renderUserActivity();
+};
 
 // Final Export: Attach to window for inline HTML onclick/onchange handlers
 if (typeof window !== 'undefined') {
