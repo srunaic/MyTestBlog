@@ -1,14 +1,13 @@
 [
     {
         "relation": [
-            "delegate_permission/common.handle_all_urls",
-            "delegate_permission/common.get_login_creds"
+            "delegate_permission/common.handle_all_urls"
         ],
         "target": {
             "namespace": "android_app",
-            "package_name": "com.nanodoroshi.rosaehub",
+            "package_name": "com.nanodoroshi.anticode",
             "sha256_cert_fingerprints": [
-                "PASTE_YOUR_SHA256_FINGERPRINT_HERE"
+                "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
             ]
         }
     }
