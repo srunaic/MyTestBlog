@@ -1337,7 +1337,26 @@ function setupEventListeners() {
             const title = document.getElementById('post-title').value;
             const content = document.getElementById('post-content').value;
             const category = document.getElementById('post-category').value;
-            const img = document.getElementById('post-img').value;
+            let img = document.getElementById('post-img').value;
+
+            // [NEW] Upload file if selected
+            const fileInput = document.getElementById('post-file-input');
+            if (fileInput && fileInput.files[0]) {
+                try {
+                    const postBtn = e.target.querySelector('button[type="submit"]');
+                    const originalText = postBtn.textContent;
+                    postBtn.textContent = 'UPLOADING...';
+                    postBtn.disabled = true;
+
+                    img = await uploadToSupabase(fileInput.files[0], 'media');
+
+                    postBtn.textContent = originalText;
+                    postBtn.disabled = false;
+                } catch (err) {
+                    alert('사진 업로드 실패: ' + err.message);
+                    return;
+                }
+            }
 
             let existingPost = id ? posts.find(p => p.id == id) : null;
             let viewCount = existingPost ? (existingPost.views || 0) : 0;
@@ -1418,23 +1437,6 @@ function setupEventListeners() {
                 await loadData();
                 openAuthModal('login');
             } else {
-                let user = null;
-                if (supabase) {
-                    const { data, error } = await supabase
-                        .from('users')
-                        .select('*')
-                        .eq('username', u)
-                        .eq('password', p)
-                        .single();
-
-                    if (!error && data) {
-                        user = data;
-                    } else if (error) {
-                        console.warn('Supabase login error:', error.message);
-                    }
-                }
-
-                // Fallback to local users list if not found in Supabase or Supabase is offline
                 if (!user) {
                     user = users.find(user => user.username === u && user.password === p);
                 }
@@ -1462,109 +1464,164 @@ function setupEventListeners() {
         };
     }
 
-    // Account Form Submit
-    if (accountForm) {
-        accountForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const newN = document.getElementById('acc-nickname').value.trim();
-            const newU = document.getElementById('acc-username').value.trim();
-            const newP = document.getElementById('acc-password').value.trim();
-            const newA = document.getElementById('acc-avatar-url').value.trim();
-            if (newP.length < 8) return alert('비밀번호는 8자 이상.');
-
-            if (supabase) {
-                const locConsent = document.getElementById('acc-consent-location') ? document.getElementById('acc-consent-location').checked : false;
-                const { error } = await supabase.from('users').update({
-                    nickname: newN,
-                    username: newU,
-                    password: newP,
-                    avatar_url: newA,
-                    location_allowed: locConsent
-                }).eq('id', currentUser.id);
-                if (error) { alert('수정 실패: ' + error.message); }
-                else { alert('정보 수정 완료. 다시 로그인해주세요.'); logout(); closeAccountModal(); }
-            } else {
-                currentUser.nickname = newN; currentUser.username = newU; currentUser.password = newP;
-                alert('수정 완료 (로컬). 다시 로그인.');
-                logout(); closeAccountModal();
+    // [NEW] Avatar/Post Image Preview Listeners
+    const avatarBtn = document.getElementById('upload-acc-avatar-btn');
+    const avatarInput = document.getElementById('acc-avatar-file-input');
+    const avatarPreviewImg = document.querySelector('#acc-avatar-preview img');
+    if (avatarBtn && avatarInput) {
+        avatarBtn.onclick = () => avatarInput.click();
+        avatarInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file && avatarPreviewImg) {
+                const reader = new FileReader();
+                reader.onload = (re) => avatarPreviewImg.src = re.target.result;
+                reader.readAsDataURL(file);
             }
         };
     }
 
-    // Other Listeners
-    if (backBtn) backBtn.onclick = () => { detailView.style.display = 'none'; listView.style.display = 'block'; };
-    if (userMgrBtn) userMgrBtn.onclick = () => { currentCategory = 'users-mgr'; listView.style.display = 'block'; detailView.style.display = 'none'; selectedPostIds.clear(); renderUserManagement(); };
-    if (manageCatsBtn) manageCatsBtn.onclick = () => { catMgrSection.style.display = catMgrSection.style.display === 'none' ? 'block' : 'none'; };
-    if (addCatBtn) addCatBtn.onclick = () => {
-        const name = newCatInput.value.trim();
-        if (name) { categories.push({ id: 'cat_' + Date.now(), name }); newCatInput.value = ''; renderAll(); }
-    };
-    if (newPostBtn) newPostBtn.onclick = () => {
-        if (!currentUser) { alert('로그인 후 이용 가능합니다.'); openAuthModal('login'); } else { openModal(); }
-    };
-    if (closeBtn) closeBtn.onclick = () => closeModal();
-
-    // Layout Switcher Listeners (Retry)
-    const pcBtn = document.getElementById('force-pc-btn');
-    const mobBtn = document.getElementById('force-mobile-btn');
-    if (pcBtn) pcBtn.onclick = () => toggleViewMode('pc');
-    if (mobBtn) mobBtn.onclick = () => toggleViewMode('mobile');
-
-    // --- NEW: Blog Post Image Upload ---
-    const postFileInput = document.getElementById('post-file-input');
-    const uploadPostImgBtn = document.getElementById('upload-post-img-btn');
-    if (uploadPostImgBtn && postFileInput) {
-        // Free users: hide upload button completely (URL input remains)
-        if (!canUploadImages()) {
-            uploadPostImgBtn.style.display = 'none';
-        } else {
-            uploadPostImgBtn.onclick = () => {
-                console.log('Post image upload button clicked');
-                postFileInput.click();
+    const postImgBtn = document.getElementById('upload-post-img-btn');
+    const postImgInput = document.getElementById('post-file-input');
+    const postImgPreview = document.getElementById('post-img-preview');
+    const postImgPreviewImg = postImgPreview ? postImgPreview.querySelector('img') : null;
+    if (postImgBtn && postImgInput) {
+        postImgBtn.onclick = () => postImgInput.click();
+        postImgInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file && postImgPreview && postImgPreviewImg) {
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    postImgPreviewImg.src = re.target.result;
+                    postImgPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
             }
-            postFileInput.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                console.log('File selected:', file.name);
-                uploadPostImgBtn.textContent = '업로드 중...';
-                try {
-                    const url = await uploadToR2(file, 'blog');
-                    console.log('Upload successful:', url);
-                    const postImgInput = document.getElementById('post-img');
-                    if (postImgInput) postImgInput.value = url;
-                    alert('이미지가 업로드되었습니다.');
-                } catch (err) {
-                    console.error('Upload failed:', err);
-                    const errMsg = err.message || JSON.stringify(err);
-                    alert('업로드 실패: ' + errMsg);
-                }
-                finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
-            };
-        }
+        };
     }
+}
 
-    // --- NEW: Account Avatar Upload ---
-    const accAvatarFileInput = document.getElementById('acc-avatar-file-input');
-    const uploadAccAvatarBtn = document.getElementById('upload-acc-avatar-btn');
-    if (uploadAccAvatarBtn && accAvatarFileInput) {
-        // Free users: hide upload button completely (URL input remains)
-        if (!canUploadImages()) {
-            uploadAccAvatarBtn.style.display = 'none';
-        } else {
-            uploadAccAvatarBtn.onclick = () => accAvatarFileInput.click();
-            accAvatarFileInput.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                uploadAccAvatarBtn.textContent = '...';
-                try {
-                    const url = await uploadToR2(file, 'blog');
-                    document.getElementById('acc-avatar-url').value = url;
-                    alert('프로필 이미지가 업로드되었습니다.');
-                } catch (err) { alert('업로드 실패: ' + err.message); }
-                finally { uploadAccAvatarBtn.textContent = '이미지 업로드'; accAvatarFileInput.value = ''; }
-            };
+// Account Form Submit
+if (accountForm) {
+    accountForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const newN = document.getElementById('acc-nickname').value.trim();
+        const newU = document.getElementById('acc-username').value.trim();
+        const newP = document.getElementById('acc-password').value.trim();
+        let newA = document.getElementById('acc-avatar-url').value.trim();
+        if (newP.length < 8) return alert('비밀번호는 8자 이상.');
+
+        // [NEW] Upload avatar if selected
+        const avatarFileInput = document.getElementById('acc-avatar-file-input');
+        if (avatarFileInput && avatarFileInput.files[0]) {
+            try {
+                const updateBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = updateBtn.textContent;
+                updateBtn.textContent = 'UPLOADING...';
+                updateBtn.disabled = true;
+
+                newA = await uploadToSupabase(avatarFileInput.files[0], 'media');
+
+                updateBtn.textContent = originalText;
+                updateBtn.disabled = false;
+            } catch (err) {
+                alert('프로필 사진 업로드 실패: ' + err.message);
+                return;
+            }
         }
+
+        if (supabase) {
+            const locConsent = document.getElementById('acc-consent-location') ? document.getElementById('acc-consent-location').checked : false;
+            const { error } = await supabase.from('users').update({
+                nickname: newN,
+                username: newU,
+                password: newP,
+                avatar_url: newA,
+                location_allowed: locConsent
+            }).eq('id', currentUser.id);
+            if (error) { alert('수정 실패: ' + error.message); }
+            else { alert('정보 수정 완료. 다시 로그인해주세요.'); logout(); closeAccountModal(); }
+        } else {
+            currentUser.nickname = newN; currentUser.username = newU; currentUser.password = newP;
+            alert('수정 완료 (로컬). 다시 로그인.');
+            logout(); closeAccountModal();
+        }
+    };
+}
+
+// Other Listeners
+if (backBtn) backBtn.onclick = () => { detailView.style.display = 'none'; listView.style.display = 'block'; };
+if (userMgrBtn) userMgrBtn.onclick = () => { currentCategory = 'users-mgr'; listView.style.display = 'block'; detailView.style.display = 'none'; selectedPostIds.clear(); renderUserManagement(); };
+if (manageCatsBtn) manageCatsBtn.onclick = () => { catMgrSection.style.display = catMgrSection.style.display === 'none' ? 'block' : 'none'; };
+if (addCatBtn) addCatBtn.onclick = () => {
+    const name = newCatInput.value.trim();
+    if (name) { categories.push({ id: 'cat_' + Date.now(), name }); newCatInput.value = ''; renderAll(); }
+};
+if (newPostBtn) newPostBtn.onclick = () => {
+    if (!currentUser) { alert('로그인 후 이용 가능합니다.'); openAuthModal('login'); } else { openModal(); }
+};
+if (closeBtn) closeBtn.onclick = () => closeModal();
+
+// Layout Switcher Listeners (Retry)
+const pcBtn = document.getElementById('force-pc-btn');
+const mobBtn = document.getElementById('force-mobile-btn');
+if (pcBtn) pcBtn.onclick = () => toggleViewMode('pc');
+if (mobBtn) mobBtn.onclick = () => toggleViewMode('mobile');
+
+// --- NEW: Blog Post Image Upload ---
+const postFileInput = document.getElementById('post-file-input');
+const uploadPostImgBtn = document.getElementById('upload-post-img-btn');
+if (uploadPostImgBtn && postFileInput) {
+    // Free users: hide upload button completely (URL input remains)
+    if (!canUploadImages()) {
+        uploadPostImgBtn.style.display = 'none';
+    } else {
+        uploadPostImgBtn.onclick = () => {
+            console.log('Post image upload button clicked');
+            postFileInput.click();
+        }
+        postFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            console.log('File selected:', file.name);
+            uploadPostImgBtn.textContent = '업로드 중...';
+            try {
+                const url = await uploadToR2(file, 'blog');
+                console.log('Upload successful:', url);
+                const postImgInput = document.getElementById('post-img');
+                if (postImgInput) postImgInput.value = url;
+                alert('이미지가 업로드되었습니다.');
+            } catch (err) {
+                console.error('Upload failed:', err);
+                const errMsg = err.message || JSON.stringify(err);
+                alert('업로드 실패: ' + errMsg);
+            }
+            finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
+        };
     }
+}
+
+// --- NEW: Account Avatar Upload ---
+const accAvatarFileInput = document.getElementById('acc-avatar-file-input');
+const uploadAccAvatarBtn = document.getElementById('upload-acc-avatar-btn');
+if (uploadAccAvatarBtn && accAvatarFileInput) {
+    // Free users: hide upload button completely (URL input remains)
+    if (!canUploadImages()) {
+        uploadAccAvatarBtn.style.display = 'none';
+    } else {
+        uploadAccAvatarBtn.onclick = () => accAvatarFileInput.click();
+        accAvatarFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            uploadAccAvatarBtn.textContent = '...';
+            try {
+                const url = await uploadToR2(file, 'blog');
+                document.getElementById('acc-avatar-url').value = url;
+                alert('프로필 이미지가 업로드되었습니다.');
+            } catch (err) { alert('업로드 실패: ' + err.message); }
+            finally { uploadAccAvatarBtn.textContent = '이미지 업로드'; accAvatarFileInput.value = ''; }
+        };
+    }
+}
 }
 
 function openModal(post = null) {
@@ -1714,9 +1771,34 @@ window.openAccountModal = () => {
     const consentCb = document.getElementById('acc-consent-location');
     if (consentCb) consentCb.checked = !!currentUser.location_allowed;
 
+    // [NEW] Set avatar preview
+    const avatarPreview = document.querySelector('#acc-avatar-preview img');
+    if (avatarPreview) avatarPreview.src = currentUser.avatar_url || 'https://via.placeholder.com/150';
+
+    // [NEW] Reset activity section
+    const activitySection = document.getElementById('account-activity-section');
+    const chevron = document.getElementById('activity-chevron');
+    if (activitySection) activitySection.style.display = 'none';
+    if (chevron) chevron.textContent = '▾';
+
     // Initial activity render
     renderUserActivity();
 };
+
+window.toggleAccountActivity = () => {
+    const section = document.getElementById('account-activity-section');
+    const chevron = document.getElementById('activity-chevron');
+    if (!section) return;
+
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        if (chevron) chevron.textContent = '▴';
+    } else {
+        section.style.display = 'none';
+        if (chevron) chevron.textContent = '▾';
+    }
+};
+
 window.closeAccountModal = () => accountModal.classList.remove('active');
 
 
