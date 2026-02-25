@@ -829,12 +829,14 @@ function openAuthModal(mode) {
     const title = document.getElementById('auth-modal-title');
     const btn = document.getElementById('auth-submit-btn');
     const group = document.getElementById('signup-nickname-group');
+    const consentGroup = document.getElementById('signup-consent-group');
     const switchTxt = document.getElementById('auth-switch-text');
     const switchLnk = document.getElementById('auth-switch-link');
 
     if (title) title.textContent = mode === 'login' ? '로그인' : '회원가입';
     if (btn) btn.textContent = mode === 'login' ? '접속하기' : '가입하기';
     if (group) group.style.display = mode === 'signup' ? 'block' : 'none';
+    if (consentGroup) consentGroup.style.display = mode === 'signup' ? 'block' : 'none';
     if (switchTxt) switchTxt.textContent = mode === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?';
     if (switchLnk) switchLnk.textContent = mode === 'login' ? '회원가입' : '로그인';
 
@@ -1402,11 +1404,13 @@ function setupEventListeners() {
                     const { data: existingUsers, error: checkError } = await supabase.from('users').select('username').eq('username', u);
                     if (!checkError && existingUsers && existingUsers.length > 0) return alert('이미 존재하는 아이디입니다. (서버 확인)');
 
-                    const newUser = { username: u, password: p, nickname: n || u, role: 'user' };
+                    const locConsent = document.getElementById('auth-consent-location') ? document.getElementById('auth-consent-location').checked : false;
+                    const newUser = { username: u, password: p, nickname: n || u, role: 'user', location_allowed: locConsent };
                     const { error } = await supabase.from('users').insert([newUser]);
                     if (error) { alert('가입 실패: ' + error.message); return; }
                 } else {
-                    const newUser = { username: u, password: p, nickname: n || u, role: 'user' };
+                    const locConsent = document.getElementById('auth-consent-location') ? document.getElementById('auth-consent-location').checked : false;
+                    const newUser = { username: u, password: p, nickname: n || u, role: 'user', location_allowed: locConsent };
                     users.push(newUser);
                 }
                 alert('회원가입이 완료되었습니다. 로그인해 주세요.');
@@ -1469,11 +1473,13 @@ function setupEventListeners() {
             if (newP.length < 8) return alert('비밀번호는 8자 이상.');
 
             if (supabase) {
+                const locConsent = document.getElementById('acc-consent-location') ? document.getElementById('acc-consent-location').checked : false;
                 const { error } = await supabase.from('users').update({
                     nickname: newN,
                     username: newU,
                     password: newP,
-                    avatar_url: newA
+                    avatar_url: newA,
+                    location_allowed: locConsent
                 }).eq('id', currentUser.id);
                 if (error) { alert('수정 실패: ' + error.message); }
                 else { alert('정보 수정 완료. 다시 로그인해주세요.'); logout(); closeAccountModal(); }
@@ -1703,6 +1709,10 @@ window.openAccountModal = () => {
     document.getElementById('acc-password').value = currentUser.password;
     const avatarInput = document.getElementById('acc-avatar-url');
     if (avatarInput) avatarInput.value = currentUser.avatar_url || '';
+
+    // [NEW] Set location consent checkbox
+    const consentCb = document.getElementById('acc-consent-location');
+    if (consentCb) consentCb.checked = !!currentUser.location_allowed;
 
     // Initial activity render
     renderUserActivity();

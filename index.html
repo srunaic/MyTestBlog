@@ -519,6 +519,17 @@
                     <label>NICKNAME</label>
                     <input type="text" id="auth-nickname" placeholder="Public Name">
                 </div>
+                <div id="signup-consent-group" class="form-group" style="display:none; margin-top: 15px;">
+                    <label
+                        style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.8rem; color: #fff; opacity: 0.9;">
+                        <input type="checkbox" id="auth-consent-location" style="width: auto; margin: 0;">
+                        <span>위치 정보 수집 및 이용에 동의합니다 (선택)</span>
+                    </label>
+                    <p
+                        style="font-size: 0.65rem; color: var(--futuristic-accent); margin-top: 5px; opacity: 0.7; line-height: 1.4;">
+                        * 주변 사용자 매칭 및 지역별 통계 기능을 위해 위치 정보가 사용될 수 있습니다. 동의하지 않아도 서비스 이용이 가능합니다.
+                    </p>
+                </div>
                 <div class="modal-btns">
                     <button type="submit" id="auth-submit-btn" class="submit-btn full">ENTER</button>
                     <div class="auth-switch">
@@ -580,6 +591,17 @@
                             style="white-space: nowrap; font-size: 0.7rem;">이미지 업로드</button>
                     </div>
                     <input type="file" id="acc-avatar-file-input" accept="image/*" style="display:none;">
+                </div>
+                <div class="form-group"
+                    style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                    <label
+                        style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; color: #fff;">
+                        <input type="checkbox" id="acc-consent-location" style="width: auto; margin: 0;">
+                        <span style="font-weight: 700;">위치 정보 수집 동의</span>
+                    </label>
+                    <p style="font-size: 0.7rem; color: #888; margin-top: 5px; line-height: 1.4;">
+                        구글 플레이 데이터 보안 규정에 따라, 위치 정보를 활용한 기능을 사용하시려면 동의가 필요합니다.
+                    </p>
                 </div>
                 <div class="modal-btns">
                     <button type="submit" class="submit-btn">UPDATE</button>
