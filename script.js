@@ -1565,63 +1565,6 @@ const mobBtn = document.getElementById('force-mobile-btn');
 if (pcBtn) pcBtn.onclick = () => toggleViewMode('pc');
 if (mobBtn) mobBtn.onclick = () => toggleViewMode('mobile');
 
-// --- NEW: Blog Post Image Upload ---
-const postFileInput = document.getElementById('post-file-input');
-const uploadPostImgBtn = document.getElementById('upload-post-img-btn');
-if (uploadPostImgBtn && postFileInput) {
-    // Free users: hide upload button completely (URL input remains)
-    if (!canUploadImages()) {
-        uploadPostImgBtn.style.display = 'none';
-    } else {
-        uploadPostImgBtn.onclick = () => {
-            console.log('Post image upload button clicked');
-            postFileInput.click();
-        }
-        postFileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            console.log('File selected:', file.name);
-            uploadPostImgBtn.textContent = '업로드 중...';
-            try {
-                const url = await uploadToR2(file, 'blog');
-                console.log('Upload successful:', url);
-                const postImgInput = document.getElementById('post-img');
-                if (postImgInput) postImgInput.value = url;
-                alert('이미지가 업로드되었습니다.');
-            } catch (err) {
-                console.error('Upload failed:', err);
-                const errMsg = err.message || JSON.stringify(err);
-                alert('업로드 실패: ' + errMsg);
-            }
-            finally { uploadPostImgBtn.textContent = '이미지 업로드'; postFileInput.value = ''; }
-        };
-    }
-}
-
-// --- NEW: Account Avatar Upload ---
-const accAvatarFileInput = document.getElementById('acc-avatar-file-input');
-const uploadAccAvatarBtn = document.getElementById('upload-acc-avatar-btn');
-if (uploadAccAvatarBtn && accAvatarFileInput) {
-    // Free users: hide upload button completely (URL input remains)
-    if (!canUploadImages()) {
-        uploadAccAvatarBtn.style.display = 'none';
-    } else {
-        uploadAccAvatarBtn.onclick = () => accAvatarFileInput.click();
-        accAvatarFileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            uploadAccAvatarBtn.textContent = '...';
-            try {
-                const url = await uploadToR2(file, 'blog');
-                document.getElementById('acc-avatar-url').value = url;
-                alert('프로필 이미지가 업로드되었습니다.');
-            } catch (err) { alert('업로드 실패: ' + err.message); }
-            finally { uploadAccAvatarBtn.textContent = '이미지 업로드'; accAvatarFileInput.value = ''; }
-        };
-    }
-}
-}
-
 function openModal(post = null) {
     modal.classList.add('active');
     catMgrSection.style.display = 'none';
