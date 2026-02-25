@@ -1437,8 +1437,23 @@ function setupEventListeners() {
                 await loadData();
                 openAuthModal('login');
             } else {
-                if (!user) {
-                    user = users.find(user => user.username === u && user.password === p);
+                // Login Mode
+                let user = null;
+                if (supabase) {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('username', u)
+                        .eq('password', p)
+                        .maybeSingle();
+
+                    if (error) {
+                        console.error('Login error:', error);
+                    } else {
+                        user = data;
+                    }
+                } else {
+                    user = users.find(uObj => uObj.username === u && uObj.password === p);
                 }
 
                 if (user) {
