@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Deletion - ROSAE HUB</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            padding: 80px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.8;
+            background-color: var(--bg-surface);
+        }
+
+        .deletion-card {
+            background: white;
+            padding: 50px;
+            border-radius: 30px;
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-soft);
+        }
+
+        h1 {
+            color: var(--accent-main);
+            font-size: 2.5rem;
+            font-weight: 950;
+            margin-bottom: 30px;
+            letter-spacing: -2px;
+        }
+
+        h2 {
+            margin-top: 40px;
+            font-size: 1.4rem;
+            color: var(--text-main);
+            border-left: 5px solid var(--accent-main);
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+
+        .warning-box {
+            background: rgba(255, 0, 122, 0.05);
+            border: 1px solid rgba(255, 0, 122, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            color: #ff007a;
+            font-weight: 700;
+        }
+
+        .btn-request {
+            display: inline-block;
+            background: var(--accent-main);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 900;
+            margin-top: 30px;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-request:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 105, 180, 0.4);
+        }
+
+        .lang-switch {
+            font-size: 0.8rem;
+            opacity: 0.5;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="deletion-card">
+        <div class="lang-switch">English | 한국어</div>
+        <h1>Account Deletion Request</h1>
+        <p>If you wish to delete your <strong>ROSAE HUB</strong> account and all associated data, please follow the
+            instructions below.</p>
+
+        <div class="warning-box">
+            ⚠ Warning: Account deletion is permanent and cannot be undone. All your posts, comments, and profile
+            information will be wiped.
+        </div>
+
+        <h2>How to Request Deletion</h2>
+        <p>You can request account deletion via the following method:</p>
+        <ol>
+            <li>Send an email to <strong>support@nanodoroshi.com</strong></li>
+            <li>Subject: <strong>[Account Deletion Request] Your Username</strong></li>
+            <li>Content: Please confirm the email address associated with your account.</li>
+        </ol>
+
+        <a href="mailto:support@nanodoroshi.com?subject=[Account Deletion Request]" class="btn-request">Send Request
+            Email</a>
+
+        <hr style="margin: 50px 0; border: none; border-top: 1px solid var(--border-soft);">
+
+        <h1>계정 및 데이터 삭제 요청</h1>
+        <p><strong>ROSAE HUB</strong> 계정과 모든 관련 데이터를 삭제하시려면 아래 절차를 확인해 주세요.</p>
+
+        <div class="warning-box">
+            ⚠ 주의: 계정 삭제는 영구적이며 되돌릴 수 없습니다. 모든 게시글, 댓글, 프로필 정보가 완전히 삭제됩니다.
+        </div>
+
+        <h2>삭제 요청 방법</h2>
+        <p>다음 방법을 통해 삭제를 요청할 수 있습니다:</p>
+        <ol>
+            <li>운영자 메일(<strong>support@nanodoroshi.com</strong>)로 메일을 보내주세요.</li>
+            <li>제목: <strong>[계정 삭제 요청] 사용자 이름</strong></li>
+            <li>내용: 본인 확인을 위해 계정에 연결된 이메일 주소를 포함해 주세요.</li>
+        </ol>
+
+        <p>요청 접수 후 48시간 이내에 모든 데이터가 안전하게 파기됩니다.</p>
+    </div>
+</body>
+
+</html>
