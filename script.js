@@ -1509,6 +1509,32 @@ function setupEventListeners() {
             }
         };
     }
+
+    // [NEW] Modal & Navigation Listeners
+    if (newPostBtn) newPostBtn.onclick = () => openModal();
+    if (closeBtn) closeBtn.onclick = () => closeModal();
+    if (backBtn) backBtn.onclick = () => {
+        detailView.style.display = 'none';
+        listView.style.display = 'block';
+        window.scrollTo({ top: 400, behavior: 'smooth' });
+    };
+
+    // Category Management
+    if (manageCatsBtn) manageCatsBtn.onclick = () => {
+        if (catMgrSection) {
+            catMgrSection.style.display = catMgrSection.style.display === 'none' ? 'block' : 'none';
+            renderCatManager();
+        }
+    };
+    if (addCatBtn) addCatBtn.onclick = () => {
+        const name = newCatInput ? newCatInput.value.trim() : '';
+        if (name) {
+            const newId = 'cat_' + Date.now();
+            categories.push({ id: newId, name: name });
+            if (newCatInput) newCatInput.value = '';
+            renderAll();
+        }
+    };
 }
 
 // Finalized setupEventListeners.

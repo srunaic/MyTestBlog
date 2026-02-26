@@ -394,7 +394,7 @@
                     <div class="list-header">
                         <h2>FEEDS</h2>
                         <div id="user-actions" style="display:none;">
-                            <button id="new-post-btn" class="write-btn">글쓰기</button>
+                            <button id="new-post-btn" class="write-btn" onclick="openModal()">글쓰기</button>
                         </div>
                     </div>
 
@@ -500,7 +500,7 @@
                 </div>
                 <div class="modal-btns">
                     <button type="submit" class="submit-btn">PUBLISH</button>
-                    <button type="button" id="close-modal" class="cancel-btn">CANCEL</button>
+                    <button type="button" id="close-modal" class="cancel-btn" onclick="closeModal()">CANCEL</button>
                 </div>
             </form>
         </div>
