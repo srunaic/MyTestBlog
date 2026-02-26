@@ -2237,8 +2237,94 @@ if (typeof window !== 'undefined') {
         deleteComment,
         updateUserRole: window.updateUserRole || async function (uid, role) { if (supabase) { const { error } = await supabase.from('users').update({ role }).eq('username', uid); if (error) alert(error.message); else alert('권한이 변경되었습니다.'); await loadData(); renderUserManagement(); } },
         deleteUser: window.deleteUser || async function (uid) { if (confirm('사용자를 삭제하시겠습니까?')) { if (supabase) { const { error } = await supabase.from('users').delete().eq('username', uid); if (error) alert(error.message); else { alert('삭제되었습니다.'); await loadData(); renderUserManagement(); } } } },
-        renderUserManagement
+        renderUserManagement,
+        openMaintenanceModal: () => {
+            const modal = document.getElementById('maintenance-modal');
+            if (modal) {
+                // Pre-fill with current state if possible
+                modal.style.display = 'flex';
+            }
+        },
+        closeMaintenanceModal: () => {
+            const modal = document.getElementById('maintenance-modal');
+            if (modal) modal.style.display = 'none';
+        },
+        toggleMaintenance: async (status) => {
+            const msg = document.getElementById('mt-message')?.value || '서버 점검 중입니다.';
+            const sch = document.getElementById('mt-schedule')?.value || '';
+
+            if (supabase) {
+                const { error } = await supabase.from('site_management').update({
+                    is_maintenance: status,
+                    maintenance_message: msg,
+                    maintenance_schedule: sch,
+                    updated_at: new Date().toISOString()
+                }).eq('id', 1);
+
+                if (error) alert('Error: ' + error.message);
+                else {
+                    alert(status ? '서버 점검이 시작되었습니다.' : '서버 점검이 종료되었습니다.');
+                    location.reload();
+                }
+            } else {
+                alert('Supabase not initialized');
+            }
+        }
     });
 }
+
+// Maintenance Sync Logic
+async function syncMaintenanceStatus() {
+    if (!supabase) return;
+
+    // Initial Load
+    const { data, error } = await supabase.from('site_management').select('*').eq('id', 1).single();
+    if (!error && data) {
+        applyMaintenanceUI(data);
+    }
+
+    // Realtime Subscription
+    supabase.channel('site_mgmt_changes')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_management' }, payload => {
+            applyMaintenanceUI(payload.new);
+        })
+        .subscribe();
+}
+
+function applyMaintenanceUI(data) {
+    const overlay = document.getElementById('maintenance-overlay');
+    const msgEl = document.getElementById('mt-display-message');
+    const schEl = document.getElementById('mt-display-schedule');
+    const ctrlEl = document.getElementById('admin-mt-control');
+
+    if (data.is_maintenance) {
+        // Check if current user is admin to allow bypass
+        const isAdmin = currentUser && currentUser.role === 'admin';
+
+        if (msgEl) msgEl.innerText = data.maintenance_message;
+        if (schEl) schEl.innerText = data.maintenance_schedule;
+        if (overlay) overlay.style.display = 'flex';
+
+        // Show restore button for admins on the overlay
+        if (ctrlEl) ctrlEl.style.display = isAdmin ? 'block' : 'none';
+
+        // Disable scrolls and interactions if NOT admin
+        if (!isAdmin) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+    } else {
+        if (overlay) overlay.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Add to init
+const originalInit = init;
+init = async function () {
+    await originalInit();
+    syncMaintenanceStatus();
+};
 
 init();
