@@ -1535,6 +1535,64 @@ function setupEventListeners() {
             renderAll();
         }
     };
+
+    // Account Form Submit
+    if (accountForm) {
+        accountForm.onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const nick = document.getElementById('acc-nickname').value.trim();
+            const pass = document.getElementById('acc-password').value.trim();
+            const avatarUrlInput = document.getElementById('acc-avatar-url');
+            let avatarUrl = avatarUrlInput ? avatarUrlInput.value : '';
+
+            // Upload Avatar File if exists
+            const fileInput = document.getElementById('acc-avatar-file-input');
+            if (fileInput && fileInput.files[0]) {
+                try {
+                    const updateBtn = e.target.querySelector('button[type="submit"]');
+                    const originalText = updateBtn.textContent;
+                    updateBtn.textContent = 'UPLOADING...';
+                    updateBtn.disabled = true;
+
+                    avatarUrl = await uploadToSupabase(fileInput.files[0], 'avatars');
+
+                    updateBtn.textContent = originalText;
+                    updateBtn.disabled = false;
+                } catch (err) {
+                    alert('프로필 사진 업로드 실패: ' + err.message);
+                    return;
+                }
+            }
+
+            const updateData = {
+                nickname: nick,
+                password: pass,
+                avatar_url: avatarUrl
+            };
+
+            if (supabase) {
+                const { error } = await supabase.from('users').update(updateData).eq('username', currentUser.username);
+                if (error) {
+                    alert('정보 수정 실패: ' + error.message);
+                    return;
+                }
+            } else {
+                // Local fallback
+                const idx = users.findIndex(u => u.username === currentUser.username);
+                if (idx !== -1) users[idx] = { ...users[idx], ...updateData };
+            }
+
+            // Update Current State
+            currentUser = { ...currentUser, ...updateData };
+            SessionManager.saveAuth(currentUser);
+            alert('회원 정보가 수정되었습니다.');
+            closeAccountModal();
+            updateUserNav();
+            renderAll();
+        };
+    }
 }
 
 // Finalized setupEventListeners.
@@ -1686,7 +1744,7 @@ window.openAccountModal = () => {
 
     // [NEW] Set avatar preview
     const avatarPreview = document.querySelector('#acc-avatar-preview img');
-    if (avatarPreview) avatarPreview.src = currentUser.avatar_url || 'https://via.placeholder.com/150';
+    if (avatarPreview) avatarPreview.src = currentUser.avatar_url || 'https://placehold.co/150/ff69b4/ffffff?text=ROSAE';
 
     // [NEW] Reset activity section (Slide hide)
     const activitySection = document.getElementById('account-activity-section');
