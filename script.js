@@ -519,10 +519,6 @@ async function init() {
     setInterval(checkServerHealth, 30000); // 30s
     setInterval(checkAppUpdate, 30000); // [MOD] Increased frequency for better detection (30s)
 
-    if (submitCommentBtn) {
-        submitCommentBtn.onclick = submitComment;
-    }
-
     if (supabase) {
         try {
             console.log('Fetching data in parallel...');
@@ -1515,70 +1511,7 @@ function setupEventListeners() {
     }
 }
 
-// Account Form Submit
-if (accountForm) {
-    accountForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const newN = document.getElementById('acc-nickname').value.trim();
-        const newU = document.getElementById('acc-username').value.trim();
-        const newP = document.getElementById('acc-password').value.trim();
-        let newA = document.getElementById('acc-avatar-url').value.trim();
-        if (newP.length < 8) return alert('비밀번호는 8자 이상.');
-
-        // [NEW] Upload avatar if selected
-        const avatarFileInput = document.getElementById('acc-avatar-file-input');
-        if (avatarFileInput && avatarFileInput.files[0]) {
-            try {
-                const updateBtn = e.target.querySelector('button[type="submit"]');
-                const originalText = updateBtn.textContent;
-                updateBtn.textContent = 'UPLOADING...';
-                updateBtn.disabled = true;
-
-                newA = await uploadToSupabase(avatarFileInput.files[0], 'media');
-
-                updateBtn.textContent = originalText;
-                updateBtn.disabled = false;
-            } catch (err) {
-                alert('프로필 사진 업로드 실패: ' + err.message);
-                return;
-            }
-        }
-
-        if (supabase) {
-            const { error } = await supabase.from('users').update({
-                nickname: newN,
-                username: newU,
-                password: newP,
-                avatar_url: newA
-            }).eq('id', currentUser.id);
-            if (error) { alert('수정 실패: ' + error.message); }
-            else { alert('정보 수정 완료. 다시 로그인해주세요.'); logout(); closeAccountModal(); }
-        } else {
-            currentUser.nickname = newN; currentUser.username = newU; currentUser.password = newP;
-            alert('수정 완료 (로컬). 다시 로그인.');
-            logout(); closeAccountModal();
-        }
-    };
-}
-
-// Other Listeners
-if (backBtn) backBtn.onclick = () => { detailView.style.display = 'none'; listView.style.display = 'block'; };
-if (userMgrBtn) userMgrBtn.onclick = () => { currentCategory = 'users-mgr'; listView.style.display = 'block'; detailView.style.display = 'none'; selectedPostIds.clear(); renderUserManagement(); };
-if (manageCatsBtn) manageCatsBtn.onclick = () => { catMgrSection.style.display = catMgrSection.style.display === 'none' ? 'block' : 'none'; };
-if (addCatBtn) addCatBtn.onclick = () => {
-    const name = newCatInput.value.trim();
-    if (name) { categories.push({ id: 'cat_' + Date.now(), name }); newCatInput.value = ''; renderAll(); }
-};
-if (newPostBtn) newPostBtn.onclick = () => {
-    if (!currentUser) { alert('로그인 후 이용 가능합니다.'); openAuthModal('login'); } else { openModal(); }
-};
-if (closeBtn) closeBtn.onclick = () => closeModal();
-
-// Layout Switcher Listeners (Retry)
-const pcBtn = document.getElementById('force-pc-btn');
-const mobBtn = document.getElementById('force-mobile-btn');
-if (pcBtn) pcBtn.onclick = () => toggleViewMode('pc');
-if (mobBtn) mobBtn.onclick = () => toggleViewMode('mobile');
+// Finalized setupEventListeners.
 
 function openModal(post = null) {
     modal.classList.add('active');
