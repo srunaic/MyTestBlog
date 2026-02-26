@@ -1344,7 +1344,7 @@ function setupEventListeners() {
                     postBtn.textContent = 'UPLOADING...';
                     postBtn.disabled = true;
 
-                    img = await uploadToSupabase(fileInput.files[0], 'media');
+                    img = await uploadToSupabase(fileInput.files[0], 'uploads');
 
                     postBtn.textContent = originalText;
                     postBtn.disabled = false;
@@ -1556,7 +1556,7 @@ function setupEventListeners() {
                     updateBtn.textContent = 'UPLOADING...';
                     updateBtn.disabled = true;
 
-                    avatarUrl = await uploadToSupabase(fileInput.files[0], 'media');
+                    avatarUrl = await uploadToSupabase(fileInput.files[0], 'uploads');
 
                     updateBtn.textContent = originalText;
                     updateBtn.disabled = false;
