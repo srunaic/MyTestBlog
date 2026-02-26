@@ -1556,7 +1556,7 @@ function setupEventListeners() {
                     updateBtn.textContent = 'UPLOADING...';
                     updateBtn.disabled = true;
 
-                    avatarUrl = await uploadToSupabase(fileInput.files[0], 'avatars');
+                    avatarUrl = await uploadToSupabase(fileInput.files[0], 'media');
 
                     updateBtn.textContent = originalText;
                     updateBtn.disabled = false;
