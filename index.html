@@ -588,20 +588,7 @@
                     <label>PASSWORD (8+ CHARS)</label>
                     <input type="password" id="acc-password" required minlength="8">
                 </div>
-                <div class="form-group">
-                    <label>PROFILE IMAGE</label>
-                    <div
-                        style="display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                        <div id="acc-avatar-preview"
-                            style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid var(--futuristic-accent);">
-                            <img src="" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <button type="button" id="upload-acc-avatar-btn" class="sm-btn"
-                            style="flex: 1; font-size: 0.75rem;">사진 변경</button>
-                    </div>
-                    <input type="file" id="acc-avatar-file-input" accept="image/*" style="display:none;">
-                    <input type="hidden" id="acc-avatar-url"> <!-- Stores uploaded URL -->
-                </div>
+
                 <div class="modal-btns">
                     <button type="submit" class="submit-btn" style="flex: 2;">UPDATE</button>
                     <button type="button" class="cancel-btn" onclick="closeAccountModal()"

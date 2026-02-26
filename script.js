@@ -1475,21 +1475,7 @@ function setupEventListeners() {
         };
     }
 
-    // [NEW] Avatar/Post Image Preview Listeners
-    const avatarBtn = document.getElementById('upload-acc-avatar-btn');
-    const avatarInput = document.getElementById('acc-avatar-file-input');
-    const avatarPreviewImg = document.querySelector('#acc-avatar-preview img');
-    if (avatarBtn && avatarInput) {
-        avatarBtn.onclick = () => avatarInput.click();
-        avatarInput.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file && avatarPreviewImg) {
-                const reader = new FileReader();
-                reader.onload = (re) => avatarPreviewImg.src = re.target.result;
-                reader.readAsDataURL(file);
-            }
-        };
-    }
+
 
     const postImgBtn = document.getElementById('upload-post-img-btn');
     const postImgInput = document.getElementById('post-file-input');
@@ -1544,32 +1530,9 @@ function setupEventListeners() {
 
             const nick = document.getElementById('acc-nickname').value.trim();
             const pass = document.getElementById('acc-password').value.trim();
-            const avatarUrlInput = document.getElementById('acc-avatar-url');
-            let avatarUrl = avatarUrlInput ? avatarUrlInput.value : '';
-
-            // Upload Avatar File if exists
-            const fileInput = document.getElementById('acc-avatar-file-input');
-            if (fileInput && fileInput.files[0]) {
-                try {
-                    const updateBtn = e.target.querySelector('button[type="submit"]');
-                    const originalText = updateBtn.textContent;
-                    updateBtn.textContent = 'UPLOADING...';
-                    updateBtn.disabled = true;
-
-                    avatarUrl = await uploadToSupabase(fileInput.files[0], 'uploads');
-
-                    updateBtn.textContent = originalText;
-                    updateBtn.disabled = false;
-                } catch (err) {
-                    alert('프로필 사진 업로드 실패: ' + err.message);
-                    return;
-                }
-            }
-
             const updateData = {
                 nickname: nick,
-                password: pass,
-                avatar_url: avatarUrl
+                password: pass
             };
 
             if (supabase) {
@@ -1738,13 +1701,6 @@ window.openAccountModal = () => {
     document.getElementById('acc-username').value = currentUser.username;
     document.getElementById('acc-password').value = currentUser.password;
 
-    // [MOD] Hidden avatar URL input update
-    const avatarInput = document.getElementById('acc-avatar-url');
-    if (avatarInput) avatarInput.value = currentUser.avatar_url || '';
-
-    // [NEW] Set avatar preview
-    const avatarPreview = document.querySelector('#acc-avatar-preview img');
-    if (avatarPreview) avatarPreview.src = currentUser.avatar_url || 'https://placehold.co/150/ff69b4/ffffff?text=ROSAE';
 
     // [NEW] Reset activity section (Slide hide)
     const activitySection = document.getElementById('account-activity-section');
