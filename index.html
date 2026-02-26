@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=1400">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -663,24 +663,6 @@
             </svg>
         </button>
 
-        <!-- Layout Switcher & More Settings -->
-        <div id="layout-switcher" class="layout-switcher">
-            <button id="force-pc-btn" class="switch-btn">🖥️ PC 버전</button>
-            <button id="force-mobile-btn" class="switch-btn active">📱 모바일 버전</button>
-            <button id="mobile-more-btn" class="switch-btn" onclick="toggleMobileMore()">⚙️ 더보기</button>
-        </div>
-
-        <!-- Mobile More Menu Overlay -->
-        <div id="mobile-more-menu" class="mobile-more-overlay" style="display:none;" onclick="toggleMobileMore()">
-            <div class="mobile-more-content" onclick="event.stopPropagation()">
-                <h3>SETTINGS</h3>
-                <div class="mobile-more-item">
-                    <span>알림 소리</span>
-                    <button onclick="toggleNotifSound()" class="notif-toggle-btn">🔔 ON</button>
-                </div>
-                <button class="mobile-more-close" onclick="toggleMobileMore()">CLOSE</button>
-            </div>
-        </div>
     </div>
 
     <!-- Real-time Notification UI -->
