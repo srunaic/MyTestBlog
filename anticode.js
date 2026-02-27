@@ -1,5 +1,5 @@
-// [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:35
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import LanguageManager from './i18n.js';
 
 // ==========================================
 // 1. CONFIGURATION & GLOBALS
@@ -233,6 +233,8 @@ const NotificationManager = {
         this._subTimeout = setTimeout(() => this.setupSubscriptions(), 2000);
 
         this.initialized = true;
+        // [NEW] Initialize Localization
+        LanguageManager.init();
     },
 
     cleanup() {
@@ -2161,6 +2163,17 @@ class AntiCodeApp {
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
+                    const user = this.currentUser;
+                    if (user && user.user_metadata) {
+                        this.currentUser.nickname = user.user_metadata.nickname || this.currentUser.nickname;
+                        this.currentUser.avatar_url = user.user_metadata.avatar_url || this.currentUser.avatar_url;
+                        this.currentUser.plan = user.user_metadata.plan || 'free';
+
+                        // [NEW] Restore Language Preference from DB
+                        if (user.user_metadata.language) {
+                            LanguageManager.setLanguage(user.user_metadata.language);
+                        }
+                    }
                     const trackData = {
                         username: this.currentUser.username,
                         nickname: this.currentUser.nickname,

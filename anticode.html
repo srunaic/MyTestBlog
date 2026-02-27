@@ -151,8 +151,8 @@
                 <!-- Group: Friends -->
                 <div class="channel-group">
                     <div class="group-header">
-                        <span class="group-label">친구 목록</span>
-                        <button id="open-add-friend" class="add-channel-btn">친구추가</button>
+                        <span class="group-label" data-i18n="chat-friends">친구 목록</span>
+                        <button id="open-add-friend" class="add-channel-btn" data-i18n="chat-add-friend">친구추가</button>
                     </div>
                     <ul id="friend-list" class="sidebar-list">
                         <!-- Friends rendered here -->
@@ -162,7 +162,7 @@
                 <!-- Group: Channels by Category -->
                 <div class="channel-group">
                     <div class="group-header">
-                        <span class="group-label">채널 목록</span>
+                        <span class="group-label" data-i18n="chat-channels">채널 목록</span>
 
                     </div>
                     <div class="channel-page-bar">
@@ -170,7 +170,8 @@
                             <option value="all">전체 채널</option>
                         </select>
                         <button id="open-channel-pages" class="notif-toggle-btn"
-                            style="padding:6px 10px; font-size:0.72rem; white-space:nowrap;">내 개인 채널 만들기</button>
+                            style="padding:6px 10px; font-size:0.72rem; white-space:nowrap;"
+                            data-i18n="chat-create-channel">내 개인 채널 만들기</button>
                     </div>
                     <div id="categorized-channels">
                         <!-- Categories and channels rendered dynamically -->
@@ -218,8 +219,8 @@
 
             <div id="message-container" class="message-container">
                 <div class="chat-welcome">
-                    <h1>ROSAE HUB에 오신 것을 환영합니다!</h1>
-                    <p>커뮤니티의 시작점입니다. 메시지를 남겨보세요.</p>
+                    <h1 data-i18n="chat-welcome-title">ROSAE HUB에 오신 것을 환영합니다!</h1>
+                    <p data-i18n="chat-welcome-desc">커뮤니티의 시작점입니다. 메시지를 남겨보세요.</p>
                 </div>
             </div>
 
@@ -230,7 +231,8 @@
                     <input type="file" id="chat-file-input"
                         accept="image/*,.txt,text/plain,.zip,application/zip,application/x-zip-compressed"
                         style="display:none;">
-                    <textarea id="chat-input" placeholder="메시지 보내기..." rows="1"></textarea>
+                    <textarea id="chat-input" data-i18n="chat-input-placeholder" placeholder="메시지 보내기..."
+                        rows="1"></textarea>
 
                     <!-- Emoji Picker Popover -->
                     <div id="emoji-picker" class="emoji-picker-popover" style="display:none;">
@@ -269,7 +271,7 @@
                     </div>
 
                     <div class="input-actions">
-                        <button id="send-msg-btn">전송</button>
+                        <button id="send-msg-btn" data-i18n="chat-send">전송</button>
                     </div>
                 </div>
             </div>

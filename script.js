@@ -3,6 +3,7 @@
 // 1. IMPORTS & GLOBALS (ES Module)
 // ==========================================
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import LanguageManager from './i18n.js';
 
 // Global State
 var posts = [];
@@ -494,6 +495,13 @@ async function init() {
     // Initialize Notifications (Non-blocking)
     setTimeout(() => NotificationManager.init(), 500);
 
+    // [NEW] Initialize Localization
+    LanguageManager.init();
+
+    // Sync settings-lang-select with current language
+    const langSelect = document.getElementById('settings-lang-select');
+    if (langSelect) langSelect.value = LanguageManager.currentLang;
+
     // [NEW] Health Checks & Update Polling
     checkServerHealth();
     checkAppUpdate();
@@ -673,6 +681,14 @@ async function checkSession() {
 
                 SessionManager.saveAuth(syncUser);
                 currentUser = syncUser;
+
+                // [NEW] Restore Language Preference from DB if available
+                if (user.user_metadata.language) {
+                    LanguageManager.setLanguage(user.user_metadata.language);
+                    const langSelect = document.getElementById('settings-lang-select');
+                    if (langSelect) langSelect.value = LanguageManager.currentLang;
+                }
+
                 console.log('OAuth Session synced successfully.');
             }
         } catch (e) {
@@ -820,11 +836,15 @@ function openAuthModal(mode) {
     const consentGroup = document.getElementById('signup-consent-group');
     const switchTxt = document.getElementById('auth-switch-text');
     const switchLnk = document.getElementById('auth-switch-link');
+    const countryGroup = document.getElementById('signup-country-group'); // Assuming these exist now
+    const langGroup = document.getElementById('signup-lang-group'); // Assuming these exist now
 
     if (title) title.textContent = mode === 'login' ? '로그인' : '회원가입';
     if (btn) btn.textContent = mode === 'login' ? '접속하기' : '가입하기';
     if (group) group.style.display = mode === 'signup' ? 'block' : 'none';
     if (consentGroup) consentGroup.style.display = mode === 'signup' ? 'block' : 'none';
+    if (countryGroup) countryGroup.style.display = mode === 'signup' ? 'block' : 'none';
+    if (langGroup) langGroup.style.display = mode === 'signup' ? 'block' : 'none';
     if (switchTxt) switchTxt.textContent = mode === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?';
     if (switchLnk) switchLnk.textContent = mode === 'login' ? '회원가입' : '로그인';
 
@@ -835,8 +855,12 @@ function openAuthModal(mode) {
             if (signupDraft) {
                 const uInput = document.getElementById('auth-username');
                 const nInput = document.getElementById('auth-nickname');
+                const cInput = document.getElementById('auth-country');
+                const lInput = document.getElementById('auth-lang');
                 if (uInput) uInput.value = signupDraft.username || '';
                 if (nInput) nInput.value = signupDraft.nickname || '';
+                if (cInput) cInput.value = signupDraft.country || '';
+                if (lInput) lInput.value = signupDraft.language || LanguageManager.currentLang;
             }
         }
     }
@@ -1417,13 +1441,30 @@ function setupEventListeners() {
                 if (users.find(user => user.username === u)) return alert('이미 존재하는 아이디입니다.');
 
                 if (supabase) {
-                    const { data: existingUsers, error: checkError } = await supabase.from('users').select('username').eq('username', u);
-                    if (!checkError && existingUsers && existingUsers.length > 0) return alert('이미 존재하는 아이디입니다. (서버 확인)');
+                    const country = document.getElementById('auth-country') ? document.getElementById('auth-country').value : '';
+                    const language = document.getElementById('auth-lang') ? document.getElementById('auth-lang').value : LanguageManager.currentLang;
 
-                    const locConsent = document.getElementById('auth-consent-location') ? document.getElementById('auth-consent-location').checked : false;
-                    const newUser = { username: u, password: p, nickname: n || u, role: 'user', location_allowed: locConsent };
-                    const { error } = await supabase.from('users').insert([newUser]);
-                    if (error) { alert('가입 실패: ' + error.message); return; }
+                    const { data, error } = await supabase.auth.signUp({
+                        email: u,
+                        password: p,
+                        options: {
+                            data: {
+                                nickname: n,
+                                country: country,
+                                language: language,
+                                consent_location: document.getElementById('auth-consent-location') ? document.getElementById('auth-consent-location').checked : false
+                            }
+                        }
+                    });
+
+                    if (error) {
+                        alert('가입 실패: ' + error.message);
+                        return;
+                    }
+
+                    // Set language immediately for the current session
+                    LanguageManager.setLanguage(language);
+
                 } else {
                     const locConsent = document.getElementById('auth-consent-location') ? document.getElementById('auth-consent-location').checked : false;
                     const newUser = { username: u, password: p, nickname: n || u, role: 'user', location_allowed: locConsent };
@@ -1470,7 +1511,9 @@ function setupEventListeners() {
             if (authMode === 'signup') {
                 SessionManager.saveDraft(SessionManager.KEYS.DRAFT_SIGNUP, {
                     username: document.getElementById('auth-username').value,
-                    nickname: document.getElementById('auth-nickname').value
+                    nickname: document.getElementById('auth-nickname').value,
+                    country: document.getElementById('auth-country') ? document.getElementById('auth-country').value : '',
+                    language: document.getElementById('auth-lang') ? document.getElementById('auth-lang').value : LanguageManager.currentLang
                 });
             }
         };
@@ -1531,12 +1574,25 @@ function setupEventListeners() {
 
             const nick = document.getElementById('acc-nickname').value.trim();
             const pass = document.getElementById('acc-password').value.trim();
+            const lang = document.getElementById('settings-lang-select') ? document.getElementById('settings-lang-select').value : LanguageManager.currentLang;
+
             const updateData = {
                 nickname: nick,
                 password: pass
             };
 
             if (supabase) {
+                // Update user metadata for language
+                const { data: userUpdateData, error: userUpdateError } = await supabase.auth.updateUser({
+                    data: { language: lang }
+                });
+                if (userUpdateError) {
+                    console.error('Failed to update user metadata:', userUpdateError);
+                    alert('언어 설정 업데이트 실패: ' + userUpdateError.message);
+                } else {
+                    LanguageManager.setLanguage(lang); // Update client-side language immediately
+                }
+
                 const { error } = await supabase.from('users').update(updateData).eq('username', currentUser.username);
                 if (error) {
                     alert('정보 수정 실패: ' + error.message);

@@ -441,9 +441,63 @@
         accent-color: #ff8fa3;
     }
 
+    .mobile-settings-body {
+        max-height: 70vh;
+        overflow-y: auto;
+        padding-right: 10px;
+        margin-right: -10px;
+        scrollbar-width: thin;
+        scrollbar-color: #ff8fa3 #f9f9f9;
+    }
+
+    /* Custom Scrollbar for Chrome/Safari/Edge */
+    .mobile-settings-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .mobile-settings-body::-webkit-scrollbar-track {
+        background: #f9f9f9;
+        border-radius: 10px;
+    }
+
+    .mobile-settings-body::-webkit-scrollbar-thumb {
+        background: #ff8fa3;
+        border-radius: 10px;
+    }
+
+    .setting-item-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f9f9f9;
+        padding: 16px;
+        border-radius: 16px;
+        margin-bottom: 16px;
+    }
+
+    .setting-label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-width: 65%;
+    }
+
+    .label-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .label-desc {
+        font-size: 0.8rem;
+        color: #999;
+        line-height: 1.3;
+    }
+
     .desc {
         font-size: 0.8rem;
         color: #999;
-        margin-top: 8px;
+        margin-bottom: 16px;
+        line-height: 1.4;
     }
 }

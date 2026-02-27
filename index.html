@@ -322,7 +322,7 @@
         <!-- Mobile Hub Header (Hidden on PC) -->
         <header class="mobile-hub-header">
             <span class="hub-label">Hub</span>
-            <h2 class="categories-title">Categories</h2>
+            <h2 class="categories-title" data-i18n="sidebar-cats">Categories</h2>
             <div class="header-actions">
                 <div class="mobile-notif-wrapper" onclick="handleMobileNotifClick()">
                     <span class="hub-icon">🔔</span>
@@ -333,8 +333,8 @@
 
         <!-- Mobile Search Bar (Expandable) -->
         <div id="mobile-search-bar" class="mobile-search-container" style="display:none;">
-            <input type="text" id="mobile-search-input" placeholder="글 제목 또는 내용을 검색하세요..."
-                oninput="handleMobileSearch(this.value)">
+            <input type="text" id="mobile-search-input" data-i18n="mobile-search-placeholder"
+                placeholder="글 제목 또는 내용을 검색하세요..." oninput="handleMobileSearch(this.value)">
             <button onclick="toggleMobileSearch()" class="search-close-btn">✕</button>
         </div>
 
@@ -342,7 +342,7 @@
         <header class="blog-header modern-header">
             <div class="header-content">
                 <h1 id="main-title" class="header-title">ROSAE HUB</h1>
-                <p class="header-subtitle">기록이 흐르고, 대화가 머무는 곳</p>
+                <p class="header-subtitle" data-i18n="header-subtitle">기록이 흐르고, 대화가 머무는 곳</p>
                 <div id="subscriber-stats" class="header-stats">
                     <span class="stats-label">SUBSCRIBERS:</span>
                     <span id="subscriber-count" class="stats-value">0</span>
@@ -360,14 +360,15 @@
         <!-- Mobile Welcome Banner (Hidden on PC) -->
         <div class="mobile-welcome-banner">
             <div class="welcome-title">Welcome Back, <span id="mobile-welcome-name">User</span>! 👋</div>
-            <div class="welcome-subtitle">Explore your resources.</div>
+            <div class="welcome-subtitle" data-i18n="welcome-subtitle">Explore your resources.</div>
         </div>
 
         <div class="main-layout">
             <!-- Sidebar: Categories & Admin -->
             <aside class="sidebar">
                 <div class="sidebar-section">
-                    <h3 class="mobile-category-section-title" style="display:none;">MAIN CATEGORIES</h3>
+                    <h3 class="mobile-category-section-title" style="display:none;" data-i18n="sidebar-cats">MAIN
+                        CATEGORIES</h3>
                     <ul id="category-list">
                         <!-- Categories rendered here -->
                     </ul>
@@ -447,7 +448,7 @@
 
                     <!-- Comment Section -->
                     <div id="comment-section" class="comment-section">
-                        <h3>COMMENTS</h3>
+                        <h3 data-i18n="comments">COMMENTS</h3>
                         <div id="comment-list" class="comment-list">
                             <!-- Comments rendered here -->
                         </div>
@@ -457,11 +458,13 @@
                                 <!-- Emoticons added here -->
                             </div>
                             <div class="comment-input-grid">
-                                <textarea id="comment-input" placeholder="댓글을 입력하세요..." rows="3"></textarea>
-                                <button id="submit-comment-btn" class="sm-btn">등록</button>
+                                <textarea id="comment-input" data-i18n="comment-placeholder" placeholder="댓글을 입력하세요..."
+                                    rows="3"></textarea>
+                                <button id="submit-comment-btn" class="sm-btn" data-i18n="comment-submit">등록</button>
                             </div>
                         </div>
-                        <div id="comment-login-msg" style="text-align:center; padding:20px; color:#888;">
+                        <div id="comment-login-msg" style="text-align:center; padding:20px; color:#888;"
+                            data-i18n="comment-login-required">
                             댓글을 달려면 <a href="javascript:void(0)" onclick="openAuthModal('login')">로그인</a>이 필요합니다.
                         </div>
                     </div>
@@ -553,9 +556,34 @@
                     <label>PASSWORD</label>
                     <input type="password" id="auth-password" required placeholder="Secret Key">
                 </div>
-                <div id="signup-nickname-group" class="form-group" style="display:none;">
-                    <label>NICKNAME</label>
-                    <input type="text" id="auth-nickname" placeholder="Public Name">
+                <div id="signup-profile-group" style="display:none;">
+                    <div class="form-group">
+                        <label data-i18n="auth-nickname">NICKNAME</label>
+                        <input type="text" id="auth-nickname" data-i18n="auth-nickname" placeholder="Public Name">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="auth-select-country">Select Country</label>
+                        <select id="auth-country" class="auth-select">
+                            <option value="KR">South Korea (대한민국)</option>
+                            <option value="US">United States</option>
+                            <option value="JP">Japan (日本)</option>
+                            <option value="CN">China (中国)</option>
+                            <option value="ID">Indonesia</option>
+                            <option value="VN">Vietnam</option>
+                            <option value="PH">Philippines</option>
+                            <option value="TH">Thailand</option>
+                            <option value="BR">Brazil</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="auth-select-lang">Select Language</label>
+                        <select id="auth-lang" class="auth-select">
+                            <option value="ko">한국어 (Korean)</option>
+                            <option value="en">English</option>
+                            <option value="ja">日本語 (Japanese)</option>
+                            <option value="zh">中文 (Chinese)</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="signup-consent-group" class="form-group" style="display:none; margin-top: 15px;">
                     <label
@@ -849,6 +877,27 @@
                         <button id="mobile-notif-toggle" onclick="toggleNotifSound()"
                             class="toggle-switch notif-toggle-btn">ON</button>
                     </div>
+                </div>
+                <div class="setting-item-group">
+                    <div class="setting-label">
+                        <span class="label-title" data-i18n="settings-profile">👤 내 프로필</span>
+                        <span class="label-desc" data-i18n="settings-profile-desc">닉네임과 프로필 이미지를 변경합니다.</span>
+                    </div>
+                    <button type="button" id="open-profile-edit-btn" class="notif-toggle-btn"
+                        data-i18n="settings-profile">프로필 설정</button>
+                </div>
+                <div class="setting-item-group">
+                    <div class="setting-label">
+                        <span class="label-title" data-i18n="settings-lang">🌐 언어 설정 (Language)</span>
+                        <span class="label-desc" data-i18n="settings-lang-desc">시스템 언어를 변경합니다.</span>
+                    </div>
+                    <select id="settings-lang-select" class="nav-select" style="width: auto; padding: 5px 10px;"
+                        onchange="LanguageManager.setLanguage(this.value)">
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                    </select>
                 </div>
                 <div class="settings-group">
                     <label>Font Settings</label>
