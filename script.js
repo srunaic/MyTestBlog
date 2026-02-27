@@ -241,6 +241,9 @@ const NotificationManager = {
     }
 };
 
+// Global Exposure for Notifications
+window.NotificationManager = NotificationManager;
+
 // Global Exposure for Notifications (Required for HTML onclick)
 window.clearNotifications = () => NotificationManager.clearNotifications();
 window.toggleNotifSound = () => NotificationManager.toggleSound();
@@ -2427,7 +2430,7 @@ function handleMobileNotifClick() {
         openAuthModal();
         return;
     }
-    if (window.NotificationManager.count === 0) {
+    if (NotificationManager.count === 0) {
         alert("현재 온 알람이 없습니다.");
     } else {
         clearNotifications();
@@ -2466,7 +2469,7 @@ function openMobileSettings() {
 
     // Sync current toggle state
     const btn = document.getElementById('mobile-notif-toggle');
-    if (btn) btn.textContent = (window.NotificationManager.isSoundOn) ? 'ON' : 'OFF';
+    if (btn) btn.textContent = (NotificationManager.isSoundOn) ? 'ON' : 'OFF';
 }
 
 function closeMobileSettings() {

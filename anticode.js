@@ -730,33 +730,39 @@ class AntiCodeApp {
 
     async loadChannelPages() {
         if (!this.supabase || !(this.currentUser && this.currentUser.username)) return;
-        const { data, error } = await this.supabase
-            .from('anticode_channel_pages')
-            .select('*')
-            .eq('username', this.currentUser.username)
-            .order('created_at', { ascending: true });
-        if (error) {
-            console.warn('loadChannelPages failed:', error);
+        try {
+            const { data, error } = await this.supabase
+                .from('anticode_channel_pages')
+                .select('*')
+                .eq('username', this.currentUser.username)
+                .order('created_at', { ascending: true });
+            if (error) {
+                console.warn('loadChannelPages failed:', error);
+                this.channelPages = [];
+                this.channelPageItems = new Map();
+                return;
+            }
+            this.channelPages = data || [];
+            const ids = this.channelPages.map(p => p.id);
+            this.channelPageItems = new Map();
+            if (ids.length === 0) return;
+            const { data: items, error: e2 } = await this.supabase
+                .from('anticode_channel_page_items')
+                .select('page_id, channel_id, position')
+                .in('page_id', ids)
+                .order('position', { ascending: true });
+            if (e2) {
+                console.warn('loadChannelPageItems failed:', e2);
+                return;
+            }
+            for (const it of (items || [])) {
+                if (!this.channelPageItems.has(it.page_id)) this.channelPageItems.set(it.page_id, []);
+                this.channelPageItems.get(it.page_id).push(it);
+            }
+        } catch (err) {
+            console.error('Critical failure in loadChannelPages (Likely missing SQL tables):', err);
             this.channelPages = [];
             this.channelPageItems = new Map();
-            return;
-        }
-        this.channelPages = data || [];
-        const ids = this.channelPages.map(p => p.id);
-        this.channelPageItems = new Map();
-        if (ids.length === 0) return;
-        const { data: items, error: e2 } = await this.supabase
-            .from('anticode_channel_page_items')
-            .select('page_id, channel_id, position')
-            .in('page_id', ids)
-            .order('position', { ascending: true });
-        if (e2) {
-            console.warn('loadChannelPageItems failed:', e2);
-            return;
-        }
-        for (const it of (items || [])) {
-            if (!this.channelPageItems.has(it.page_id)) this.channelPageItems.set(it.page_id, []);
-            this.channelPageItems.get(it.page_id).push(it);
         }
     }
 
