@@ -13,12 +13,9 @@ const translations = {
         "settings-title": "⚙️ 환경 설정", "settings-notif-sound": "🔔 알림 소리", "settings-notif-desc": "새 메시지 도착 시 소리로 알립니다.", "settings-layout": "레이아웃 조절", "settings-layout-desc": "화면 너비와 높이를 조절합니다.", "settings-font": "글자 크기", "settings-lang": "🌐 언어 설정 (Language)", "settings-lang-desc": "시스템 언어를 변경합니다.", "confirm": "확인", "cancel": "취소",
         "auth-login": "로그인", "auth-signup": "회원가입", "auth-id": "아이디", "auth-pw": "비밀번호", "auth-nickname": "닉네임", "auth-enter": "입장", "auth-no-acc": "계정이 없으신가요?", "auth-yes-acc": "이미 계정이 있으신가요?", "auth-select-country": "국가 선택", "auth-select-lang": "언어 선택", "auth-location-consent": "위치 정보 수집 및 이용에 동의합니다 (선택)",
         "chat-channels": "채널 목록", "chat-friends": "친구 목록", "chat-members": "멤버 목록", "chat-add-friend": "친구추가", "chat-create-channel": "내 채널 만들기", "chat-welcome-title": "ROSAE HUB에 오신 것을 환영합니다!", "chat-welcome-desc": "커뮤니티의 시작점입니다. 메시지를 남겨보세요.", "chat-input-placeholder": "메시지 보내기...", "chat-send": "전송", "chat-online": "온라인", "chat-back-to-blog": "↩️ 블로그로 돌아가기",
-        "cat-notice": "📢 공지사항", "cat-chat": "💬 채팅방", "cat-karaoke": "🎤 노래방", "cat-voice": "📞 보이스 톡", "cat-game": "🎮 게임 방",
-        "type-notice": " (공지)", "type-secret": " (비밀)", "type-open": " (오픈)", "type-qna": " (질문)",
-        "time-now": "방금 전", "time-min": "분 전", "time-hour": "시간 전", "time-day": "일 전", "time-old": "오래 전", "time-offline": "오프라인",
-        "btn-invite": "초대", "btn-delete": "삭제", "btn-edit": "수정", "btn-translate": "🌏 번역", "settings-auto-translate": "자동 번역", "settings-auto-translate-desc": "메시지를 자동으로 번역하여 표시합니다.",
-        "type-notice": " (공지)", "type-secret": " (비밀)", "type-open": " (오픈)", "type-qna": " (질문)", "type-general": "일반",
-        "chat-page-all": "전체 채널(편집 불가)", "chat-page-empty": "이 페이지에 채널이 없습니다.", "chat-discovery-none": "검색 결과 없음", "chat-owned-none": "내가 만든 채팅방이 없습니다.", "chat-personal-none": "내가 만든 채널 목록(카테고리)이 없습니다."
+        "cat-all": "전체보기 (ALL)", "cat-research": "연구소 소식", "cat-drawings": "갤러리", "cat-bug": "버그 신고", "status-posts": "개의 글", "status-no-posts": "아직 등록된 글이 없습니다.", "admin-user-mgr": "👥 사용자 관리", "admin-user-mgr-title": "전체 사용자 관리", "admin-user-mgr-desc": "가입된 전체 회원 목록입니다.", "btn-refresh": "목록 새로고침", "detail-archive": "아카이브", "detail-published": "발행", "detail-views": "조회", "cat-uncategorized": "미분류",
+        "admin-cat-mgr": "카테고리 관리", "admin-social-links": "소셜 링크 설정", "admin-social-name": "이름 (예: INSTA)", "admin-social-url": "주소 (https://...)", "admin-social-add": "링크 추가", "admin-ai-logs": "ORACLE INSIGHTS (AI 로그)", "admin-chatbot-logs": "챗봇 로그 분석", "admin-test-server": "관리자 테스트 서버", "admin-maintenance": "서버 점검 관리", "chat-input-placeholder-dynamic": "에 메시지 보내기",
+        "type-general": "일반", "chat-page-all": "전체 채널(편집 불가)", "chat-page-empty": "이 페이지에 채널이 없습니다.", "chat-discovery-none": "검색 결과 없음", "chat-owned-none": "내가 만든 채팅방이 없습니다.", "chat-personal-none": "내가 만든 채널 목록(카테고리)이 없습니다."
     },
     en: {
         "nav-records": "Records", "nav-chat": "💬 Chat", "nav-journal": "Journal", "nav-login": "Login", "nav-signup": "Sign Up", "nav-logout": "Logout", "nav-account": "Account",
@@ -28,12 +25,9 @@ const translations = {
         "settings-title": "⚙️ Settings", "settings-notif-sound": "🔔 Notif Sound", "settings-notif-desc": "Play sound on new messages.", "settings-layout": "Layout Controls", "settings-layout-desc": "Adjust screen width and height.", "settings-font": "Font Size", "settings-lang": "🌐 Language Settings", "settings-lang-desc": "Change the system language.", "confirm": "Confirm", "cancel": "Cancel",
         "auth-login": "Login", "auth-signup": "Sign Up", "auth-id": "Username", "auth-pw": "Password", "auth-nickname": "Nickname", "auth-enter": "ENTER", "auth-no-acc": "Don't have an account?", "auth-yes-acc": "Already have an account?", "auth-select-country": "Select Country", "auth-select-lang": "Select Language", "auth-location-consent": "Agree to location collection (Optional)",
         "chat-channels": "Channels", "chat-friends": "Friends", "chat-members": "Members", "chat-add-friend": "Add Friend", "chat-create-channel": "Create Channel", "chat-welcome-title": "Welcome to ROSAE HUB!", "chat-welcome-desc": "This is the start of the community. Leave a message.", "chat-input-placeholder": "Send a message...", "chat-send": "Send", "chat-online": "Online", "chat-back-to-blog": "↩️ Back to Blog",
-        "cat-notice": "📢 Notices", "cat-chat": "💬 Chat Rooms", "cat-karaoke": "🎤 Karaoke", "cat-voice": "📞 Voice Talk", "cat-game": "🎮 Gaming",
-        "type-notice": " (Notice)", "type-secret": " (Secret)", "type-open": " (Open)", "type-qna": " (Q&A)",
-        "time-now": "Just now", "time-min": "m ago", "time-hour": "h ago", "time-day": "d ago", "time-old": "Long ago", "time-offline": "Offline",
-        "btn-invite": "Invite", "btn-delete": "Delete", "btn-edit": "Edit", "btn-translate": "🌏 Translate", "settings-auto-translate": "Auto-Translate", "settings-auto-translate-desc": "Automatically translate incoming messages.",
-        "type-notice": " (Notice)", "type-secret": " (Secret)", "type-open": " (Open)", "type-qna": " (Q&A)", "type-general": "General",
-        "chat-page-all": "All Channels (View Only)", "chat-page-empty": "No channels on this page.", "chat-discovery-none": "No results found", "chat-owned-none": "No chat rooms created.", "chat-personal-none": "No personal categories found."
+        "cat-all": "All (ALL)", "cat-research": "Research", "cat-drawings": "Drawings", "cat-bug": "Bug Report", "status-posts": "posts", "status-no-posts": "No posts found.", "admin-user-mgr": "👥 User Mgmt", "admin-user-mgr-title": "Global User Management", "admin-user-mgr-desc": "List of all registered members.", "btn-refresh": "Refresh List", "detail-archive": "Archive", "detail-published": "Published", "detail-views": "Views", "cat-uncategorized": "Uncategorized",
+        "admin-cat-mgr": "Category Mgmt", "admin-social-links": "Social Links", "admin-social-name": "Name (e.g. INSTA)", "admin-social-url": "URL (https://...)", "admin-social-add": "Add Link", "admin-ai-logs": "ORACLE INSIGHTS (AI Logs)", "admin-chatbot-logs": "Chatbot Logs", "admin-test-server": "Admin Test Server", "admin-maintenance": "Server Maintenance", "chat-input-placeholder-dynamic": "Send a message to",
+        "type-general": "General", "chat-page-all": "All Channels (View Only)", "chat-page-empty": "No channels on this page.", "chat-discovery-none": "No results found", "chat-owned-none": "No chat rooms created.", "chat-personal-none": "No personal categories found."
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
@@ -43,12 +37,9 @@ const translations = {
         "settings-title": "⚙️ 環境設定", "settings-notif-sound": "🔔 通知音", "settings-notif-desc": "新しいメッセージの到着を音で知らせます。", "settings-layout": "レイアウト調整", "settings-layout-desc": "画面의 幅と高さを調整します。", "settings-font": "文字サイズ", "settings-lang": "🌐 言語設定", "settings-lang-desc": "システム言語を変更します。", "confirm": "確認", "cancel": "キャンセル",
         "auth-login": "ログイン", "auth-signup": "新規登録", "auth-id": "ID", "auth-pw": "パスワード", "auth-nickname": "ニックネーム", "auth-enter": "入場", "auth-no-acc": "アカウントをお持ちでないですか？", "auth-yes-acc": "すでにアカウントをお持ちですか？", "auth-select-country": "国を選択", "auth-select-lang": "言語を選択", "auth-location-consent": "位置情報の収集に同意する (任意)",
         "chat-channels": "チャンネル", "chat-friends": "友達", "chat-members": "メンバー", "chat-add-friend": "友達追加", "chat-create-channel": "チャンネル作成", "chat-welcome-title": "ROSAE HUBへようこそ！", "chat-welcome-desc": "コミュニティの始まりです。メッセージを残しましょう。", "chat-input-placeholder": "メッセージを送る...", "chat-send": "送信", "chat-online": "オンライン", "chat-back-to-blog": "↩️ ブログに戻る",
-        "cat-notice": "📢 お知らせ", "cat-chat": "💬 チャットルーム", "cat-karaoke": "🎤 カラオケ", "cat-voice": "📞 ボイストーク", "cat-game": "🎮 ゲームルーム",
-        "type-notice": " (お知らせ)", "type-secret": " (非公開)", "type-open": " (オープン)", "type-qna": " (Q&A)",
-        "time-now": "たった今", "time-min": "分前", "time-hour": "時間前", "time-day": "日前", "time-old": "ずっと前", "time-offline": "オフライン",
-        "btn-invite": "招待", "btn-delete": "削除", "btn-edit": "修正", "btn-translate": "🌏 翻訳", "settings-auto-translate": "自動翻訳", "settings-auto-translate-desc": "メッセージを自動的に翻訳して表示します。",
-        "type-general": "一般",
-        "chat-page-all": "全チャンネル (編集不可)", "chat-page-empty": "このページにはチャンネルがありません。", "chat-discovery-none": "検索結果なし", "chat-owned-none": "作成したチャットルームはありません。", "chat-personal-none": "作成したカテゴリーはありません。"
+        "cat-all": "全表示 (ALL)", "cat-research": "研究所ニュース", "cat-drawings": "ギャラリー", "cat-bug": "バグ報告", "status-posts": "件の投稿", "status-no-posts": "まだ投稿がありません。", "admin-user-mgr": "👥 ユーザー管理", "admin-user-mgr-title": "全ユーザー管理", "admin-user-mgr-desc": "登録された全会員のリストです。", "btn-refresh": "リスト更新", "detail-archive": "アーカイブ", "detail-published": "発行", "detail-views": "閲覧", "cat-uncategorized": "未分類",
+        "admin-cat-mgr": "カテゴリー管理", "admin-social-links": "SNSリンク設定", "admin-social-name": "名前 (例: INSTA)", "admin-social-url": "アドレス (https://...)", "admin-social-add": "リンク追加", "admin-ai-logs": "ORACLE INSIGHTS (AIログ)", "admin-chatbot-logs": "チャットボットログ分析", "admin-test-server": "管理者テストサーバー", "admin-maintenance": "サーバー点検管理", "chat-input-placeholder-dynamic": "にメッセージを送信",
+        "type-general": "一般", "chat-page-all": "全チャンネル (編集不可)", "chat-page-empty": "このページにはチャンネル가ありません。", "chat-discovery-none": "検索結果なし", "chat-owned-none": "作成したチャットルームはありません。", "chat-personal-none": "作成したカテゴリーはありません。"
     },
     zh: {
         "nav-records": "记录所", "nav-chat": "💬 聊天", "nav-journal": "日记", "nav-login": "登录", "nav-signup": "注册", "nav-logout": "注销", "nav-account": "账号管理",
@@ -58,10 +49,8 @@ const translations = {
         "settings-title": "⚙️ 设置", "settings-notif-sound": "🔔 提示音", "settings-notif-desc": "新消息到达时播放提示音。", "settings-layout": "布局调整", "settings-layout-desc": "调整屏幕宽度和高度。", "settings-font": "字体大小", "settings-lang": "🌐 语言设置", "settings-lang-desc": "更改系统语言。", "confirm": "确定", "cancel": "取消",
         "auth-login": "登录", "auth-signup": "注册", "auth-id": "用户名", "auth-pw": "密码", "auth-nickname": "昵称", "auth-enter": "进入", "auth-no-acc": "没有账号？", "auth-yes-acc": "已有账号？", "auth-select-country": "选择国家", "auth-select-lang": "选择语言", "auth-location-consent": "同意收集位置信息 (可选)",
         "chat-channels": "频道列表", "chat-friends": "好友列表", "chat-members": "成员列表", "chat-add-friend": "添加好友", "chat-create-channel": "创建频道", "chat-welcome-title": "欢迎来到 ROSAE HUB!", "chat-welcome-desc": "这是社区的起点。留下您的消息。", "chat-input-placeholder": "发送消息...", "chat-send": "发送", "chat-online": "在线", "chat-back-to-blog": "↩️ 返回博客",
-        "cat-notice": "📢 公告事项", "cat-chat": "💬 聊天室", "cat-karaoke": "🎤 卡拉OK", "cat-voice": "📞 语音通话", "cat-game": "🎮 游戏室",
-        "type-notice": " (公告)", "type-secret": " (私密)", "type-open": " (公开)", "type-qna": " (Q&A)",
-        "time-now": "刚刚", "time-min": "分钟前", "time-hour": "小时前", "time-day": "天前", "time-old": "很久以前", "time-offline": "离线",
-        "btn-invite": "邀请", "btn-delete": "删除", "btn-edit": "确认", "btn-translate": "🌏 翻译", "settings-auto-translate": "自动翻译", "settings-auto-translate-desc": "自动翻译并显示消息。",
+        "cat-all": "全部显示 (ALL)", "cat-research": "研究所新闻", "cat-drawings": "画廊", "cat-bug": "Bug 报告", "status-posts": "条内容", "status-no-posts": "尚无内容。", "admin-user-mgr": "👥 用户管理", "admin-user-mgr-title": "全局用户管理", "admin-user-mgr-desc": "已注册会员列表。", "btn-refresh": "刷新列表", "detail-archive": "归档", "detail-published": "发布", "detail-views": "阅读", "cat-uncategorized": "未分类",
+        "admin-cat-mgr": "类别管理", "admin-social-links": "社交链接设置", "admin-social-name": "名称 (如: INSTA)", "admin-social-url": "地址 (https://...)", "admin-social-add": "添加链接", "admin-ai-logs": "ORACLE INSIGHTS (AI日志)", "admin-chatbot-logs": "聊天机器人日志分析", "admin-test-server": "管理员测试服务器", "admin-maintenance": "服务器维护管理", "chat-input-placeholder-dynamic": "发送消息至",
         "type-notice": " (公告)", "type-secret": " (私密)", "type-open": " (公开)", "type-qna": " (Q&A)", "type-general": "普通",
         "chat-page-all": "全部频道 (不可编辑)", "chat-page-empty": "此页面暂无频道。", "chat-discovery-none": "无搜索结果", "chat-owned-none": "暂无创建的聊天室。", "chat-personal-none": "暂无个人分类。"
     }
@@ -88,9 +77,11 @@ const LanguageManager = {
             window.supabase.from('users').update({ language: lang }).eq('username', window.currentUser.username)
                 .then(({ error }) => { if (error) console.error('Failed to sync language to DB:', error); });
         }
-        // [NEW] Trigger re-render of messages if language changes
-        if (window.app && window.app.activeChannelId) {
-            window.app.loadMessages(window.app.activeChannelId);
+        // [NEW] Trigger re-render of messages and refresh UI if language changes
+        if (window.app) {
+            if (window.app.activeChannelId) window.app.loadMessages(window.app.activeChannelId);
+            window.app.renderChannelList(); // Refresh channel names
+            LanguageManager.applyTranslations(); // Refresh static data-i18n tags
         }
     },
     get(key) { return (translations[this.currentLang] && translations[this.currentLang][key]) || key; },
