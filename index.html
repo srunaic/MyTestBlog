@@ -862,13 +862,28 @@
                     <label>Layout Optimization</label>
                     <div class="layout-controls">
                         <p class="desc">If the layout doesn't fit your screen, adjust the width.</p>
+                        <span>Content Width</span>
+                        <input type="range" min="80" max="100" value="100" oninput="changeLayoutScale(this.value)">
                     </div>
-                    <div class="settings-group">
-                        <label>Vertical Optimization</label>
-                        <div class="layout-controls">
-                            <span>Content Height</span>
-                            <input type="range" min="80" max="120" value="100" oninput="changeHeightScale(this.value)">
-                        </div>
+                    <div class="layout-controls" style="margin-top: 20px;">
+                        <span>Content Height</span>
+                        <input type="range" min="80" max="120" value="100" oninput="changeHeightScale(this.value)">
+                    </div>
+                </div>
+
+                <!-- Account Section (Gated) -->
+                <div id="mobile-account-group" class="settings-group"
+                    style="display:none; margin-top: 30px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 20px;">
+                    <label>Account Management</label>
+                    <div class="setting-row" style="margin-top: 10px;">
+                        <span>Current User</span>
+                        <span id="mobile-user-name" style="font-weight: 700; color: #ff4d6d;">Guest</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button onclick="openAccountModal(); closeMobileSettings();" class="sm-btn"
+                            style="flex: 1; background: #333; height: 40px;">Manage</button>
+                        <button onclick="logout(); closeMobileSettings();" class="sm-btn"
+                            style="flex: 1; background: #ff4d6d; height: 40px;">Logout</button>
                     </div>
                 </div>
             </div>

@@ -1687,9 +1687,14 @@ window.deleteUser = async (username) => {
 window.openAccountModal = () => {
     if (!currentUser) return;
     accountModal.classList.add('active');
-    document.getElementById('acc-nickname').value = currentUser.nickname;
-    document.getElementById('acc-username').value = currentUser.username;
-    document.getElementById('acc-password').value = currentUser.password;
+    document.getElementById('acc-nickname').value = currentUser.nickname || '';
+    document.getElementById('acc-username').value = currentUser.username || '';
+    // For Google/OAuth users, password might be empty/null
+    document.getElementById('acc-password').value = currentUser.password || '';
+
+    // [NEW] If OAuth user, disable password edit or show indicator?
+    // Let's keep it editable if they want to set a local password, 
+    // but handle the display gracefully.
 
 
     // [NEW] Reset activity section (Slide hide)
@@ -2465,9 +2470,35 @@ function openMobileSettings() {
     const overlay = document.getElementById('mobile-settings-overlay');
     if (overlay) overlay.style.display = 'flex';
 
-    // Sync current toggle state
+    // 1. Sync current toggle state
     const btn = document.getElementById('mobile-notif-toggle');
     if (btn) btn.textContent = (NotificationManager.isSoundOn) ? 'ON' : 'OFF';
+
+    // 2. Sync Layout Sliders with current CSS variables
+    const style = getComputedStyle(document.documentElement);
+    const widthRaw = style.getPropertyValue('--mobile-layout-scale').trim() || '100%';
+    const heightRaw = style.getPropertyValue('--mobile-layout-height').trim() || '100%';
+
+    const widthVal = parseInt(widthRaw) || 100;
+    const heightVal = parseInt(heightRaw) || 100;
+
+    const wSlider = document.querySelector('input[oninput="changeLayoutScale(this.value)"]');
+    const hSlider = document.querySelector('input[oninput="changeHeightScale(this.value)"]');
+
+    if (wSlider) wSlider.value = widthVal;
+    if (hSlider) hSlider.value = heightVal;
+
+    // 3. Conditional Account Section
+    const accountGroup = document.getElementById('mobile-account-group');
+    const userNameEl = document.getElementById('mobile-user-name');
+    if (accountGroup) {
+        if (currentUser) {
+            accountGroup.style.display = 'block';
+            if (userNameEl) userNameEl.textContent = currentUser.nickname || currentUser.username;
+        } else {
+            accountGroup.style.display = 'none';
+        }
+    }
 }
 
 function closeMobileSettings() {
