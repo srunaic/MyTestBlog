@@ -25,7 +25,7 @@ const translations = {
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
-        "header-subtitle": "記録が流れ、会話が留まる場所", "welcome-back": "おかえ리なさい、 ", "welcome-subtitle": "リソースを探索しましょう。",
+        "header-subtitle": "記録が流れ、会話が留まる場所", "welcome-back": "おかえりなさい、 ", "welcome-subtitle": "リソースを探索しましょう。",
         "sidebar-cats": "メインカテゴリー", "sidebar-admin": "管理者パネル", "sidebar-connect": "接続", "sidebar-bgm": "BGMプレイヤー",
         "best-posts": "ベストポスト", "feeds": "フィード", "write": "記事を書く", "back-to-list": "← リストに戻る", "comments": "コメント", "comment-placeholder": "コメントを入力してください...", "comment-submit": "登録", "comment-login-required": "コメントするにはログインが必要です。",
         "settings-title": "⚙️ 環境設定", "settings-profile": "👤 プロフィール", "settings-profile-desc": "ニックネームとプロフィール画像を変更します。", "settings-notif-sound": "🔔 通知音", "settings-notif-desc": "新しいメッセージの到着を音で知らせます。", "settings-layout": "レイアウト調整", "settings-layout-desc": "画面의 幅と高さを調整します。", "settings-font": "文字サイズ", "settings-lang": "🌐 言語設定", "settings-lang-desc": "システム言語を変更します。", "confirm": "確認", "cancel": "キャンセル",
@@ -45,12 +45,21 @@ const translations = {
 
 const LanguageManager = {
     currentLang: localStorage.getItem('app_lang') || 'ko',
-    init() { this.applyTranslations(); },
+    init() {
+        this.applyTranslations();
+        const select = document.getElementById('settings-lang-select');
+        if (select) select.value = this.currentLang;
+    },
     setLanguage(lang) {
-        if (!translations[lang]) return;
+        console.log('LanguageManager: Changing language to', lang);
+        if (!translations[lang]) {
+            console.error('LanguageManager: Translation not found for', lang);
+            return;
+        }
         this.currentLang = lang;
         localStorage.setItem('app_lang', lang);
         this.applyTranslations();
+        // Sync with Supabase if logged in
         if (window.currentUser && window.supabase) {
             window.supabase.from('users').update({ language: lang }).eq('username', window.currentUser.username)
                 .then(({ error }) => { if (error) console.error('Failed to sync language to DB:', error); });
@@ -6087,7 +6096,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 // EXPOSE FUNCTIONS TO WINDOW (For Module Compatibility)
 // ==========================================
-window.toggleChat = toggleChat;
+// window.toggleChat = toggleChat; (Not required in Anticode)
 window.clearNotifications = clearNotifications;
 window.exitApp = typeof exitApp !== 'undefined' ? exitApp : undefined;
 window.handleMobileNotifClick = typeof handleMobileNotifClick !== 'undefined' ? handleMobileNotifClick : undefined;

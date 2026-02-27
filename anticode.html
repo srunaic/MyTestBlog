@@ -624,8 +624,21 @@
             </div>
             <div class="setting-item-group">
                 <div class="setting-label">
-                    <span class="label-title">🔔 알림 소리</span>
-                    <span class="label-desc">새 메시지 도착 시 소리로 알립니다.</span>
+                    <span class="label-title" data-i18n="settings-lang">🌐 언어 설정 (Language)</span>
+                    <span class="label-desc" data-i18n="settings-lang-desc">시스템 언어를 변경합니다.</span>
+                </div>
+                <select id="settings-lang-select" class="nav-select" style="width: auto; padding: 5px 10px;"
+                    onchange="LanguageManager.setLanguage(this.value)">
+                    <option value="ko">한국어 (Korean)</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語 (Japanese)</option>
+                    <option value="zh">中文 (Chinese)</option>
+                </select>
+            </div>
+            <div class="setting-item-group">
+                <div class="setting-label">
+                    <span class="label-title" data-i18n="settings-notif-sound">🔔 알림 소리</span>
+                    <span class="label-desc" data-i18n="settings-notif-desc">새 메시지 도착 시 소리로 알립니다.</span>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button onclick="toggleNotifSound()" id="notif-toggle-settings"

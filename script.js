@@ -53,7 +53,7 @@ const translations = {
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
-        "header-subtitle": "記録が流れ、会話が留まる場所", "welcome-back": "おかえ리なさい、 ", "welcome-subtitle": "リソースを探索しましょう。",
+        "header-subtitle": "記録が流れ、会話が留まる場所", "welcome-back": "おかえりなさい、 ", "welcome-subtitle": "リソースを探索しましょう。",
         "sidebar-cats": "メインカテゴリー", "sidebar-admin": "管理者パネル", "sidebar-connect": "接続", "sidebar-bgm": "BGMプレイヤー",
         "best-posts": "ベストポスト", "feeds": "フィード", "write": "記事を書く", "back-to-list": "← リストに戻る", "comments": "コメント", "comment-placeholder": "コメントを入力してください...", "comment-submit": "登録", "comment-login-required": "コメントするにはログインが必要です。",
         "settings-title": "⚙️ 環境設定", "settings-profile": "👤 プロフィール", "settings-profile-desc": "ニックネームとプロフィール画像を変更します。", "settings-notif-sound": "🔔 通知音", "settings-notif-desc": "新しいメッセージの到着を音で知らせます。", "settings-layout": "レイアウト調整", "settings-layout-desc": "画面の幅と高さを調整します。", "settings-font": "文字サイズ", "settings-lang": "🌐 言語設定", "settings-lang-desc": "システム言語を変更します。", "confirm": "確認", "cancel": "キャンセル",
@@ -67,18 +67,27 @@ const translations = {
         "best-posts": "推荐文章", "feeds": "动态", "write": "发帖", "back-to-list": "← 返回列表", "comments": "评论", "comment-placeholder": "输入评论...", "comment-submit": "提交", "comment-login-required": "登录后即可发表评论。",
         "settings-title": "⚙️ 设置", "settings-profile": "👤 我的资料", "settings-profile-desc": "修改昵称和头像。", "settings-notif-sound": "🔔 提示音", "settings-notif-desc": "新消息到达时播放提示音。", "settings-layout": "布局调整", "settings-layout-desc": "调整屏幕宽度和高度。", "settings-font": "字体大小", "settings-lang": "🌐 语言设置", "settings-lang-desc": "更改系统语言。", "confirm": "确定", "cancel": "取消",
         "auth-login": "登录", "auth-signup": "注册", "auth-id": "用户名", "auth-pw": "密码", "auth-nickname": "昵称", "auth-enter": "进入", "auth-no-acc": "没有账号？", "auth-yes-acc": "已有账号？", "auth-select-country": "选择国家", "auth-select-lang": "选择语言", "auth-location-consent": "同意收集位置信息 (可选)",
-        "chat-channels": "频道列表", "chat-friends": "好友列表", "chat-members": "成员列表", "chat-add-friend": "添加好友", "chat-create-channel": "创建频道", "chat-welcome-title": "欢迎来到 ROSAE HUB!", "chat-welcome-desc": "这是社区의 起点。留下您的消息。", "chat-input-placeholder": "发送消息...", "chat-send": "发送", "chat-online": "在线", "chat-back-to-blog": "↩️ 返回博客"
+        "chat-channels": "频道列表", "chat-friends": "好友列表", "chat-members": "成员列表", "chat-add-friend": "添加好友", "chat-create-channel": "创建频道", "chat-welcome-title": "欢迎来到 ROSAE HUB!", "chat-welcome-desc": "这是社区的起点。留下您的消息。", "chat-input-placeholder": "发送消息...", "chat-send": "发送", "chat-online": "在线", "chat-back-to-blog": "↩️ 返回博客"
     }
 };
 
 const LanguageManager = {
     currentLang: localStorage.getItem('app_lang') || 'ko',
-    init() { this.applyTranslations(); },
+    init() {
+        this.applyTranslations();
+        const select = document.getElementById('settings-lang-select');
+        if (select) select.value = this.currentLang;
+    },
     setLanguage(lang) {
-        if (!translations[lang]) return;
+        console.log('LanguageManager: Changing language to', lang);
+        if (!translations[lang]) {
+            console.error('LanguageManager: Translation not found for', lang);
+            return;
+        }
         this.currentLang = lang;
         localStorage.setItem('app_lang', lang);
         this.applyTranslations();
+        // Sync with Supabase if logged in
         if (window.currentUser && window.supabase) {
             window.supabase.from('users').update({ language: lang }).eq('username', window.currentUser.username)
                 .then(({ error }) => { if (error) console.error('Failed to sync language to DB:', error); });
