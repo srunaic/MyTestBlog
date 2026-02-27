@@ -176,15 +176,33 @@ const NotificationManager = {
     updateBadge() {
         const badge = document.getElementById('notif-badge');
         const display = document.getElementById('notif-count-display');
-        if (!badge || !display) return;
+        const mobileBadge = document.getElementById('mobile-notif-badge');
 
-        if (this.count > 0) {
-            badge.classList.add('active');
-            display.style.display = 'block';
-            display.textContent = this.count > 99 ? '99+' : this.count;
-        } else {
-            badge.classList.remove('active');
-            display.style.display = 'none';
+        let mobileCountText = this.count;
+        if (this.count > 10) {
+            mobileCountText = 'x10';
+        }
+
+        // Desktop
+        if (badge && display) {
+            if (this.count > 0) {
+                badge.classList.add('active');
+                display.style.display = 'block';
+                display.textContent = this.count > 99 ? '99+' : this.count;
+            } else {
+                badge.classList.remove('active');
+                display.style.display = 'none';
+            }
+        }
+
+        // Mobile
+        if (mobileBadge) {
+            mobileBadge.textContent = this.count > 0 ? mobileCountText : '';
+            if (this.count > 0) {
+                mobileBadge.classList.add('active');
+            } else {
+                mobileBadge.classList.remove('active');
+            }
         }
     },
 
@@ -1054,7 +1072,16 @@ function renderPosts() {
         grid.removeChild(grid.firstChild);
     }
 
-    const filtered = currentCategory === 'all' ? posts : posts.filter(p => p.category === currentCategory);
+    let filtered = currentCategory === 'all' ? posts : posts.filter(p => p.category === currentCategory);
+
+    // [MOBILE] Search Filter
+    if (window.mobileSearchKeyword) {
+        const kw = window.mobileSearchKeyword.toLowerCase();
+        filtered = filtered.filter(p =>
+            p.title.toLowerCase().includes(kw) ||
+            (p.content && p.content.toLowerCase().includes(kw))
+        );
+    }
 
     // Debug UI: Show count in header if exists
     const feedHeader = document.querySelector('.list-header h2');
@@ -2328,3 +2355,104 @@ init = async function () {
 };
 
 init();
+
+// Mobile UI Sync Logic
+function syncMobileUI() {
+    const welcomeName = document.getElementById('mobile-welcome-name');
+    if (welcomeName) {
+        welcomeName.innerText = currentUser ? (currentUser.nickname || currentUser.username) : 'User';
+    }
+}
+
+// Intercept renderAll to sync mobile UI
+const originalRenderAll = typeof renderAll !== 'undefined' ? renderAll : null;
+if (originalRenderAll) {
+    renderAll = async function () {
+        await originalRenderAll();
+        syncMobileUI();
+    };
+} else {
+    // If renderAll not defined yet, poll for it or add to window
+    window.addEventListener('load', () => {
+        if (typeof renderAll !== 'undefined') {
+            const innerRender = renderAll;
+            renderAll = async function () {
+                await innerRender();
+                syncMobileUI();
+            };
+        }
+    });
+}
+// ==========================================
+// 11. MOBILE FUNCTIONAL FEATURES [NEW]
+// ==========================================
+window.mobileSearchKeyword = '';
+
+function toggleMobileSearch() {
+    const bar = document.getElementById('mobile-search-bar');
+    if (!bar) return;
+    const isVisible = bar.style.display !== 'none';
+    bar.style.display = isVisible ? 'none' : 'flex';
+    if (!isVisible) {
+        document.getElementById('mobile-search-input').focus();
+    } else {
+        window.mobileSearchKeyword = '';
+        document.getElementById('mobile-search-input').value = '';
+        renderPosts();
+    }
+}
+
+function handleMobileSearch(val) {
+    window.mobileSearchKeyword = val;
+    renderPosts();
+}
+
+function clearNotifications() {
+    if (window.NotificationManager) {
+        window.NotificationManager.count = 0;
+        window.NotificationManager.updateBadge();
+    }
+}
+
+function exitApp() {
+    if (confirm('블로그를 나가시겠습니까?')) {
+        // In a real app/hybrid, this would close. 
+        // For web, we navigate to home or show a message.
+        location.href = '/';
+    }
+}
+
+// Mobile Settings
+function openMobileSettings() {
+    const overlay = document.getElementById('mobile-settings-overlay');
+    if (overlay) overlay.style.display = 'flex';
+
+    // Sync current toggle state
+    const btn = document.getElementById('mobile-notif-toggle');
+    if (btn) btn.textContent = (window.notifSoundEnabled) ? 'ON' : 'OFF';
+}
+
+function closeMobileSettings() {
+    const overlay = document.getElementById('mobile-settings-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function changeFontSize(scale) {
+    document.documentElement.style.setProperty('--mobile-font-scale', scale);
+    document.querySelectorAll('.font-size-controls button').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function changeLayoutScale(percentage) {
+    document.documentElement.style.setProperty('--mobile-layout-scale', percentage + '%');
+}
+
+// Expose globals
+window.toggleMobileSearch = toggleMobileSearch;
+window.handleMobileSearch = handleMobileSearch;
+window.clearNotifications = clearNotifications;
+window.exitApp = exitApp;
+window.openMobileSettings = openMobileSettings;
+window.closeMobileSettings = closeMobileSettings;
+window.changeFontSize = changeFontSize;
+window.changeLayoutScale = changeLayoutScale;

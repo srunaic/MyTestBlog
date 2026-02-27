@@ -1906,3 +1906,213 @@ body.is-pc-forced .layout-switcher {
 .oauth-btn.google:hover { background: rgba(66, 133, 244, 0.05); }
 .oauth-btn.naver .naver-icon { background: #03C75A; color: white; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900; border-radius: 2px; }
 .oauth-btn.naver:hover { background: rgba(3, 199, 90, 0.05); }
+. o a u t h - b t n . n a v e r : h o v e r   {   b a c k g r o u n d :   r g b a ( 3 ,   1 9 9 ,   9 0 ,   0 . 0 5 ) ;   }  
+ 
+/* ==========================================
+   MOBILE-ONLY REDESIGN (PINK/WHITE PREMIUM)
+   ========================================== */
+@media (max-width: 1024px) {
+    /* Hide PC-specific layout elements */
+    .modern-header, .sidebar h3, #subscriber-stats { display: none !important; }
+    
+    body {
+        background-color: #fff5f7 !important; /* Soft Pink Background */
+        min-width: 0 !important;
+        width: 100% !important;
+        overflow-x: hidden;
+    }
+
+    #blog-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Mobile Hub Header */
+    .mobile-hub-header {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px 10px;
+        background: transparent;
+    }
+    .hub-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #ff8fa3;
+    }
+    .categories-title {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0;
+    }
+    .header-actions {
+        display: flex;
+        gap: 15px;
+    }
+    .hub-icon {
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+    /* Mobile Welcome Banner */
+    .mobile-welcome-banner {
+        display: block !important;
+        margin: 10px 20px 20px;
+        padding: 25px 20px;
+        background: linear-gradient(135deg, #ff8fa3 0%, #ffb3c1 100%);
+        border-radius: 20px;
+        color: white;
+        box-shadow: 0 10px 20px rgba(255, 143, 163, 0.2);
+    }
+    .welcome-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .welcome-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    /* Layout Adjustments */
+    .main-layout {
+        display: block !important;
+        padding: 0 20px 100px !important; /* Padding for bottom nav */
+    }
+
+    .sidebar {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    /* Category List as Premium Cards */
+    #category-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+    #category-list li {
+        background: white;
+        border-radius: 16px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        cursor: pointer;
+        transition: transform 0.2s;
+        position: relative;
+    }
+    #category-list li:active {
+        transform: scale(0.98);
+    }
+    #category-list li::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: #ff8fa3;
+        border-radius: 50%;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    #category-list li.active {
+        background: #fff0f3 !important;
+        border: 1px solid #ffccd5 !important;
+    }
+    #category-list li .cat-name {
+        flex-grow: 1;
+        font-weight: 600;
+        color: #444;
+        font-size: 1rem;
+    }
+    #category-list li::after {
+        content: "\203A"; /* Chevron symbol */
+        font-size: 1.4rem;
+        color: #ff8fa3;
+        margin-left: 10px;
+    }
+
+    /* Main Content (Feed) Adjustments */
+    .content-area {
+        width: 100% !important;
+        padding: 0 !important;
+        margin-top: 30px;
+    }
+    .post-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+    .post-card {
+        background: white !important;
+        border-radius: 20px !important;
+        border: none !important;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.04) !important;
+        overflow: hidden;
+    }
+    .post-card .post-title {
+        color: #333 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Hide PC elements on mobile */
+    .hero-nav, .search-bar, .bgm-player { display: none !important; }
+
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 75px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(15px);
+        border-top: 1px solid rgba(255, 143, 163, 0.1);
+        z-index: 1000;
+        padding: 0 20px;
+        align-items: center;
+        justify-content: space-around;
+        box-shadow: 0 -5px 25px rgba(255, 143, 163, 0.1);
+    }
+    .mobile-bottom-nav .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        color: #bbb;
+        text-decoration: none;
+        flex: 1;
+        transition: all 0.3s ease;
+    }
+    .mobile-bottom-nav .nav-item svg {
+        transition: transform 0.3s ease;
+    }
+    .mobile-bottom-nav .nav-item:active svg {
+        transform: scale(0.85);
+    }
+    .mobile-bottom-nav .nav-item.active {
+        color: #ff8fa3;
+    }
+    .mobile-bottom-nav .nav-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+}
+
+/* PC Protection: Hide mobile-only elements by default */
+.mobile-hub-header, .mobile-welcome-banner, .mobile-bottom-nav { 
+    display: none !important; 
+}

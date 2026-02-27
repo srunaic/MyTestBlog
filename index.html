@@ -114,6 +114,7 @@
     <!-- Favicon bypass to prevent 404 -->
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css?v=2026.01.28.2015">
+    <link rel="stylesheet" href="mobile-style.css" media="(max-width: 1024px)">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap"
         rel="stylesheet">
@@ -318,7 +319,26 @@
     </div>
 
     <div id="blog-container">
-        <!-- Modern Header -->
+        <!-- Mobile Hub Header (Hidden on PC) -->
+        <header class="mobile-hub-header">
+            <span class="hub-label">Hub</span>
+            <h2 class="categories-title">Categories</h2>
+            <div class="header-actions">
+                <div class="mobile-notif-wrapper" onclick="clearNotifications()">
+                    <span class="hub-icon">🔔</span>
+                    <span id="mobile-notif-badge" class="notif-badge"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mobile Search Bar (Expandable) -->
+        <div id="mobile-search-bar" class="mobile-search-container" style="display:none;">
+            <input type="text" id="mobile-search-input" placeholder="글 제목 또는 내용을 검색하세요..."
+                oninput="handleMobileSearch(this.value)">
+            <button onclick="toggleMobileSearch()" class="search-close-btn">✕</button>
+        </div>
+
+        <!-- Modern Header (PC View) -->
         <header class="blog-header modern-header">
             <div class="header-content">
                 <h1 id="main-title" class="header-title">ROSAE HUB</h1>
@@ -337,11 +357,17 @@
             </div>
         </header>
 
+        <!-- Mobile Welcome Banner (Hidden on PC) -->
+        <div class="mobile-welcome-banner">
+            <div class="welcome-title">Welcome Back, <span id="mobile-welcome-name">User</span>! 👋</div>
+            <div class="welcome-subtitle">Explore your resources.</div>
+        </div>
+
         <div class="main-layout">
             <!-- Sidebar: Categories & Admin -->
             <aside class="sidebar">
                 <div class="sidebar-section">
-                    <h3>CATEGORIES</h3>
+                    <h3 class="mobile-category-section-title" style="display:none;">MAIN CATEGORIES</h3>
                     <ul id="category-list">
                         <!-- Categories rendered here -->
                     </ul>
@@ -389,6 +415,7 @@
 
             <!-- Main Content Area -->
             <main class="content-area">
+                <h3 class="mobile-recent-activity-title" style="display:none;">Recent Activity</h3>
                 <div id="list-view">
                     <!-- BEST Posts -->
                     <div class="best-header">
@@ -764,6 +791,80 @@
                 <button onclick="toggleMaintenance(false)"
                     style="padding:15px 40px; background:#ffa500; border:none; border-radius:5px; color:#000; font-weight:bold; cursor:pointer; font-size:1rem;">관리자:
                     점검 완료 및 복구</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <a href="javascript:void(0)" onclick="exitApp()" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="javascript:void(0)" onclick="toggleMobileSearch()" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span class="nav-label">Search</span>
+        </a>
+        <a href="javascript:void(0)" onclick="openModal()" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y1="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span class="nav-label">New</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+            <span class="nav-label">Files</span>
+        </a>
+        <a href="javascript:void(0)" onclick="openMobileSettings()" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span class="nav-label">Settings</span>
+        </a>
+    </nav>
+
+    <!-- Mobile Settings Modal -->
+    <div id="mobile-settings-overlay" class="mobile-modal-overlay" style="display:none;">
+        <div class="mobile-modal-content">
+            <div class="mobile-modal-header">
+                <h2>Mobile Settings</h2>
+                <button onclick="closeMobileSettings()" class="close-btn">✕</button>
+            </div>
+            <div class="mobile-settings-body">
+                <div class="settings-group">
+                    <label>Notifications</label>
+                    <div class="setting-row">
+                        <span>Sound Notifications</span>
+                        <button id="mobile-notif-toggle" onclick="toggleNotifSound()" class="toggle-switch">ON</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Font Settings</label>
+                    <div class="font-size-controls">
+                        <button onclick="changeFontSize(0.8)">Small</button>
+                        <button onclick="changeFontSize(1.0)" class="active">Normal</button>
+                        <button onclick="changeFontSize(1.2)">Large</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Layout Optimization</label>
+                    <div class="layout-controls">
+                        <span>Content Width</span>
+                        <input type="range" min="85" max="100" value="100" oninput="changeLayoutScale(this.value)">
+                    </div>
+                    <p class="desc">If the layout doesn't fit your screen, adjust the width.</p>
+                </div>
             </div>
         </div>
     </div>
