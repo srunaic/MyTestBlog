@@ -19,7 +19,8 @@ const translations = {
         "msg-dear": "님", "msg-translating": "번역 중...", "btn-show-original": "원본 보기", "msg-edit-prompt": "메시지 수정:", "msg-delete-confirm": "정말 이 메시지를 삭제하시겠습니까?", "msg-unknown-user": "알 수 없음", "alert-owner-profile": "방장의 프로필을 볼 수 없습니다.",
         "shop-owned": "보유중", "shop-no-products": "판매 중인 상품이 없습니다.", "shop-buy-warning": "[구매 경고]\n이 상품은 구매 후 환불이 불가능합니다.\n정말 구매하시겠습니까?", "shop-buy-error": "구매 중 오류가 발생했습니다: ", "shop-buy-success": "구매 성공! 이모티콘 탭에서 확인할 수 있습니다.", "shop-buy-fail": "구매 실패: ",
         "bank-input-error": "보내시는 분의 은행명과 입금자명을 입력해주세요.", "bank-confirm-desc": "[입금 신청 내역 확인]\n신청 금액: {amount} 코인\n입금 은행: {bank}\n입금자명: {owner}\n\n위 내용으로 입금 신청하시겠습니까?", "bank-error": "입금 신청 중 오류가 발생했습니다.", "msg-loading": "로딩 중...", "msg-permission-error": "권한이 없거나 오류가 발생했습니다.", "bank-no-pending": "대기 중인 요청이 없습니다.",
-        "settings-notif-on": "🔔 알림 소리 ON", "settings-notif-off": "🔕 알림 소리 OFF", "blocked-users-title": "차단한 유저 목록"
+        "settings-notif-on": "🔔 알림 소리 ON", "settings-notif-off": "🔕 알림 소리 OFF", "blocked-users-title": "차단한 유저 목록",
+        "btn-invite": "초대하기", "btn-delete": "삭제하기", "btn-kick": "강퇴", "btn-block": "차단"
     },
     en: {
         "nav-records": "Records", "nav-chat": "💬 Chat", "nav-journal": "Journal", "nav-login": "Login", "nav-signup": "Sign Up", "nav-logout": "Logout", "nav-account": "Account",
@@ -35,7 +36,8 @@ const translations = {
         "msg-dear": "", "msg-translating": "Translating...", "btn-show-original": "Show Original", "msg-edit-prompt": "Edit Message:", "msg-delete-confirm": "Delete this message?", "msg-unknown-user": "Unknown", "alert-owner-profile": "Cannot view owner's profile.",
         "shop-owned": "Owned", "shop-no-products": "No products for sale.", "shop-buy-warning": "[Purchase Warning]\nNo refunds after purchase.\nProceed?", "shop-buy-error": "Error buying product: ", "shop-buy-success": "Purchase successful!", "shop-buy-fail": "Purchase failed: ",
         "bank-input-error": "Enter bank name and sender name.", "bank-confirm-desc": "[Deposit Details]\nAmount: {amount}\nBank: {bank}\nOwner: {owner}\nProceed?", "bank-error": "Deposit error.", "msg-loading": "Loading...", "msg-permission-error": "No permission or error.", "bank-no-pending": "No pending requests.",
-        "settings-notif-on": "🔔 Notif Sound ON", "settings-notif-off": "🔕 Notif Sound OFF", "blocked-users-title": "Blocked Users"
+        "settings-notif-on": "🔔 Notif Sound ON", "settings-notif-off": "🔕 Notif Sound OFF", "blocked-users-title": "Blocked Users",
+        "btn-invite": "Invite", "btn-delete": "Delete", "btn-kick": "Kick", "btn-block": "Block"
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
@@ -51,7 +53,8 @@ const translations = {
         "msg-dear": "様", "msg-translating": "翻訳中...", "btn-show-original": "原文表示", "msg-edit-prompt": "メッセージを編集:", "msg-delete-confirm": "このメッセージを削除しますか？", "msg-unknown-user": "不明", "alert-owner-profile": "作成者のプロフィールを見ることはできません。",
         "shop-owned": "保有中", "shop-no-products": "販売中の商品はありません。", "shop-buy-warning": "[購入警告]\nこの商品は購入後の払い戻しができません。\n本当に購入しますか？", "shop-buy-error": "購入中にエラーが発生しました: ", "shop-buy-success": "購入成功！絵文字タブで確認できます。", "shop-buy-fail": "購入失敗: ",
         "bank-input-error": "振込元の銀行名と振込人名を入力してください。", "bank-confirm-desc": "[振込申請内容の確認]\n申請金額: {amount} コイン\n振込先銀行: {bank}\n振込人名: {owner}\n\n上記の内容で申請しますか？", "bank-error": "振込申請中にエラーが発生しました。", "msg-loading": "読み込み中...", "msg-permission-error": "権限がないか、エラーが発生しました。", "bank-no-pending": "待機中のリクエストはありません。",
-        "settings-notif-on": "🔔 通知音 ON", "settings-notif-off": "🔕 通知音 OFF", "blocked-users-title": "ブロックしたユーザーリスト"
+        "settings-notif-on": "🔔 通知音 ON", "settings-notif-off": "🔕 通知音 OFF", "blocked-users-title": "ブロックしたユーザーリスト",
+        "btn-invite": "招待", "btn-delete": "削除", "btn-kick": "追放", "btn-block": "ブロック"
     },
     zh: {
         "nav-records": "记录所", "nav-chat": "💬 聊天", "nav-journal": "日记", "nav-login": "登录", "nav-signup": "注册", "nav-logout": "注销", "nav-account": "账号管理",
@@ -4173,7 +4176,10 @@ class AntiCodeApp {
                 if (msg.id) msgEl.setAttribute('data-temp-id', msg.id);
             }
 
-            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = new Date(msg.created_at).toLocaleString([], {
+                year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+                hour: '2-digit', minute: '2-digit'
+            });
             const initial = (info.nickname || msg.author || '?')[0];
             const avatarHtml = `
             <div class="avatar-wrapper" style="width:32px; height:32px; position:relative; flex-shrink:0; cursor:pointer;" onclick="openProfileCard('${msg.user_id}')">

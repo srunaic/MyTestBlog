@@ -45,7 +45,7 @@ const translations = {
         "cat-notice": "📢 공지사항", "cat-chat": "💬 채팅방", "cat-karaoke": "🎤 노래방", "cat-voice": "📞 보이스 톡", "cat-game": "🎮 게임 방",
         "type-notice": " (공지)", "type-secret": " (비밀)", "type-open": " (오픈)", "type-qna": " (질문)",
         "time-now": "방금 전", "time-min": "분 전", "time-hour": "시간 전", "time-day": "일 전", "time-old": "오래 전", "time-offline": "오프라인",
-        "btn-invite": "초대", "btn-delete": "삭제", "btn-edit": "수정", "btn-translate": "🌏 번역", "settings-auto-translate": "자동 번역", "settings-auto-translate-desc": "메시지를 자동으로 번역하여 표시합니다.",
+        "btn-invite": "초대하기", "btn-delete": "삭제하기", "btn-kick": "강퇴", "btn-block": "차단", "btn-edit": "수정", "btn-translate": "🌏 번역", "settings-auto-translate": "자동 번역", "settings-auto-translate-desc": "메시지를 자동으로 번역하여 표시합니다.",
         "cat-all": "전체보기 (ALL)", "cat-research": "연구소 소식", "cat-drawings": "갤러리", "cat-bug": "버그 신고", "status-posts": "개의 글", "status-no-posts": "아직 등록된 글이 없습니다.", "admin-user-mgr": "👥 사용자 관리", "admin-user-mgr-title": "전체 사용자 관리", "admin-user-mgr-desc": "가입된 전체 회원 목록입니다.", "btn-refresh": "목록 새로고침", "detail-archive": "아카이브", "detail-published": "발행", "detail-views": "조회", "cat-uncategorized": "미분류",
         "admin-cat-mgr": "카테고리 관리", "admin-social-links": "소셜 링크 설정", "admin-social-name": "이름 (예: INSTA)", "admin-social-url": "주소 (https://...)", "admin-social-add": "링크 추가", "admin-ai-logs": "ORACLE INSIGHTS (AI 로그)", "admin-chatbot-logs": "챗봇 로그 분석", "admin-test-server": "관리자 테스트 서버", "admin-maintenance": "서버 점검 관리", "chat-input-placeholder-dynamic": "에 메시지 보내기"
     },
@@ -61,7 +61,7 @@ const translations = {
         "cat-notice": "📢 Notices", "cat-chat": "💬 Chat Rooms", "cat-karaoke": "🎤 Karaoke", "cat-voice": "📞 Voice Talk", "cat-game": "🎮 Gaming",
         "type-notice": " (Notice)", "type-secret": " (Secret)", "type-open": " (Open)", "type-qna": " (Q&A)",
         "time-now": "Just now", "time-min": "m ago", "time-hour": "h ago", "time-day": "d ago", "time-old": "Long ago", "time-offline": "Offline",
-        "btn-invite": "Invite", "btn-delete": "Delete", "btn-edit": "Edit", "btn-translate": "🌏 Translate", "settings-auto-translate": "Auto-Translate", "settings-auto-translate-desc": "Automatically translate incoming messages.",
+        "btn-invite": "Invite", "btn-delete": "Delete", "btn-kick": "Kick", "btn-block": "Block", "btn-edit": "Edit", "btn-translate": "🌏 Translate", "settings-auto-translate": "Auto-Translate", "settings-auto-translate-desc": "Automatically translate incoming messages.",
         "cat-all": "All (ALL)", "cat-research": "Research", "cat-drawings": "Drawings", "cat-bug": "Bug Report", "status-posts": "posts", "status-no-posts": "No posts found.", "admin-user-mgr": "👥 User Mgmt", "admin-user-mgr-title": "Global User Management", "admin-user-mgr-desc": "List of all registered members.", "btn-refresh": "Refresh List", "detail-archive": "Archive", "detail-published": "Published", "detail-views": "Views", "cat-uncategorized": "Uncategorized",
         "admin-cat-mgr": "Category Mgmt", "admin-social-links": "Social Links", "admin-social-name": "Name (e.g. INSTA)", "admin-social-url": "URL (https://...)", "admin-social-add": "Add Link", "admin-ai-logs": "ORACLE INSIGHTS (AI Logs)", "admin-chatbot-logs": "Chatbot Logs", "admin-test-server": "Admin Test Server", "admin-maintenance": "Server Maintenance", "chat-input-placeholder-dynamic": "Send a message to"
     },
@@ -77,7 +77,7 @@ const translations = {
         "cat-notice": "📢 お知らせ", "cat-chat": "💬 チャットルーム", "cat-karaoke": "🎤 カラオケ", "cat-voice": "📞 ボイストーク", "cat-game": "🎮 ゲームルーム",
         "type-notice": " (お知らせ)", "type-secret": " (非公開)", "type-open": " (オープン)", "type-qna": " (Q&A)",
         "time-now": "たった今", "time-min": "分前", "time-hour": "時間前", "time-day": "日前", "time-old": "ずっと前", "time-offline": "オフライン",
-        "btn-invite": "招待", "btn-delete": "削除", "btn-edit": "修正", "btn-translate": "🌏 翻訳", "settings-auto-translate": "自動翻訳", "settings-auto-translate-desc": "メッセージを自動的に翻訳して表示します。",
+        "btn-invite": "招待", "btn-delete": "削除", "btn-kick": "追放", "btn-block": "ブロック", "btn-edit": "修正", "btn-translate": "🌏 翻訳", "settings-auto-translate": "自動翻訳", "settings-auto-translate-desc": "メッセージを自動的に翻訳して表示します。",
         "cat-all": "全表示 (ALL)", "cat-research": "研究所ニュース", "cat-drawings": "ギャラリー", "cat-bug": "バグ報告", "status-posts": "件の投稿", "status-no-posts": "まだ投稿がありません。", "admin-user-mgr": "👥 ユーザー管理", "admin-user-mgr-title": "全ユーザー管理", "admin-user-mgr-desc": "登録された全会員のリストです。", "btn-refresh": "リスト更新", "detail-archive": "アーカイブ", "detail-published": "発行", "detail-views": "閲覧", "cat-uncategorized": "未分類",
         "admin-cat-mgr": "カテゴリー管理", "admin-social-links": "SNSリンク設定", "admin-social-name": "名前 (例: INSTA)", "admin-social-url": "アドレス (https://...)", "admin-social-add": "링크 추가", "admin-ai-logs": "ORACLE INSIGHTS (AIログ)", "admin-chatbot-logs": "チャットボットログ分析", "admin-test-server": "管理者テストサーバー", "admin-maintenance": "サーバー点검 관리", "chat-input-placeholder-dynamic": "にメッセージを送信"
     },
@@ -93,7 +93,7 @@ const translations = {
         "cat-notice": "📢 公告事项", "cat-chat": "💬 聊天室", "cat-karaoke": "🎤 卡拉OK", "cat-voice": "📞 语音通话", "cat-game": "🎮 游戏室",
         "type-notice": " (公告)", "type-secret": " (私密)", "type-open": " (公开)", "type-qna": " (Q&A)",
         "time-now": "刚刚", "time-min": "分钟前", "time-hour": "小时前", "time-day": "天前", "time-old": "很久以前", "time-offline": "离线",
-        "btn-invite": "邀请", "btn-delete": "删除", "btn-edit": "确认", "btn-translate": "🌏 翻译", "settings-auto-translate": "自动翻译", "settings-auto-translate-desc": "自动翻译并显示消息。",
+        "btn-invite": "邀请", "btn-delete": "删除", "btn-kick": "踢出", "btn-block": "屏蔽", "btn-edit": "确认", "btn-translate": "🌏 翻译", "settings-auto-translate": "自动翻译", "settings-auto-translate-desc": "自动翻译并显示消息。",
         "cat-all": "全部显示 (ALL)", "cat-research": "研究所新闻", "cat-drawings": "画廊", "cat-bug": "Bug 报告", "status-posts": "条内容", "status-no-posts": "尚无内容。", "admin-user-mgr": "👥 用户管理", "admin-user-mgr-title": "全局用户管理", "admin-user-mgr-desc": "已注册会员列表。", "btn-refresh": "刷新列表", "detail-archive": "归档", "detail-published": "发布", "detail-views": "阅读", "cat-uncategorized": "未分类",
         "admin-cat-mgr": "类别管理", "admin-social-links": "社交链接设置", "admin-social-name": "名称 (如: INSTA)", "admin-social-url": "地址 (https://...)", "admin-social-add": "添加链接", "admin-ai-logs": "ORACLE INSIGHTS (AI日志)", "admin-chatbot-logs": "聊天机器人日志分析", "admin-test-server": "管理员测试服务器", "admin-maintenance": "服务器维护管理", "chat-input-placeholder-dynamic": "发送消息至"
     }
