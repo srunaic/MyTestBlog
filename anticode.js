@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import LanguageManager from './i18n.js';
+// LanguageManager is now loaded as a classic script and available globally via window.LanguageManager
 
 // ==========================================
 // 1. CONFIGURATION & GLOBALS
@@ -6005,3 +6005,21 @@ app.init();
 document.addEventListener('DOMContentLoaded', () => {
     app.setupProfileCardEvents();
 });
+// ==========================================
+// EXPOSE FUNCTIONS TO WINDOW (For Module Compatibility)
+// ==========================================
+window.toggleChat = toggleChat;
+window.clearNotifications = clearNotifications;
+window.exitApp = typeof exitApp !== 'undefined' ? exitApp : undefined;
+window.handleMobileNotifClick = typeof handleMobileNotifClick !== 'undefined' ? handleMobileNotifClick : undefined;
+window.logout = typeof logout !== 'undefined' ? logout : undefined;
+window.openMobileSettings = typeof openMobileSettings !== 'undefined' ? openMobileSettings : undefined;
+window.closeMobileSettings = typeof closeMobileSettings !== 'undefined' ? closeMobileSettings : undefined;
+window.toggleNotifSound = typeof toggleNotifSound !== 'undefined' ? toggleNotifSound : undefined;
+window.changeFontSize = typeof changeFontSize !== 'undefined' ? changeFontSize : undefined;
+window.changeLayoutScale = typeof changeLayoutScale !== 'undefined' ? changeLayoutScale : undefined;
+window.changeHeightScale = typeof changeHeightScale !== 'undefined' ? changeHeightScale : undefined;
+window.handleMobileSearch = typeof handleMobileSearch !== 'undefined' ? handleMobileSearch : undefined;
+window.toggleMobileSearch = typeof toggleMobileSearch !== 'undefined' ? toggleMobileSearch : undefined;
+window.openAccountModal = typeof openAccountModal !== 'undefined' ? openAccountModal : undefined;
+window.closeAccountModal = typeof closeAccountModal !== 'undefined' ? closeAccountModal : undefined;

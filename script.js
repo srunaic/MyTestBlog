@@ -3,7 +3,7 @@
 // 1. IMPORTS & GLOBALS (ES Module)
 // ==========================================
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import LanguageManager from './i18n.js';
+// LanguageManager is now loaded as a classic script and available globally via window.LanguageManager
 
 // Global State
 var posts = [];
@@ -2620,3 +2620,34 @@ function toggleMobileSearchActual() {
         renderPosts();
     }
 }
+// ==========================================
+// EXPOSE FUNCTIONS TO WINDOW (For Module Compatibility)
+// ==========================================
+window.toggleAuthMode = toggleAuthMode;
+window.openRecoveryModal = openRecoveryModal;
+window.closeAuthModal = closeAuthModal;
+window.loginWithOAuth = loginWithOAuth;
+window.closeAccountModal = closeAccountModal;
+window.toggleAccountActivity = toggleAccountActivity;
+window.toggleMaintenance = toggleMaintenance;
+window.openMaintenanceModal = openMaintenanceModal;
+window.toggleChat = toggleChat;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.addSocialLink = addSocialLink;
+window.toggleOracleInsights = toggleOracleInsights;
+window.handleMobileSearch = handleMobileSearch;
+window.handleMobileNotifClick = handleMobileNotifClick;
+window.exitApp = exitApp;
+window.toggleMobileSearch = toggleMobileSearch;
+window.handleMobileChat = handleMobileChat;
+window.openMobileSettings = openMobileSettings;
+window.closeMobileSettings = closeMobileSettings;
+window.toggleNotifSound = toggleNotifSound;
+window.changeFontSize = changeFontSize;
+window.changeLayoutScale = changeLayoutScale;
+window.changeHeightScale = changeHeightScale;
+window.clearNotifications = clearNotifications;
+window.logout = logout;
+window.openAuthModal = openAuthModal;
+window.handleMobileSearch = handleMobileSearch;

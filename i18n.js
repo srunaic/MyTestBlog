@@ -316,4 +316,4 @@ const LanguageManager = {
 };
 
 window.LanguageManager = LanguageManager;
-export default LanguageManager;
+// Removed export default for classic script compatibility
