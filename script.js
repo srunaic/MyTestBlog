@@ -1097,7 +1097,7 @@ function renderBestPosts() {
     const topPosts = [...posts].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 3);
     topPosts.forEach((post, index) => {
         const cat = categories.find(c => c.id === post.category);
-        const catName = cat ? cat.name.split(' (')[0] : '미분류';
+        const catName = cat ? (cat.i18n ? LanguageManager.get(cat.i18n) : cat.name.split(' (')[0]) : LanguageManager.get('cat-uncategorized');
         const card = document.createElement('div');
         card.className = 'blog-card';
         card.onclick = () => {
@@ -1114,7 +1114,7 @@ function renderBestPosts() {
                 <div class="item-meta">
                     <span>${post.author}</span>
                     <span>${post.date}</span>
-                    <span class="view-count">조회 ${post.views || 0}</span>
+                    <span class="view-count">${LanguageManager.get('detail-views') || 'Views'} ${post.views || 0}</span>
                 </div>
             </div>
         `;
@@ -1271,7 +1271,7 @@ function renderPosts() {
                     <div class="item-meta">
                         <span>${post.author}</span>
                         <span>${post.date}</span>
-                        <span class="view-count">조회 ${post.views || 0}</span>
+                        <span class="view-count">${LanguageManager.get('detail-views') || 'Views'} ${post.views || 0}</span>
                     </div>
                 </div>
                 ${isAuthor ? `
