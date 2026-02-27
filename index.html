@@ -324,7 +324,7 @@
             <span class="hub-label">Hub</span>
             <h2 class="categories-title">Categories</h2>
             <div class="header-actions">
-                <div class="mobile-notif-wrapper" onclick="clearNotifications()">
+                <div class="mobile-notif-wrapper" onclick="handleMobileNotifClick()">
                     <span class="hub-icon">🔔</span>
                     <span id="mobile-notif-badge" class="notif-badge"></span>
                 </div>
@@ -818,11 +818,11 @@
             </svg>
             <span class="nav-label">New</span>
         </a>
-        <a href="javascript:void(0)" class="nav-item">
+        <a href="javascript:void(0)" onclick="handleMobileChat()" class="nav-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            <span class="nav-label">Files</span>
+            <span class="nav-label">Chat</span>
         </a>
         <a href="javascript:void(0)" onclick="openMobileSettings()" class="nav-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -846,7 +846,8 @@
                     <label>Notifications</label>
                     <div class="setting-row">
                         <span>Sound Notifications</span>
-                        <button id="mobile-notif-toggle" onclick="toggleNotifSound()" class="toggle-switch">ON</button>
+                        <button id="mobile-notif-toggle" onclick="toggleNotifSound()"
+                            class="toggle-switch notif-toggle-btn">ON</button>
                     </div>
                 </div>
                 <div class="settings-group">
@@ -860,14 +861,18 @@
                 <div class="settings-group">
                     <label>Layout Optimization</label>
                     <div class="layout-controls">
-                        <span>Content Width</span>
-                        <input type="range" min="85" max="100" value="100" oninput="changeLayoutScale(this.value)">
+                        <p class="desc">If the layout doesn't fit your screen, adjust the width.</p>
                     </div>
-                    <p class="desc">If the layout doesn't fit your screen, adjust the width.</p>
+                    <div class="settings-group">
+                        <label>Vertical Optimization</label>
+                        <div class="layout-controls">
+                            <span>Content Height</span>
+                            <input type="range" min="80" max="120" value="100" oninput="changeHeightScale(this.value)">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 </body>
 
 </html>

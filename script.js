@@ -2352,6 +2352,13 @@ const originalInit = init;
 init = async function () {
     await originalInit();
     syncMaintenanceStatus();
+
+    // Check for mobile login enforcement
+    if (window.innerWidth <= 1024 && !currentUser) {
+        setTimeout(() => {
+            if (!currentUser) openAuthModal();
+        }, 1500);
+    }
 };
 
 init();
@@ -2414,22 +2421,52 @@ function clearNotifications() {
     }
 }
 
+function handleMobileNotifClick() {
+    if (!currentUser) {
+        alert("로그인 후 이용 할 수 있습니다.");
+        openAuthModal();
+        return;
+    }
+    if (window.NotificationManager.count === 0) {
+        alert("현재 온 알람이 없습니다.");
+    } else {
+        clearNotifications();
+    }
+}
+
 function exitApp() {
     if (confirm('블로그를 나가시겠습니까?')) {
-        // In a real app/hybrid, this would close. 
-        // For web, we navigate to home or show a message.
         location.href = '/';
     }
 }
 
+function handleMobileChat() {
+    if (!currentUser) {
+        alert("로그인 후 이용 할 수 있습니다.");
+        openAuthModal();
+        return;
+    }
+    location.href = 'anticode.html';
+}
+
+function checkAuthGating() {
+    if (!currentUser) {
+        alert("로그인 후 이용 할 수 있습니다.");
+        openAuthModal();
+        return false;
+    }
+    return true;
+}
+
 // Mobile Settings
 function openMobileSettings() {
+    if (!checkAuthGating()) return;
     const overlay = document.getElementById('mobile-settings-overlay');
     if (overlay) overlay.style.display = 'flex';
 
     // Sync current toggle state
     const btn = document.getElementById('mobile-notif-toggle');
-    if (btn) btn.textContent = (window.notifSoundEnabled) ? 'ON' : 'OFF';
+    if (btn) btn.textContent = (window.NotificationManager.isSoundOn) ? 'ON' : 'OFF';
 }
 
 function closeMobileSettings() {
@@ -2440,19 +2477,40 @@ function closeMobileSettings() {
 function changeFontSize(scale) {
     document.documentElement.style.setProperty('--mobile-font-scale', scale);
     document.querySelectorAll('.font-size-controls button').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    event.currentTarget.classList.add('active');
 }
 
 function changeLayoutScale(percentage) {
     document.documentElement.style.setProperty('--mobile-layout-scale', percentage + '%');
 }
 
+function changeHeightScale(percentage) {
+    document.documentElement.style.setProperty('--mobile-layout-height', percentage + '%');
+}
+
 // Expose globals
-window.toggleMobileSearch = toggleMobileSearch;
+window.toggleMobileSearch = () => checkAuthGating() && toggleMobileSearchActual();
 window.handleMobileSearch = handleMobileSearch;
+window.handleMobileNotifClick = handleMobileNotifClick;
 window.clearNotifications = clearNotifications;
 window.exitApp = exitApp;
+window.handleMobileChat = handleMobileChat;
 window.openMobileSettings = openMobileSettings;
 window.closeMobileSettings = closeMobileSettings;
 window.changeFontSize = changeFontSize;
 window.changeLayoutScale = changeLayoutScale;
+window.changeHeightScale = changeHeightScale;
+
+function toggleMobileSearchActual() {
+    const bar = document.getElementById('mobile-search-bar');
+    if (!bar) return;
+    const isVisible = bar.style.display !== 'none';
+    bar.style.display = isVisible ? 'none' : 'flex';
+    if (!isVisible) {
+        document.getElementById('mobile-search-input').focus();
+    } else {
+        window.mobileSearchKeyword = '';
+        document.getElementById('mobile-search-input').value = '';
+        renderPosts();
+    }
+}

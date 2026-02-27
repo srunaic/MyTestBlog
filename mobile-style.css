@@ -6,6 +6,7 @@
 :root {
     --mobile-font-scale: 1.0;
     --mobile-layout-scale: 100%;
+    --mobile-layout-height: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -24,15 +25,17 @@
         padding: 0 !important;
         margin: 0 auto !important;
         width: var(--mobile-layout-scale) !important;
+        height: var(--mobile-layout-height) !important;
         max-width: 100%;
     }
 
-    /* Hide PC-only elements */
+    /* Hide PC-only elements and Chatbot */
     .modern-header,
     .sidebar h3,
     #subscriber-stats,
     .hero-nav,
-    .bgm-player {
+    .bgm-player,
+    #chatbot-container {
         display: none !important;
     }
 
@@ -76,6 +79,11 @@
     .hub-icon {
         font-size: 1.4rem;
         color: #333;
+        transition: transform 0.2s;
+    }
+
+    .hub-icon:active {
+        transform: scale(0.9);
     }
 
     .notif-badge {
