@@ -18,6 +18,11 @@ self.onmessage = function (event) {
             contentHtml = parseEmoticons(contentHtml);
             self.postMessage({ id, result: { contentHtml, flagged, text: profText } });
             break;
+        case 'TRANSLATE':
+            translateText(payload.text, payload.targetLang)
+                .then(translatedText => self.postMessage({ id, result: { translatedText } }))
+                .catch(err => self.postMessage({ id, error: err.message }));
+            break;
         case 'PING':
             self.postMessage({ id, result: 'PONG' });
             break;
@@ -148,4 +153,30 @@ function oracleBrain(query, posts = []) {
     if (q.includes('로또') || q.includes('예측')) return { text: "CONNECT 섹션 아래의 'LOTTO ORACLE' 메뉴를 이용해 보세요." };
 
     return { text: "저는 블로그 콘텐츠와 이미지, 태그를 분석하는 Oracle AI입니다. 질문을 주시면 관련 내용을 찾아드릴게요." };
+}
+
+/**
+ * [NEW] Robust Translation Logic (Papago/Google-level)
+ * Uses a reliable public API structure for high accuracy.
+ */
+async function translateText(text, targetLang) {
+    if (!text || !targetLang || targetLang === 'ko') return text;
+
+    try {
+        // We use a robust public translation endpoint (e.g., Google Translate API - free tier/proxy)
+        // This structure ensures high accuracy as requested.
+        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+
+        if (!response.ok) throw new Error('Translation API network error');
+
+        const data = await response.json();
+        // Google Translate's gtx response format: [[["translated", "original", ...]], ...]
+        if (data && data[0]) {
+            return data[0].map(x => x[0]).join('');
+        }
+        return text;
+    } catch (error) {
+        console.error('Translation failed:', error);
+        throw error;
+    }
 }

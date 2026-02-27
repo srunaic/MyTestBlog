@@ -112,6 +112,9 @@ const LanguageManager = {
             window.supabase.from('users').update({ language: lang }).eq('username', window.currentUser.username)
                 .then(({ error }) => { if (error) console.error('Failed to sync language to DB:', error); });
         }
+        // [NEW] Trigger re-render of dynamic content
+        if (typeof renderAll === 'function') renderAll();
+        else if (typeof renderPosts === 'function') renderPosts();
     },
     get(key) { return (translations[this.currentLang] && translations[this.currentLang][key]) || key; },
     applyTranslations() {
@@ -1363,7 +1366,6 @@ function showDetail(id) {
             <span class="tag">${catName} ${LanguageManager.get('detail-archive') || 'Archive'}</span>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h1 id="post-detail-title">${post.title}</h1>
-                <button onclick="translatePost(${post.id})" class="notif-toggle-btn" style="height:fit-content; border:1px solid var(--accent); color:var(--accent);">${LanguageManager.get('btn-translate')}</button>
             </div>
             <div class="detail-meta">
                 <span>${post.author} ${LanguageManager.get('detail-published') || 'Published'}</span>
@@ -1377,6 +1379,12 @@ function showDetail(id) {
             ${canManage ? `<button onclick="editPostAction(${post.id})" class="action-btn">${LanguageManager.get('btn-edit')}</button><button onclick="deletePostAction(${post.id})" class="action-btn">${LanguageManager.get('btn-delete')}</button>` : ''}
         </div>
     `;
+
+    // [NEW] Automatic Post Translation
+    const autoTrans = localStorage.getItem('app_auto_translate') === 'true';
+    if (autoTrans && LanguageManager.currentLang !== 'ko') {
+        setTimeout(() => translatePost(id), 100);
+    }
 
     // Load and render comments
     loadComments(id);
@@ -1395,16 +1403,15 @@ async function translatePost(id) {
         const bodyEl = document.getElementById('post-detail-body');
 
         if (titleEl) {
-            const res = await LogicWorker.execute('translate', { text: post.title, targetLang });
+            const res = await LogicWorker.execute('TRANSLATE', { text: post.title, targetLang });
             if (res && res.translatedText) titleEl.innerText = res.translatedText;
         }
         if (bodyEl) {
-            const res = await LogicWorker.execute('translate', { text: post.content, targetLang });
+            const res = await LogicWorker.execute('TRANSLATE', { text: post.content, targetLang });
             if (res && res.translatedText) bodyEl.innerHTML = res.translatedText.replace(/\n/g, '<br>');
         }
     } catch (e) {
         console.error('Translation failed:', e);
-        alert('Translation failed.');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -2625,8 +2632,19 @@ function toggleMobileSearch() {
     }
 }
 
-function handleMobileSearch(val) {
+async function handleMobileSearch(val) {
     window.mobileSearchKeyword = val;
+
+    // [NEW] Translate search keyword to Korean if in other language
+    if (val && LanguageManager.currentLang !== 'ko') {
+        try {
+            const res = await LogicWorker.execute('TRANSLATE', { text: val, targetLang: 'ko' });
+            if (res && res.translatedText) {
+                console.log('Search keyword translated to KO:', res.translatedText);
+                window.mobileSearchKeyword = res.translatedText;
+            }
+        } catch (e) { console.warn('Search translation failed', e); }
+    }
     renderPosts();
 }
 
@@ -2651,9 +2669,8 @@ function handleMobileNotifClick() {
 }
 
 function exitApp() {
-    if (confirm('블로그를 나가시겠습니까?')) {
-        location.href = '/';
-    }
+    console.log('Exiting app to main OS...');
+    window.location.href = 'https://victoryka-os.pages.dev/';
 }
 
 function handleMobileChat() {
@@ -2749,6 +2766,10 @@ window.closeMobileSettings = closeMobileSettings;
 window.changeFontSize = changeFontSize;
 window.changeLayoutScale = changeLayoutScale;
 window.changeHeightScale = changeHeightScale;
+
+function exitApp() {
+    window.location.href = 'https://victoryka-os.pages.dev/';
+}
 
 function toggleMobileSearchActual() {
     const bar = document.getElementById('mobile-search-bar');

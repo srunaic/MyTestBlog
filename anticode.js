@@ -88,6 +88,10 @@ const LanguageManager = {
             window.supabase.from('users').update({ language: lang }).eq('username', window.currentUser.username)
                 .then(({ error }) => { if (error) console.error('Failed to sync language to DB:', error); });
         }
+        // [NEW] Trigger re-render of messages if language changes
+        if (window.app && window.app.activeChannelId) {
+            window.app.loadMessages(window.app.activeChannelId);
+        }
     },
     get(key) { return (translations[this.currentLang] && translations[this.currentLang][key]) || key; },
     applyTranslations() {
@@ -4194,7 +4198,6 @@ class AntiCodeApp {
         <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? `(${LanguageManager.get('status-sending')})` : ''}</span></span>
         <div class="message-meta-actions">
             ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="${LanguageManager.get('btn-delete')}" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
-            ${!isOptimistic ? `<button class="translate-msg-btn" title="${LanguageManager.get('btn-translate')}" onclick="if(window.app && window.app.translateMessage) window.app.translateMessage('${msg.id}')">🌏</button>` : ''}
         </div>
     </div>
     <div class="message-text">
@@ -4203,6 +4206,10 @@ class AntiCodeApp {
     </div>
 </div>
 `;
+            // [NEW] Automatic Translation for incoming messages
+            if (!isOptimistic && !isMyMessage && this.autoTranslateEnabled && LanguageManager.currentLang !== 'ko') {
+                setTimeout(() => this.translateMessage(msg.id), 100);
+            }
 
             // [NEW] Editing capability (Step 1)
             if (isMyMessage && !isOptimistic) {
@@ -4734,15 +4741,22 @@ class AntiCodeApp {
         textEl.innerHTML = `<span style="font-size:0.8rem; color:var(--accent); opacity:0.7;">${loadingStr}</span>`;
 
         try {
-            await new Promise(r => setTimeout(r, 800));
-            let trans = `[${targetLang.toUpperCase()}] ${originalText} (AI Simulated)`;
-            textEl.innerHTML = `<div style="color:var(--accent); font-style:italic;">${trans}</div>
-                <div style="font-size:0.65rem; color:var(--text-muted); cursor:pointer; margin-top:4px; text-decoration:underline;" 
-                     onclick="this.parentNode.innerHTML = \`${originalHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`; document.getElementById('msg-${msgId}').setAttribute('data-translated', 'false');">
-                     ${LanguageManager.get('btn-show-original') || 'Show Original'}
-                </div>`;
-            el.setAttribute('data-translated', 'true');
-        } catch (e) { textEl.innerHTML = originalHtml; }
+            // [NEW] Use LogicWorker with robust translation API
+            const res = await LogicWorker.execute('TRANSLATE', { text: originalText, targetLang });
+            if (res && res.translatedText) {
+                textEl.innerHTML = `<div class="translated-content" style="color:var(--accent); font-style:italic;">${res.translatedText}</div>
+                    <div class="show-original" style="font-size:0.65rem; color:var(--text-muted); cursor:pointer; margin-top:4px; text-decoration:underline;" 
+                         onclick="this.parentNode.innerHTML = \`${originalHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`; document.getElementById('msg-${msgId}').setAttribute('data-translated', 'false');">
+                         ${LanguageManager.get('btn-show-original') || 'Show Original'}
+                    </div>`;
+                el.setAttribute('data-translated', 'true');
+            } else {
+                textEl.innerHTML = originalHtml;
+            }
+        } catch (e) {
+            console.error('Translation error:', e);
+            textEl.innerHTML = originalHtml;
+        }
     }
 
     // [NEW] Edit Message Prompt
@@ -6209,3 +6223,7 @@ window.handleMobileSearch = typeof handleMobileSearch !== 'undefined' ? handleMo
 window.toggleMobileSearch = typeof toggleMobileSearch !== 'undefined' ? toggleMobileSearch : undefined;
 window.openAccountModal = typeof openAccountModal !== 'undefined' ? openAccountModal : undefined;
 window.closeAccountModal = typeof closeAccountModal !== 'undefined' ? closeAccountModal : undefined;
+window.exitApp = function () {
+    console.log('Exiting app to main OS...');
+    window.location.href = 'https://victoryka-os.pages.dev/';
+};
