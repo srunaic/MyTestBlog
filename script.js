@@ -9,9 +9,9 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 var posts = [];
 var users = [];
 var defaultCats = [
-    { id: 'board', name: '연구소 소식 (RESEARCH)' },
-    { id: 'drawing', name: '갤러리 (DRAWINGS)' },
-    { id: 'bug_report', name: '버그 신고 (BUG REPORT)' }
+    { id: 'board', i18n: 'cat-research' },
+    { id: 'drawing', i18n: 'cat-drawings' },
+    { id: 'bug_report', i18n: 'cat-bug' }
 ];
 var socialLinks = [];
 var categories = [];
@@ -38,36 +38,56 @@ const translations = {
         "header-subtitle": "기록이 흐르고, 대화가 머무는 곳", "welcome-back": "다시 오신 것을 환영합니다, ", "welcome-subtitle": "당신의 자원을 탐색하세요.",
         "sidebar-cats": "주요 카테고리", "sidebar-admin": "관리자 패널", "sidebar-connect": "연결", "sidebar-bgm": "BGM 플레이어",
         "best-posts": "베스트 포스트", "feeds": "피드", "write": "글쓰기", "back-to-list": "← 목록으로", "comments": "댓글", "comment-placeholder": "댓글을 입력하세요...", "comment-submit": "등록", "comment-login-required": "댓글을 달려면 로그인이 필요합니다.",
-        "settings-title": "⚙️ 환경 설정", "settings-profile": "👤 내 프로필", "settings-profile-desc": "닉네임과 프로필 이미지를 변경합니다.", "settings-notif-sound": "🔔 알림 소리", "settings-notif-desc": "새 메시지 도착 시 소리로 알립니다.", "settings-layout": "레이아웃 조절", "settings-layout-desc": "화면 너비와 높이를 조절합니다.", "settings-font": "글자 크기", "settings-lang": "🌐 언어 설정 (Language)", "settings-lang-desc": "시스템 언어를 변경합니다.", "confirm": "확인", "cancel": "취소",
+        "settings-title": "⚙️ 환경 설정", "settings-notif-sound": "🔔 알림 소리", "settings-notif-desc": "새 메시지 도착 시 소리로 알립니다.", "settings-layout": "레이아웃 조절", "settings-layout-desc": "화면 너비와 높이를 조절합니다.", "settings-font": "글자 크기", "settings-lang": "🌐 언어 설정 (Language)", "settings-lang-desc": "시스템 언어를 변경합니다.", "confirm": "확인", "cancel": "취소",
         "auth-login": "로그인", "auth-signup": "회원가입", "auth-id": "아이디", "auth-pw": "비밀번호", "auth-nickname": "닉네임", "auth-enter": "입장", "auth-no-acc": "계정이 없으신가요?", "auth-yes-acc": "이미 계정이 있으신가요?", "auth-select-country": "국가 선택", "auth-select-lang": "언어 선택", "auth-location-consent": "위치 정보 수집 및 이용에 동의합니다 (선택)",
-        "chat-channels": "채널 목록", "chat-friends": "친구 목록", "chat-members": "멤버 목록", "chat-add-friend": "친구추가", "chat-create-channel": "내 채널 만들기", "chat-welcome-title": "ROSAE HUB에 오신 것을 환영합니다!", "chat-welcome-desc": "커뮤니티의 시작점입니다. 메시지를 남겨보세요.", "chat-input-placeholder": "메시지 보내기...", "chat-send": "전송", "chat-online": "온라인", "chat-back-to-blog": "↩️ 블로그로 돌아가기"
+        "chat-channels": "채널 목록", "chat-friends": "친구 목록", "chat-members": "멤버 목록", "chat-add-friend": "친구추가", "chat-create-channel": "내 채널 만들기", "chat-welcome-title": "ROSAE HUB에 오신 것을 환영합니다!", "chat-welcome-desc": "커뮤니티의 시작점입니다. 메시지를 남겨보세요.", "chat-input-placeholder": "메시지 보내기...", "chat-send": "전송", "chat-online": "온라인", "chat-back-to-blog": "↩️ 블로그로 돌아가기",
+        "cat-notice": "📢 공지사항", "cat-chat": "💬 채팅방", "cat-karaoke": "🎤 노래방", "cat-voice": "📞 보이스 톡", "cat-game": "🎮 게임 방",
+        "type-notice": " (공지)", "type-secret": " (비밀)", "type-open": " (오픈)", "type-qna": " (질문)",
+        "time-now": "방금 전", "time-min": "분 전", "time-hour": "시간 전", "time-day": "일 전", "time-old": "오래 전", "time-offline": "오프라인",
+        "btn-invite": "초대", "btn-delete": "삭제", "btn-edit": "수정", "btn-translate": "🌏 번역", "settings-auto-translate": "자동 번역", "settings-auto-translate-desc": "메시지를 자동으로 번역하여 표시합니다.",
+        "cat-all": "전체보기 (ALL)", "cat-research": "연구소 소식", "cat-drawings": "갤러리", "cat-bug": "버그 신고", "status-posts": "개의 글", "status-no-posts": "아직 등록된 글이 없습니다.", "admin-user-mgr": "👥 사용자 관리", "admin-user-mgr-title": "전체 사용자 관리", "admin-user-mgr-desc": "가입된 전체 회원 목록입니다.", "btn-refresh": "목록 새로고침", "detail-archive": "아카이브", "detail-published": "발행", "detail-views": "조회", "cat-uncategorized": "미분류"
     },
     en: {
         "nav-records": "Records", "nav-chat": "💬 Chat", "nav-journal": "Journal", "nav-login": "Login", "nav-signup": "Sign Up", "nav-logout": "Logout", "nav-account": "Account",
         "header-subtitle": "Where records flow and conversations stay", "welcome-back": "Welcome back, ", "welcome-subtitle": "Explore your resources.",
         "sidebar-cats": "MAIN CATEGORIES", "sidebar-admin": "ADMIN PANEL", "sidebar-connect": "CONNECT", "sidebar-bgm": "BGM PLAYER",
         "best-posts": "BEST POSTS", "feeds": "FEEDS", "write": "Write", "back-to-list": "← Back to List", "comments": "COMMENTS", "comment-placeholder": "Enter your comment...", "comment-submit": "Submit", "comment-login-required": "Login is required to comment.",
-        "settings-title": "⚙️ Settings", "settings-profile": "👤 My Profile", "settings-profile-desc": "Change your nickname and profile image.", "settings-notif-sound": "🔔 Notif Sound", "settings-notif-desc": "Play sound on new messages.", "settings-layout": "Layout Controls", "settings-layout-desc": "Adjust screen width and height.", "settings-font": "Font Size", "settings-lang": "🌐 Language Settings", "settings-lang-desc": "Change the system language.", "confirm": "Confirm", "cancel": "Cancel",
+        "settings-title": "⚙️ Settings", "settings-notif-sound": "🔔 Notif Sound", "settings-notif-desc": "Play sound on new messages.", "settings-layout": "Layout Controls", "settings-layout-desc": "Adjust screen width and height.", "settings-font": "Font Size", "settings-lang": "🌐 Language Settings", "settings-lang-desc": "Change the system language.", "confirm": "Confirm", "cancel": "Cancel",
         "auth-login": "Login", "auth-signup": "Sign Up", "auth-id": "Username", "auth-pw": "Password", "auth-nickname": "Nickname", "auth-enter": "ENTER", "auth-no-acc": "Don't have an account?", "auth-yes-acc": "Already have an account?", "auth-select-country": "Select Country", "auth-select-lang": "Select Language", "auth-location-consent": "Agree to location collection (Optional)",
-        "chat-channels": "Channels", "chat-friends": "Friends", "chat-members": "Members", "chat-add-friend": "Add Friend", "chat-create-channel": "Create Channel", "chat-welcome-title": "Welcome to ROSAE HUB!", "chat-welcome-desc": "This is the start of the community. Leave a message.", "chat-input-placeholder": "Send a message...", "chat-send": "Send", "chat-online": "Online", "chat-back-to-blog": "↩️ Back to Blog"
+        "chat-channels": "Channels", "chat-friends": "Friends", "chat-members": "Members", "chat-add-friend": "Add Friend", "chat-create-channel": "Create Channel", "chat-welcome-title": "Welcome to ROSAE HUB!", "chat-welcome-desc": "This is the start of the community. Leave a message.", "chat-input-placeholder": "Send a message...", "chat-send": "Send", "chat-online": "Online", "chat-back-to-blog": "↩️ Back to Blog",
+        "cat-notice": "📢 Notices", "cat-chat": "💬 Chat Rooms", "cat-karaoke": "🎤 Karaoke", "cat-voice": "📞 Voice Talk", "cat-game": "🎮 Gaming",
+        "type-notice": " (Notice)", "type-secret": " (Secret)", "type-open": " (Open)", "type-qna": " (Q&A)",
+        "time-now": "Just now", "time-min": "m ago", "time-hour": "h ago", "time-day": "d ago", "time-old": "Long ago", "time-offline": "Offline",
+        "btn-invite": "Invite", "btn-delete": "Delete", "btn-edit": "Edit", "btn-translate": "🌏 Translate", "settings-auto-translate": "Auto-Translate", "settings-auto-translate-desc": "Automatically translate incoming messages.",
+        "cat-all": "All (ALL)", "cat-research": "Research", "cat-drawings": "Drawings", "cat-bug": "Bug Report", "status-posts": "posts", "status-no-posts": "No posts found.", "admin-user-mgr": "👥 User Mgmt", "admin-user-mgr-title": "Global User Management", "admin-user-mgr-desc": "List of all registered members.", "btn-refresh": "Refresh List", "detail-archive": "Archive", "detail-published": "Published", "detail-views": "Views", "cat-uncategorized": "Uncategorized"
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
         "header-subtitle": "記録が流れ、会話が留まる場所", "welcome-back": "おかえりなさい、 ", "welcome-subtitle": "リソースを探索しましょう。",
         "sidebar-cats": "メインカテゴリー", "sidebar-admin": "管理者パネル", "sidebar-connect": "接続", "sidebar-bgm": "BGMプレイヤー",
         "best-posts": "ベストポスト", "feeds": "フィード", "write": "記事を書く", "back-to-list": "← リストに戻る", "comments": "コメント", "comment-placeholder": "コメントを入力してください...", "comment-submit": "登録", "comment-login-required": "コメントするにはログインが必要です。",
-        "settings-title": "⚙️ 環境設定", "settings-profile": "👤 プロフィール", "settings-profile-desc": "ニックネームとプロフィール画像を変更します。", "settings-notif-sound": "🔔 通知音", "settings-notif-desc": "新しいメッセージの到着を音で知らせます。", "settings-layout": "レイアウト調整", "settings-layout-desc": "画面の幅と高さを調整します。", "settings-font": "文字サイズ", "settings-lang": "🌐 言語設定", "settings-lang-desc": "システム言語を変更します。", "confirm": "確認", "cancel": "キャンセル",
+        "settings-title": "⚙️ 環境設定", "settings-notif-sound": "🔔 通知音", "settings-notif-desc": "新しいメッセージの到着を音で知らせます。", "settings-layout": "レイアウト調整", "settings-layout-desc": "画面の幅と高さを調整します。", "settings-font": "文字サイズ", "settings-lang": "🌐 言語設定", "settings-lang-desc": "システム言語を変更します。", "confirm": "確認", "cancel": "キャンセル",
         "auth-login": "ログイン", "auth-signup": "新規登録", "auth-id": "ID", "auth-pw": "パスワード", "auth-nickname": "ニックネーム", "auth-enter": "入場", "auth-no-acc": "アカウントをお持ちでないですか？", "auth-yes-acc": "すでにアカウントをお持ちですか？", "auth-select-country": "国を選択", "auth-select-lang": "言語を選択", "auth-location-consent": "位置情報の収集に同意する (任意)",
-        "chat-channels": "チャンネル", "chat-friends": "友達", "chat-members": "メンバー", "chat-add-friend": "友達追加", "chat-create-channel": "チャンネル作成", "chat-welcome-title": "ROSAE HUBへようこそ！", "chat-welcome-desc": "コミュニティの始まりです。メッセージを残しましょう。", "chat-input-placeholder": "メッセージを送る...", "chat-send": "送信", "chat-online": "オンライン", "chat-back-to-blog": "↩️ ブログに戻る"
+        "chat-channels": "チャンネル", "chat-friends": "友達", "chat-members": "メンバー", "chat-add-friend": "友達追加", "chat-create-channel": "チャンネル作成", "chat-welcome-title": "ROSAE HUBへようこそ！", "chat-welcome-desc": "コミュニティの始まりです。メッセージを残しましょう。", "chat-input-placeholder": "メッセージを送る...", "chat-send": "送信", "chat-online": "オンライン", "chat-back-to-blog": "↩️ ブログに戻る",
+        "cat-notice": "📢 お知らせ", "cat-chat": "💬 チャットルーム", "cat-karaoke": "🎤 カラオケ", "cat-voice": "📞 ボイストーク", "cat-game": "🎮 ゲームルーム",
+        "type-notice": " (お知らせ)", "type-secret": " (非公開)", "type-open": " (オープン)", "type-qna": " (Q&A)",
+        "time-now": "たった今", "time-min": "分前", "time-hour": "時間前", "time-day": "日前", "time-old": "ずっと前", "time-offline": "オフライン",
+        "btn-invite": "招待", "btn-delete": "削除", "btn-edit": "修正", "btn-translate": "🌏 翻訳", "settings-auto-translate": "自動翻訳", "settings-auto-translate-desc": "メッセージを自動的に翻訳して表示します。",
+        "cat-all": "全表示 (ALL)", "cat-research": "研究所ニュース", "cat-drawings": "ギャラリー", "cat-bug": "バグ報告", "status-posts": "件の投稿", "status-no-posts": "まだ投稿がありません。", "admin-user-mgr": "👥 ユーザー 관리", "admin-user-mgr-title": "全ユーザー管理", "admin-user-mgr-desc": "登録された全会員のリストです。", "btn-refresh": "リスト更新", "detail-archive": "アーカイブ", "detail-published": "発行", "detail-views": "閲覧", "cat-uncategorized": "未分類"
     },
     zh: {
         "nav-records": "记录所", "nav-chat": "💬 聊天", "nav-journal": "日记", "nav-login": "登录", "nav-signup": "注册", "nav-logout": "注销", "nav-account": "账号管理",
         "header-subtitle": "记录流动，对话停留的地方", "welcome-back": "欢迎回来, ", "welcome-subtitle": "探索您的资源。",
         "sidebar-cats": "主要类别", "sidebar-admin": "管理面板", "sidebar-connect": "连接", "sidebar-bgm": "BGM播放器",
         "best-posts": "推荐文章", "feeds": "动态", "write": "发帖", "back-to-list": "← 返回列表", "comments": "评论", "comment-placeholder": "输入评论...", "comment-submit": "提交", "comment-login-required": "登录后即可发表评论。",
-        "settings-title": "⚙️ 设置", "settings-profile": "👤 我的资料", "settings-profile-desc": "修改昵称和头像。", "settings-notif-sound": "🔔 提示音", "settings-notif-desc": "新消息到达时播放提示音。", "settings-layout": "布局调整", "settings-layout-desc": "调整屏幕宽度和高度。", "settings-font": "字体大小", "settings-lang": "🌐 语言设置", "settings-lang-desc": "更改系统语言。", "confirm": "确定", "cancel": "取消",
+        "settings-title": "⚙️ 设置", "settings-notif-sound": "🔔 提示音", "settings-notif-desc": "新消息到达时播放提示音。", "settings-layout": "布局调整", "settings-layout-desc": "调整屏幕宽度和高度。", "settings-font": "字体大小", "settings-lang": "🌐 语言设置", "settings-lang-desc": "更改系统 language。", "confirm": "确定", "cancel": "取消",
         "auth-login": "登录", "auth-signup": "注册", "auth-id": "用户名", "auth-pw": "密码", "auth-nickname": "昵称", "auth-enter": "进入", "auth-no-acc": "没有账号？", "auth-yes-acc": "已有账号？", "auth-select-country": "选择国家", "auth-select-lang": "选择语言", "auth-location-consent": "同意收集位置信息 (可选)",
-        "chat-channels": "频道列表", "chat-friends": "好友列表", "chat-members": "成员列表", "chat-add-friend": "添加好友", "chat-create-channel": "创建频道", "chat-welcome-title": "欢迎来到 ROSAE HUB!", "chat-welcome-desc": "这是社区的起点。留下您的消息。", "chat-input-placeholder": "发送消息...", "chat-send": "发送", "chat-online": "在线", "chat-back-to-blog": "↩️ 返回博客"
+        "chat-channels": "频道列表", "chat-friends": "好友列表", "chat-members": "成员列表", "chat-add-friend": "添加好友", "chat-create-channel": "创建频道", "chat-welcome-title": "欢迎来到 ROSAE HUB!", "chat-welcome-desc": "这是社区的起点。留下您的消息。", "chat-input-placeholder": "发送消息...", "chat-send": "发送", "chat-online": "在线", "chat-back-to-blog": "↩️ 返回博客",
+        "cat-notice": "📢 公告事项", "cat-chat": "💬 聊天室", "cat-karaoke": "🎤 卡拉OK", "cat-voice": "📞 语音通话", "cat-game": "🎮 游戏室",
+        "type-notice": " (公告)", "type-secret": " (私密)", "type-open": " (公开)", "type-qna": " (Q&A)",
+        "time-now": "刚刚", "time-min": "分钟前", "time-hour": "小时前", "time-day": "天前", "time-old": "很久以前", "time-offline": "离线",
+        "btn-invite": "邀请", "btn-delete": "删除", "btn-edit": "确认", "btn-translate": "🌏 翻译", "settings-auto-translate": "自动翻译", "settings-auto-translate-desc": "自动翻译并显示消息。",
+        "cat-all": "全部显示 (ALL)", "cat-research": "研究所新闻", "cat-drawings": "画廊", "cat-bug": "Bug 报告", "status-posts": "条内容", "status-no-posts": "尚无内容。", "admin-user-mgr": "👥 用户管理", "admin-user-mgr-title": "全局用户管理", "admin-user-mgr-desc": "已注册会员列表。", "btn-refresh": "刷新列表", "detail-archive": "归档", "detail-published": "发布", "detail-views": "阅读", "cat-uncategorized": "未分类"
     }
 };
 
@@ -1104,16 +1124,20 @@ function renderBestPosts() {
 
 function renderCategories() {
     if (!catList) return;
-    catList.innerHTML = `<li><a class="cat-item ${currentCategory === 'all' ? 'active' : ''}" data-id="all">전체보기 (ALL)</a></li>`;
+    catList.innerHTML = `<li><a class="cat-item ${currentCategory === 'all' ? 'active' : ''}" data-id="all">${LanguageManager.get('cat-all')}</a></li>`;
     categories.forEach(cat => {
-        catList.innerHTML += `<li><a class="cat-item ${currentCategory === cat.id ? 'active' : ''}" data-id="${cat.id}">${cat.name}</a></li>`;
+        const displayName = cat.i18n ? LanguageManager.get(cat.i18n) : (cat.name || cat.id);
+        catList.innerHTML += `<li><a class="cat-item ${currentCategory === cat.id ? 'active' : ''}" data-id="${cat.id}">${displayName}</a></li>`;
     });
     if (isAdminMode) {
-        catList.innerHTML += `<li><a class="cat-item user-mgr-cat ${currentCategory === 'users-mgr' ? 'active' : ''}" data-id="users-mgr" style="color:#d32f2f; font-weight:bold;">👥 사용자 관리</a></li>`;
+        catList.innerHTML += `<li><a class="cat-item user-mgr-cat ${currentCategory === 'users-mgr' ? 'active' : ''}" data-id="users-mgr" style="color:#d32f2f; font-weight:bold;">${LanguageManager.get('admin-user-mgr')}</a></li>`;
     }
     if (postCatSelect) {
         postCatSelect.innerHTML = '';
-        categories.forEach(cat => postCatSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`);
+        categories.forEach(cat => {
+            const displayName = cat.i18n ? LanguageManager.get(cat.i18n) : (cat.name || cat.id);
+            postCatSelect.innerHTML += `<option value="${cat.id}">${displayName}</option>`;
+        });
     }
     document.querySelectorAll('.cat-item').forEach(el => {
         el.onclick = () => {
@@ -1145,9 +1169,9 @@ async function renderUserManagement() {
 
     grid.innerHTML = `
         <div class="admin-section-title">
-            <h2>전체 사용자 관리</h2>
-            <p>가입된 전체 회원 목록입니다.</p>
-            <button onclick="renderUserManagement()" class="sm-action-btn" style="margin-top:10px;">🔄 목록 새로고침</button>
+            <h2>${LanguageManager.get('admin-user-mgr-title')}</h2>
+            <p>${LanguageManager.get('admin-user-mgr-desc')}</p>
+            <button onclick="renderUserManagement()" class="sm-action-btn" style="margin-top:10px;">🔄 ${LanguageManager.get('btn-refresh')}</button>
         </div>
     `;
 
@@ -1210,7 +1234,7 @@ function renderPosts() {
     // Debug UI: Show count in header if exists
     const feedHeader = document.querySelector('.list-header h2');
     if (feedHeader) {
-        feedHeader.innerHTML = `FEEDS <span style="font-size:0.6rem; opacity:0.5;">(${filtered.length} posts)</span>`;
+        feedHeader.innerHTML = `FEEDS <span style="font-size:0.6rem; opacity:0.5;">(${filtered.length} ${LanguageManager.get('status-posts')})</span>`;
     }
 
     // Forced Pagination Logic
@@ -1225,7 +1249,7 @@ function renderPosts() {
     console.log(`[PAGINATION] Total: ${total}, Page: ${currPage}/${totalPages}, Showing: ${pagedPosts.length}`);
 
     if (total === 0) {
-        grid.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">아직 등록된 글이 없습니다.</div>';
+        grid.innerHTML = `<div style="text-align:center; padding:50px; color:#aaa;">${LanguageManager.get('status-no-posts')}</div>`;
         const pgContainer = document.getElementById('pagination-container');
         if (pgContainer) pgContainer.innerHTML = '';
         return;
@@ -1233,7 +1257,7 @@ function renderPosts() {
 
     pagedPosts.forEach(post => {
         const cat = categories.find(c => c.id === post.category);
-        const catName = cat ? cat.name.split(' (')[0] : '미분류';
+        const catName = cat ? (cat.i18n ? LanguageManager.get(cat.i18n) : cat.name.split(' (')[0]) : LanguageManager.get('cat-uncategorized');
         const isSelected = selectedPostIds.has(post.id);
         const isAuthor = currentUser && currentUser.nickname === post.author;
         const item = document.createElement('div');
@@ -1252,8 +1276,8 @@ function renderPosts() {
                 </div>
                 ${isAuthor ? `
                 <div class="item-inline-actions">
-                    <button onclick="editPostAction(${post.id})" class="inline-action-btn">수정</button>
-                    <button onclick="deletePostAction(${post.id})" class="inline-action-btn delete">삭제</button>
+                    <button onclick="editPostAction(${post.id})" class="inline-action-btn">${LanguageManager.get('btn-edit')}</button>
+                    <button onclick="deletePostAction(${post.id})" class="inline-action-btn delete">${LanguageManager.get('btn-delete')}</button>
                 </div>` : ''}
             </div>
         `;
@@ -1332,22 +1356,25 @@ function showDetail(id) {
     const isAuthor = currentUser && currentUser.nickname === post.author;
     const canManage = isAdminMode || isAuthor;
     const foundCat = categories.find(function (c) { return c.id === post.category; });
-    const catName = (foundCat && foundCat.name) ? foundCat.name.split(' (')[0] : '미분류';
+    const catName = foundCat ? (foundCat.i18n ? LanguageManager.get(foundCat.i18n) : foundCat.name.split(' (')[0]) : LanguageManager.get('cat-uncategorized');
 
     detailContent.innerHTML = `
         <header class="detail-header">
-            <span class="tag">${catName} 아카이브</span>
-            <h1>${post.title}</h1>
+            <span class="tag">${catName} ${LanguageManager.get('detail-archive') || 'Archive'}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1 id="post-detail-title">${post.title}</h1>
+                <button onclick="translatePost(${post.id})" class="notif-toggle-btn" style="height:fit-content; border:1px solid var(--accent); color:var(--accent);">${LanguageManager.get('btn-translate')}</button>
+            </div>
             <div class="detail-meta">
-                <span>${post.author} 발행</span>
+                <span>${post.author} ${LanguageManager.get('detail-published') || 'Published'}</span>
                 <span>${post.date}</span>
-                <span class="view-count">조회 ${post.views}</span>
+                <span class="view-count">${LanguageManager.get('detail-views') || 'Views'} ${post.views}</span>
             </div>
         </header>
         ${post.img ? `<div class="post-img-container"><img src="${post.img}" alt="본문 이미지"></div>` : ''}
-        <div class="post-body">${post.content.replace(/\n/g, '<br>')}</div>
+        <div class="post-body" id="post-detail-body">${post.content.replace(/\n/g, '<br>')}</div>
         <div class="post-footer">
-            ${canManage ? `<button onclick="editPostAction(${post.id})" class="action-btn">내용 수정</button><button onclick="deletePostAction(${post.id})" class="action-btn">내용 삭제</button>` : ''}
+            ${canManage ? `<button onclick="editPostAction(${post.id})" class="action-btn">${LanguageManager.get('btn-edit')}</button><button onclick="deletePostAction(${post.id})" class="action-btn">${LanguageManager.get('btn-delete')}</button>` : ''}
         </div>
     `;
 
@@ -1355,6 +1382,34 @@ function showDetail(id) {
     loadComments(id);
 }
 window.showDetail = showDetail;
+
+async function translatePost(id) {
+    const post = posts.find(p => p.id == id);
+    if (!post) return;
+    const targetLang = LanguageManager.currentLang;
+    const btn = document.querySelector('.detail-header button');
+    if (btn) btn.disabled = true;
+
+    try {
+        const titleEl = document.getElementById('post-detail-title');
+        const bodyEl = document.getElementById('post-detail-body');
+
+        if (titleEl) {
+            const res = await LogicWorker.execute('translate', { text: post.title, targetLang });
+            if (res && res.translatedText) titleEl.innerText = res.translatedText;
+        }
+        if (bodyEl) {
+            const res = await LogicWorker.execute('translate', { text: post.content, targetLang });
+            if (res && res.translatedText) bodyEl.innerHTML = res.translatedText.replace(/\n/g, '<br>');
+        }
+    } catch (e) {
+        console.error('Translation failed:', e);
+        alert('Translation failed.');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+window.translatePost = translatePost;
 
 // ==========================================
 // 10. UTILS & SETUP

@@ -10,36 +10,60 @@ const translations = {
         "header-subtitle": "기록이 흐르고, 대화가 머무는 곳", "welcome-back": "다시 오신 것을 환영합니다, ", "welcome-subtitle": "당신의 자원을 탐색하세요.",
         "sidebar-cats": "주요 카테고리", "sidebar-admin": "관리자 패널", "sidebar-connect": "연결", "sidebar-bgm": "BGM 플레이어",
         "best-posts": "베스트 포스트", "feeds": "피드", "write": "글쓰기", "back-to-list": "← 목록으로", "comments": "댓글", "comment-placeholder": "댓글을 입력하세요...", "comment-submit": "등록", "comment-login-required": "댓글을 달려면 로그인이 필요합니다.",
-        "settings-title": "⚙️ 환경 설정", "settings-profile": "👤 내 프로필", "settings-profile-desc": "닉네임과 프로필 이미지를 변경합니다.", "settings-notif-sound": "🔔 알림 소리", "settings-notif-desc": "새 메시지 도착 시 소리로 알립니다.", "settings-layout": "레이아웃 조절", "settings-layout-desc": "화면 너비와 높이를 조절합니다.", "settings-font": "글자 크기", "settings-lang": "🌐 언어 설정 (Language)", "settings-lang-desc": "시스템 언어를 변경합니다.", "confirm": "확인", "cancel": "취소",
+        "settings-title": "⚙️ 환경 설정", "settings-notif-sound": "🔔 알림 소리", "settings-notif-desc": "새 메시지 도착 시 소리로 알립니다.", "settings-layout": "레이아웃 조절", "settings-layout-desc": "화면 너비와 높이를 조절합니다.", "settings-font": "글자 크기", "settings-lang": "🌐 언어 설정 (Language)", "settings-lang-desc": "시스템 언어를 변경합니다.", "confirm": "확인", "cancel": "취소",
         "auth-login": "로그인", "auth-signup": "회원가입", "auth-id": "아이디", "auth-pw": "비밀번호", "auth-nickname": "닉네임", "auth-enter": "입장", "auth-no-acc": "계정이 없으신가요?", "auth-yes-acc": "이미 계정이 있으신가요?", "auth-select-country": "국가 선택", "auth-select-lang": "언어 선택", "auth-location-consent": "위치 정보 수집 및 이용에 동의합니다 (선택)",
-        "chat-channels": "채널 목록", "chat-friends": "친구 목록", "chat-members": "멤버 목록", "chat-add-friend": "친구추가", "chat-create-channel": "내 채널 만들기", "chat-welcome-title": "ROSAE HUB에 오신 것을 환영합니다!", "chat-welcome-desc": "커뮤니티의 시작점입니다. 메시지를 남겨보세요.", "chat-input-placeholder": "메시지 보내기...", "chat-send": "전송", "chat-online": "온라인", "chat-back-to-blog": "↩️ 블로그로 돌아가기"
+        "chat-channels": "채널 목록", "chat-friends": "친구 목록", "chat-members": "멤버 목록", "chat-add-friend": "친구추가", "chat-create-channel": "내 채널 만들기", "chat-welcome-title": "ROSAE HUB에 오신 것을 환영합니다!", "chat-welcome-desc": "커뮤니티의 시작점입니다. 메시지를 남겨보세요.", "chat-input-placeholder": "메시지 보내기...", "chat-send": "전송", "chat-online": "온라인", "chat-back-to-blog": "↩️ 블로그로 돌아가기",
+        "cat-notice": "📢 공지사항", "cat-chat": "💬 채팅방", "cat-karaoke": "🎤 노래방", "cat-voice": "📞 보이스 톡", "cat-game": "🎮 게임 방",
+        "type-notice": " (공지)", "type-secret": " (비밀)", "type-open": " (오픈)", "type-qna": " (질문)",
+        "time-now": "방금 전", "time-min": "분 전", "time-hour": "시간 전", "time-day": "일 전", "time-old": "오래 전", "time-offline": "오프라인",
+        "btn-invite": "초대", "btn-delete": "삭제", "btn-edit": "수정", "btn-translate": "🌏 번역", "settings-auto-translate": "자동 번역", "settings-auto-translate-desc": "메시지를 자동으로 번역하여 표시합니다.",
+        "type-notice": " (공지)", "type-secret": " (비밀)", "type-open": " (오픈)", "type-qna": " (질문)", "type-general": "일반",
+        "chat-page-all": "전체 채널(편집 불가)", "chat-page-empty": "이 페이지에 채널이 없습니다.", "chat-discovery-none": "검색 결과 없음", "chat-owned-none": "내가 만든 채팅방이 없습니다.", "chat-personal-none": "내가 만든 채널 목록(카테고리)이 없습니다."
     },
     en: {
         "nav-records": "Records", "nav-chat": "💬 Chat", "nav-journal": "Journal", "nav-login": "Login", "nav-signup": "Sign Up", "nav-logout": "Logout", "nav-account": "Account",
         "header-subtitle": "Where records flow and conversations stay", "welcome-back": "Welcome back, ", "welcome-subtitle": "Explore your resources.",
         "sidebar-cats": "MAIN CATEGORIES", "sidebar-admin": "ADMIN PANEL", "sidebar-connect": "CONNECT", "sidebar-bgm": "BGM PLAYER",
         "best-posts": "BEST POSTS", "feeds": "FEEDS", "write": "Write", "back-to-list": "← Back to List", "comments": "COMMENTS", "comment-placeholder": "Enter your comment...", "comment-submit": "Submit", "comment-login-required": "Login is required to comment.",
-        "settings-title": "⚙️ Settings", "settings-profile": "👤 My Profile", "settings-profile-desc": "Change your nickname and profile image.", "settings-notif-sound": "🔔 Notif Sound", "settings-notif-desc": "Play sound on new messages.", "settings-layout": "Layout Controls", "settings-layout-desc": "Adjust screen width and height.", "settings-font": "Font Size", "settings-lang": "🌐 Language Settings", "settings-lang-desc": "Change the system language.", "confirm": "Confirm", "cancel": "Cancel",
+        "settings-title": "⚙️ Settings", "settings-notif-sound": "🔔 Notif Sound", "settings-notif-desc": "Play sound on new messages.", "settings-layout": "Layout Controls", "settings-layout-desc": "Adjust screen width and height.", "settings-font": "Font Size", "settings-lang": "🌐 Language Settings", "settings-lang-desc": "Change the system language.", "confirm": "Confirm", "cancel": "Cancel",
         "auth-login": "Login", "auth-signup": "Sign Up", "auth-id": "Username", "auth-pw": "Password", "auth-nickname": "Nickname", "auth-enter": "ENTER", "auth-no-acc": "Don't have an account?", "auth-yes-acc": "Already have an account?", "auth-select-country": "Select Country", "auth-select-lang": "Select Language", "auth-location-consent": "Agree to location collection (Optional)",
-        "chat-channels": "Channels", "chat-friends": "Friends", "chat-members": "Members", "chat-add-friend": "Add Friend", "chat-create-channel": "Create Channel", "chat-welcome-title": "Welcome to ROSAE HUB!", "chat-welcome-desc": "This is the start of the community. Leave a message.", "chat-input-placeholder": "Send a message...", "chat-send": "Send", "chat-online": "Online", "chat-back-to-blog": "↩️ Back to Blog"
+        "chat-channels": "Channels", "chat-friends": "Friends", "chat-members": "Members", "chat-add-friend": "Add Friend", "chat-create-channel": "Create Channel", "chat-welcome-title": "Welcome to ROSAE HUB!", "chat-welcome-desc": "This is the start of the community. Leave a message.", "chat-input-placeholder": "Send a message...", "chat-send": "Send", "chat-online": "Online", "chat-back-to-blog": "↩️ Back to Blog",
+        "cat-notice": "📢 Notices", "cat-chat": "💬 Chat Rooms", "cat-karaoke": "🎤 Karaoke", "cat-voice": "📞 Voice Talk", "cat-game": "🎮 Gaming",
+        "type-notice": " (Notice)", "type-secret": " (Secret)", "type-open": " (Open)", "type-qna": " (Q&A)",
+        "time-now": "Just now", "time-min": "m ago", "time-hour": "h ago", "time-day": "d ago", "time-old": "Long ago", "time-offline": "Offline",
+        "btn-invite": "Invite", "btn-delete": "Delete", "btn-edit": "Edit", "btn-translate": "🌏 Translate", "settings-auto-translate": "Auto-Translate", "settings-auto-translate-desc": "Automatically translate incoming messages.",
+        "type-notice": " (Notice)", "type-secret": " (Secret)", "type-open": " (Open)", "type-qna": " (Q&A)", "type-general": "General",
+        "chat-page-all": "All Channels (View Only)", "chat-page-empty": "No channels on this page.", "chat-discovery-none": "No results found", "chat-owned-none": "No chat rooms created.", "chat-personal-none": "No personal categories found."
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
         "header-subtitle": "記録が流れ、会話が留まる場所", "welcome-back": "おかえりなさい、 ", "welcome-subtitle": "リソースを探索しましょう。",
         "sidebar-cats": "メインカテゴリー", "sidebar-admin": "管理者パネル", "sidebar-connect": "接続", "sidebar-bgm": "BGMプレイヤー",
         "best-posts": "ベストポスト", "feeds": "フィード", "write": "記事を書く", "back-to-list": "← リストに戻る", "comments": "コメント", "comment-placeholder": "コメントを入力してください...", "comment-submit": "登録", "comment-login-required": "コメントするにはログインが必要です。",
-        "settings-title": "⚙️ 環境設定", "settings-profile": "👤 プロフィール", "settings-profile-desc": "ニックネームとプロフィール画像を変更します。", "settings-notif-sound": "🔔 通知音", "settings-notif-desc": "新しいメッセージの到着を音で知らせます。", "settings-layout": "レイアウト調整", "settings-layout-desc": "画面의 幅と高さを調整します。", "settings-font": "文字サイズ", "settings-lang": "🌐 言語設定", "settings-lang-desc": "システム言語を変更します。", "confirm": "確認", "cancel": "キャンセル",
+        "settings-title": "⚙️ 環境設定", "settings-notif-sound": "🔔 通知音", "settings-notif-desc": "新しいメッセージの到着を音で知らせます。", "settings-layout": "レイアウト調整", "settings-layout-desc": "画面의 幅と高さを調整します。", "settings-font": "文字サイズ", "settings-lang": "🌐 言語設定", "settings-lang-desc": "システム言語を変更します。", "confirm": "確認", "cancel": "キャンセル",
         "auth-login": "ログイン", "auth-signup": "新規登録", "auth-id": "ID", "auth-pw": "パスワード", "auth-nickname": "ニックネーム", "auth-enter": "入場", "auth-no-acc": "アカウントをお持ちでないですか？", "auth-yes-acc": "すでにアカウントをお持ちですか？", "auth-select-country": "国を選択", "auth-select-lang": "言語を選択", "auth-location-consent": "位置情報の収集に同意する (任意)",
-        "chat-channels": "チャンネル", "chat-friends": "友達", "chat-members": "メンバー", "chat-add-friend": "友達追加", "chat-create-channel": "チャンネル作成", "chat-welcome-title": "ROSAE HUBへようこそ！", "chat-welcome-desc": "コミュニティの始まりです。メッセージを残しましょう。", "chat-input-placeholder": "メッセージを送る...", "chat-send": "送信", "chat-online": "オンライン", "chat-back-to-blog": "↩️ ブログに戻る"
+        "chat-channels": "チャンネル", "chat-friends": "友達", "chat-members": "メンバー", "chat-add-friend": "友達追加", "chat-create-channel": "チャンネル作成", "chat-welcome-title": "ROSAE HUBへようこそ！", "chat-welcome-desc": "コミュニティの始まりです。メッセージを残しましょう。", "chat-input-placeholder": "メッセージを送る...", "chat-send": "送信", "chat-online": "オンライン", "chat-back-to-blog": "↩️ ブログに戻る",
+        "cat-notice": "📢 お知らせ", "cat-chat": "💬 チャットルーム", "cat-karaoke": "🎤 カラオケ", "cat-voice": "📞 ボイストーク", "cat-game": "🎮 ゲームルーム",
+        "type-notice": " (お知らせ)", "type-secret": " (非公開)", "type-open": " (オープン)", "type-qna": " (Q&A)",
+        "time-now": "たった今", "time-min": "分前", "time-hour": "時間前", "time-day": "日前", "time-old": "ずっと前", "time-offline": "オフライン",
+        "btn-invite": "招待", "btn-delete": "削除", "btn-edit": "修正", "btn-translate": "🌏 翻訳", "settings-auto-translate": "自動翻訳", "settings-auto-translate-desc": "メッセージを自動的に翻訳して表示します。",
+        "type-general": "一般",
+        "chat-page-all": "全チャンネル (編集不可)", "chat-page-empty": "このページにはチャンネルがありません。", "chat-discovery-none": "検索結果なし", "chat-owned-none": "作成したチャットルームはありません。", "chat-personal-none": "作成したカテゴリーはありません。"
     },
     zh: {
         "nav-records": "记录所", "nav-chat": "💬 聊天", "nav-journal": "日记", "nav-login": "登录", "nav-signup": "注册", "nav-logout": "注销", "nav-account": "账号管理",
         "header-subtitle": "记录流动，对话停留的地方", "welcome-back": "欢迎回来, ", "welcome-subtitle": "探索您的资源。",
         "sidebar-cats": "主要类别", "sidebar-admin": "管理面板", "sidebar-connect": "连接", "sidebar-bgm": "BGM播放器",
         "best-posts": "推荐文章", "feeds": "动态", "write": "发帖", "back-to-list": "← 返回列表", "comments": "评论", "comment-placeholder": "输入评论...", "comment-submit": "提交", "comment-login-required": "登录后即可发表评论。",
-        "settings-title": "⚙️ 设置", "settings-profile": "👤 我的资料", "settings-profile-desc": "修改昵称和头像。", "settings-notif-sound": "🔔 提示音", "settings-notif-desc": "新消息到达时播放提示音。", "settings-layout": "布局调整", "settings-layout-desc": "调整屏幕宽度和高度。", "settings-font": "字体大小", "settings-lang": "🌐 语言设置", "settings-lang-desc": "更改系统语言。", "confirm": "确定", "cancel": "取消",
+        "settings-title": "⚙️ 设置", "settings-notif-sound": "🔔 提示音", "settings-notif-desc": "新消息到达时播放提示音。", "settings-layout": "布局调整", "settings-layout-desc": "调整屏幕宽度和高度。", "settings-font": "字体大小", "settings-lang": "🌐 语言设置", "settings-lang-desc": "更改系统语言。", "confirm": "确定", "cancel": "取消",
         "auth-login": "登录", "auth-signup": "注册", "auth-id": "用户名", "auth-pw": "密码", "auth-nickname": "昵称", "auth-enter": "进入", "auth-no-acc": "没有账号？", "auth-yes-acc": "已有账号？", "auth-select-country": "选择国家", "auth-select-lang": "选择语言", "auth-location-consent": "同意收集位置信息 (可选)",
-        "chat-channels": "频道列表", "chat-friends": "好友列表", "chat-members": "成员列表", "chat-add-friend": "添加好友", "chat-create-channel": "创建频道", "chat-welcome-title": "欢迎来到 ROSAE HUB!", "chat-welcome-desc": "这是社区的起点。留下您的消息。", "chat-input-placeholder": "发送消息...", "chat-send": "发送", "chat-online": "在线", "chat-back-to-blog": "↩️ 返回博客"
+        "chat-channels": "频道列表", "chat-friends": "好友列表", "chat-members": "成员列表", "chat-add-friend": "添加好友", "chat-create-channel": "创建频道", "chat-welcome-title": "欢迎来到 ROSAE HUB!", "chat-welcome-desc": "这是社区的起点。留下您的消息。", "chat-input-placeholder": "发送消息...", "chat-send": "发送", "chat-online": "在线", "chat-back-to-blog": "↩️ 返回博客",
+        "cat-notice": "📢 公告事项", "cat-chat": "💬 聊天室", "cat-karaoke": "🎤 卡拉OK", "cat-voice": "📞 语音通话", "cat-game": "🎮 游戏室",
+        "type-notice": " (公告)", "type-secret": " (私密)", "type-open": " (公开)", "type-qna": " (Q&A)",
+        "time-now": "刚刚", "time-min": "分钟前", "time-hour": "小时前", "time-day": "天前", "time-old": "很久以前", "time-offline": "离线",
+        "btn-invite": "邀请", "btn-delete": "删除", "btn-edit": "确认", "btn-translate": "🌏 翻译", "settings-auto-translate": "自动翻译", "settings-auto-translate-desc": "自动翻译并显示消息。",
+        "type-notice": " (公告)", "type-secret": " (私密)", "type-open": " (公开)", "type-qna": " (Q&A)", "type-general": "普通",
+        "chat-page-all": "全部频道 (不可编辑)", "chat-page-empty": "此页面暂无频道。", "chat-discovery-none": "无搜索结果", "chat-owned-none": "暂无创建的聊天室。", "chat-personal-none": "暂无个人分类。"
     }
 };
 
@@ -110,14 +134,14 @@ const CATEGORY_NAMES = {
 };
 
 const formatDistanceToNow = (date) => {
-    if (!date) return '오프라인';
+    if (!date) return LanguageManager.get('time-offline');
     const now = new Date();
     const diff = Math.floor((now - new Date(date)) / 1000); // seconds
-    if (diff < 60) return '방금 전';
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-    if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
-    return '오래 전';
+    if (diff < 60) return LanguageManager.get('time-now');
+    if (diff < 3600) return `${Math.floor(diff / 60)}${LanguageManager.get('time-min')}`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}${LanguageManager.get('time-hour')}`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)}${LanguageManager.get('time-day')}`;
+    return LanguageManager.get('time-old');
 };
 
 // 🧵 Web Worker (Logic Thread) Manager
@@ -181,17 +205,17 @@ class Channel {
 
     _getTypeLabel() {
         switch (this.type) {
-            case 'notice': return ' (공지)';
-            case 'secret': return ' (비밀)';
-            case 'open_hidden': return ' (오픈)';
-            case 'qna': return ' (질문)';
+            case 'notice': return LanguageManager.get('type-notice');
+            case 'secret': return LanguageManager.get('type-secret');
+            case 'open_hidden': return LanguageManager.get('type-open');
+            case 'qna': return LanguageManager.get('type-qna');
             default: return '';
         }
     }
 
     renderHeader() {
         const hash = this.type === 'secret' ? '🔒' : '#';
-        const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
+        const categoryLabel = LanguageManager.get(`cat-${this.category}`) || LanguageManager.get('cat-chat');
         const typeLabel = this._getTypeLabel();
         return `
             <div class="header-left">
@@ -207,13 +231,13 @@ class Channel {
 
     renderSidebarItem(isActive, currentUsername, isAdmin, voiceState = { show: false, on: false }) {
         const hash = this.type === 'secret' ? '🔒' : '#';
-        const categoryLabel = CATEGORY_NAMES[this.category] || '💬 채팅방';
+        const categoryLabel = LanguageManager.get(`cat-${this.category}`) || LanguageManager.get('cat-chat');
         const typeLabel = this._getTypeLabel();
         const isOwner = currentUsername && String(this.owner_id) === String(currentUsername);
         const canManage = isAdmin || isOwner;
 
-        const deleteHtml = canManage ? `<button class="delete-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.deleteChannel('${this.id}')" title="채널 삭제">&times;</button>` : '';
-        const editHtml = canManage ? `<button class="edit-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.editChannelPrompt('${this.id}')" title="채널 수정">✎</button>` : '';
+        const deleteHtml = canManage ? `<button class="delete-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.deleteChannel('${this.id}')" title="${LanguageManager.get('btn-delete')}">&times;</button>` : '';
+        const editHtml = canManage ? `<button class="edit-channel-btn" data-id="${this.id}" onclick="event.stopPropagation(); window.app.editChannelPrompt('${this.id}')" title="${LanguageManager.get('btn-edit')}">✎</button>` : '';
         const voiceHtml = (voiceState && voiceState.show)
             ? `<span class="channel-voice-indicator ${voiceState.on ? 'on' : 'off'}" title="보이스 톡 ${voiceState.on ? 'ON' : 'OFF'}">${voiceState.on ? '🎙️' : '🎤'}</span>`
             : '';
@@ -232,7 +256,7 @@ class Channel {
     }
 
     getPlaceholder() {
-        return `#${this.name} 에 메시지 보내기`;
+        return `#${this.name} ${LanguageManager.get('chat-input-placeholder-dynamic') || '에 메시지 보내기'}`;
     }
 }
 
@@ -592,6 +616,7 @@ class AntiCodeApp {
         this.unlockedStorageKey = null; // per-user localStorage key (set after auth)
         this.sentMessageCache = new Set(); // To prevent duplicates in Optimistic UI
         this.isAdminMode = false;
+        this.autoTranslateEnabled = localStorage.getItem('app_auto_translate') === 'true'; // [NEW]
         this.userRequestCache = {}; // Dedup in-flight user info requests
         this.processedMessageIds = new Set(); // To prevent duplicates (Broadcast vs Postgres)
         this.recentMessageFingerprints = new Map(); // Dedup Broadcast vs Postgres when IDs differ
@@ -650,6 +675,7 @@ class AntiCodeApp {
         this.finalizeOptimistic = this.finalizeOptimistic.bind(this);
         this.getUserInfo = this.getUserInfo.bind(this);
         this._scrollToBottom = this._scrollToBottom.bind(this);
+        this.updateAutoTranslateUI = this.updateAutoTranslateUI.bind(this); // [NEW]
     }
 
     async refreshEntitlements() {
@@ -1020,8 +1046,9 @@ class AntiCodeApp {
 
     _channelLabel(ch) {
         if (!ch) return '';
-        const cat = CATEGORY_NAMES[ch.category] || ('#' + (ch.category || 'chat'));
-        const type = ch.type || 'general';
+        const cat = LanguageManager.get(`cat-${ch.category}`) || ('#' + (ch.category || 'chat'));
+        const typeKey = `type-${ch.type || 'general'}`;
+        const type = LanguageManager.get(typeKey);
         return `${cat} · ${type}`;
     }
 
@@ -1080,7 +1107,7 @@ class AntiCodeApp {
             sel.innerHTML = '';
             const optAll = document.createElement('option');
             optAll.value = 'all';
-            optAll.textContent = '전체 채널(편집 불가)';
+            optAll.textContent = LanguageManager.get('chat-page-all');
             sel.appendChild(optAll);
             (this.channelPages || []).forEach(p => {
                 const opt = document.createElement('option');
@@ -1162,7 +1189,7 @@ class AntiCodeApp {
         const pid = String(sel.value || 'all');
 
         if (pid === 'all') {
-            itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">'전체 채널'은 편집할 수 없습니다. 새 페이지를 만든 뒤 채널을 추가하세요.</div>`;
+            itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">${LanguageManager.get('chat-page-all')}</div>`;
             return;
         }
 
@@ -1173,7 +1200,7 @@ class AntiCodeApp {
         chans.sort((a, b) => (order.get(String(a.id)) || 0) - (order.get(String(b.id)) || 0));
 
         if (chans.length === 0) {
-            itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">이 페이지에 채널이 없습니다.</div>`;
+            itemsBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">${LanguageManager.get('chat-page-empty')}</div>`;
             return;
         }
 
@@ -1187,9 +1214,9 @@ class AntiCodeApp {
                   <span class="member-status-sub">${this.escapeHtml(label)}</span>
                 </div>
                 <div class="member-actions">
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">이동</button>
-                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">제거</button>
-                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">초대</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="if(window.app) { window.app.handleChannelSwitch('${ch.id}'); document.getElementById('channel-pages-modal').style.display='none'; }">${LanguageManager.get('chat-nav-move') || '이동'}</button>
+                  <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeChannelFromPage && window.app.removeChannelFromPage('${pid}','${ch.id}')">${LanguageManager.get('btn-delete')}</button>
+                  <button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.openFriendModalForChannel && window.app.openFriendModalForChannel('${ch.id}')">${LanguageManager.get('btn-invite')}</button>
                 </div>
               </div>
             `;
@@ -1268,7 +1295,7 @@ class AntiCodeApp {
     _renderDiscoveryResults(items, container, pid) {
         if (!container) return;
         if (items.length === 0) {
-            container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">검색 결과 없음</div>`;
+            container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">${LanguageManager.get('chat-discovery-none')}</div>`;
             return;
         }
 
@@ -1320,7 +1347,7 @@ class AntiCodeApp {
         const ownedChans = this.channels.filter(ch => me && String(ch.owner_id) === String(me));
 
         if (ownedChans.length === 0) {
-            list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">내가 만든 채팅방이 없습니다.</div>';
+            list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">${LanguageManager.get('chat-owned-none')}</div>`;
             return;
         }
 
@@ -1342,7 +1369,7 @@ class AntiCodeApp {
         if (!list) return;
 
         if (!this.channelPages || this.channelPages.length === 0) {
-            list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">내가 만든 채널 목록(카테고리)이 없습니다.</div>';
+            list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">${LanguageManager.get('chat-personal-none')}</div>`;
             return;
         }
 
@@ -2156,13 +2183,13 @@ class AntiCodeApp {
                         <span class="online-dot"></span>
                     </div>
                     <div class="member-info" onclick="if(window.app && window.app.showUserProfile) { window.app.showUserProfile('${uname}'); event.stopPropagation(); }" style="cursor:pointer;">
-                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isAdmin ? '<span class="friend-badge">[관리자]</span>' : (isFriend ? '<span class="friend-badge">[친구]</span>' : '')}</span>
-                        <span class="member-status-sub">온라인 (클릭하여 UID 확인)</span>
+                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isAdmin ? `<span class="friend-badge">[${LanguageManager.get('role-admin')}]</span>` : (isFriend ? `<span class="friend-badge">[${LanguageManager.get('role-friend')}]</span>` : '')}</span>
+                        <span class="member-status-sub">${LanguageManager.get('status-online')} (${LanguageManager.get('profile-click-uid')})</span>
                     </div>
                     <div class="member-actions">
-                        ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
-                        ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
-                        ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
+                        ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">${LanguageManager.get('btn-kick')}</button>` : ''}
+                        ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">${LanguageManager.get('btn-block')}</button>` : ''}
+                        ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">${LanguageManager.get('btn-unblock')}</button>` : ''}
                     </div>
                 </div>
             `;
@@ -2205,13 +2232,13 @@ class AntiCodeApp {
                         <div class="avatar-sm" style="${avatar ? 'display:none;' : ''}">${this.escapeHtml(String(nick || uname || '?')[0] || '?')}</div>
                     </div>
                     <div class="member-info" onclick="if(window.app && window.app.showUserProfile) { window.app.showUserProfile('${uname}'); event.stopPropagation(); }" style="cursor:pointer;">
-                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? '<span class="friend-badge">[친구]</span>' : ''}</span>
-                        <span class="member-status-sub">${this.escapeHtml(lastSeen)} (클릭하여 UID 확인)</span>
+                        <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} ${isFriend ? `<span class="friend-badge">[${LanguageManager.get('role-friend')}]</span>` : ''}</span>
+                        <span class="member-status-sub">${this.escapeHtml(lastSeen)} (${LanguageManager.get('profile-click-uid')})</span>
                     </div>
                     <div class="member-actions">
-                        ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">강퇴</button>` : ''}
-                        ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">차단</button>` : ''}
-                        ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">차단해제</button>` : ''}
+                        ${showKick ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.kickMemberFromActiveChannel && window.app.kickMemberFromActiveChannel('${uname}')">${LanguageManager.get('btn-kick')}</button>` : ''}
+                        ${(showKick && !isBlocked) ? `<button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.blockUserInActiveChannel && window.app.blockUserInActiveChannel('${uname}')">${LanguageManager.get('btn-block')}</button>` : ''}
+                        ${(showKick && isBlocked) ? `<button class="notif-toggle-btn on" style="white-space:nowrap;" onclick="window.app && window.app.unblockUserInActiveChannel && window.app.unblockUserInActiveChannel('${uname}')">${LanguageManager.get('btn-unblock')}</button>` : ''}
                     </div>
                 </div>
             `);
@@ -3506,11 +3533,11 @@ class AntiCodeApp {
                 </div>
                 <div class="friend-info" style="flex: 1; min-width: 0;">
                     <span class="friend-nickname" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(f.nickname)} <small>#${f.uid}</small></span>
-                    <span class="friend-status-text" style="display: block; color: var(--text-muted); font-size: 0.7rem;">${f.online ? '온라인' : formatDistanceToNow(f.last_seen)}</span>
+                    <span class="friend-status-text" style="display: block; color: var(--text-muted); font-size: 0.7rem;">${f.online ? LanguageManager.get('status-online') : formatDistanceToNow(f.last_seen)}</span>
                 </div>
                 <div class="friend-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel((window.app.activeChannel ? window.app.activeChannel.id : null), '${f.username}')" title="방으로 초대">초대</button>
-                    <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="친구 삭제">삭제</button>
+                    <button class="invite-friend-btn" onclick="event.stopPropagation(); window.app && window.app.inviteFriendToChannel && window.app.inviteFriendToChannel((window.app.activeChannel ? window.app.activeChannel.id : null), '${f.username}')" title="${LanguageManager.get('btn-invite')}">${LanguageManager.get('btn-invite')}</button>
+                    <button class="delete-friend-btn" onclick="event.stopPropagation(); window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')" title="${LanguageManager.get('btn-delete')}">${LanguageManager.get('btn-delete')}</button>
                 </div>
             </li>
         `;
@@ -3581,10 +3608,10 @@ class AntiCodeApp {
                 </div>
                 <div class="member-info">
                     <span class="member-name-text" title="${this.escapeHtml(tn.full)}">${this.escapeHtml(tn.short)} <small>#${f.uid}</small></span>
-                    <span class="member-status-sub">${f.online ? '온라인' : '오프라인'}</span>
+                    <span class="member-status-sub">${f.online ? LanguageManager.get('status-online') : LanguageManager.get('status-offline')}</span>
                 </div>
                 <div class="member-actions">
-                    <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')">친구삭제</button>
+                    <button class="notif-toggle-btn" style="white-space:nowrap;" onclick="window.app && window.app.removeFriend && window.app.removeFriend('${f.username}')">${LanguageManager.get('btn-delete')}</button>
                     ${blockBtn}
                     ${inviteBtn}
                 </div>
@@ -4164,14 +4191,15 @@ class AntiCodeApp {
 <div class="message-content-wrapper">
     <div class="message-meta">
         <span class="member-name">${info.nickname}</span>
-        <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? '(전송 중...)' : ''}</span></span>
+        <span class="timestamp">${timeStr} <span class="sending-status">${isOptimistic ? `(${LanguageManager.get('status-sending')})` : ''}</span></span>
         <div class="message-meta-actions">
-            ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="삭제" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
+            ${(!isOptimistic && canDelete) ? `<button class="delete-msg-btn" title="${LanguageManager.get('btn-delete')}" onclick="if(window.app) window.app.deleteMessage('${msg.id}')">🗑️</button>` : ''}
+            ${!isOptimistic ? `<button class="translate-msg-btn" title="${LanguageManager.get('btn-translate')}" onclick="if(window.app && window.app.translateMessage) window.app.translateMessage('${msg.id}')">🌏</button>` : ''}
         </div>
     </div>
     <div class="message-text">
-        ${contentHtml || (msg.image_url ? '' : '<span style="color:red; font-size:0.8rem;">[내용 없음]</span>')}
-        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')" onerror="this.onerror=null; this.parentNode.innerHTML='<span style=\\'color:red; font-size:0.8rem;\\'>❌ 이미지 로드 실패</span>'"></div>` : ''}
+        ${contentHtml || (msg.image_url ? '' : `<span style="color:red; font-size:0.8rem;">[${LanguageManager.get('msg-no-content')}]</span>`)}
+        ${msg.image_url ? `<div class="message-image-content"><img src="${msg.image_url}" class="chat-img" onclick="window.open('${msg.image_url}')" onerror="this.onerror=null; this.parentNode.innerHTML='<span style=\\'color:red; font-size:0.8rem;\\'>❌ ${LanguageManager.get('msg-image-load-fail')}</span>'"></div>` : ''}
     </div>
 </div>
 `;
@@ -4567,6 +4595,11 @@ class AntiCodeApp {
                 if (typeof this._scrollToBottom === 'function') {
                     this._scrollToBottom();
                 }
+
+                // [NEW] Auto-Translate for incoming messages
+                if (!isOptimistic && this.autoTranslateEnabled && msg.id) {
+                    this.translateMessage(msg.id);
+                }
             }
         } catch (e) {
             console.error('appendMessage error:', e);
@@ -4581,12 +4614,29 @@ class AntiCodeApp {
     }
 
     async finalizeOptimistic(el, realMsg) {
+        if (!el || !realMsg) return;
         el.id = `msg-${realMsg.id}`;
+        el.setAttribute('data-optimistic', 'false');
         el.style.opacity = '1';
-        el.removeAttribute('data-optimistic');
-        // Keep data-temp-id but mark it as finalized so we don't accidentally match it again 
-        // with another message, but keep it for immediate server confirmation events.
-        el.setAttribute('data-finalized', 'true');
+        el.removeAttribute('data-temp-id');
+
+        const status = el.querySelector('.sending-status');
+        if (status) status.remove();
+
+        // [MOD] Enable translation button after finalization
+        const actions = el.querySelector('.message-meta-actions');
+        if (actions && !actions.querySelector('.translate-msg-btn')) {
+            const btn = document.createElement('button');
+            btn.className = 'translate-msg-btn';
+            btn.title = LanguageManager.get('btn-translate');
+            btn.onclick = () => this.translateMessage(realMsg.id);
+            btn.textContent = '🌏';
+            actions.appendChild(btn);
+        }
+        // [NEW] Auto-Translate if enabled
+        if (this.autoTranslateEnabled) {
+            this.translateMessage(realMsg.id);
+        }
 
         // Record as processed to prevent realtime duplicates
         if (realMsg.id) {
@@ -4595,8 +4645,8 @@ class AntiCodeApp {
         }
         this._isRecentDuplicate(realMsg); // Record fingerprint for filtered version
 
-        const status = el.querySelector('.sending-status');
-        if (status) status.innerText = '';
+        const finalStatus = el.querySelector('.sending-status');
+        if (finalStatus) finalStatus.innerText = '';
 
         const meta = el.querySelector('.message-meta');
         if (meta && this.isAdminMode) {
@@ -4646,7 +4696,54 @@ class AntiCodeApp {
         }
     }
 
+    // [NEW] Toggle Auto-Translate
+    toggleAutoTranslate() {
+        this.autoTranslateEnabled = !this.autoTranslateEnabled;
+        localStorage.setItem('app_auto_translate', this.autoTranslateEnabled);
+        this.updateAutoTranslateUI();
 
+        // If turned ON, try to translate currently visible messages
+        if (this.autoTranslateEnabled) {
+            document.querySelectorAll('.message-item[id^="msg-"]').forEach(el => {
+                const msgId = el.id.replace('msg-', '');
+                if (el.getAttribute('data-translated') !== 'true') this.translateMessage(msgId);
+            });
+        }
+    }
+
+    updateAutoTranslateUI() {
+        const btn = document.getElementById('auto-translate-toggle');
+        if (btn) {
+            btn.textContent = this.autoTranslateEnabled ? 'ON' : 'OFF';
+            btn.classList.toggle('on', this.autoTranslateEnabled);
+        }
+    }
+
+    async translateMessage(msgId) {
+        const el = document.getElementById(`msg-${msgId}`);
+        if (!el || !el.querySelector('.message-text')) return;
+        const textEl = el.querySelector('.message-text');
+        if (el.getAttribute('data-translated') === 'true') return;
+
+        const originalText = textEl.innerText;
+        const targetLang = LanguageManager.currentLang;
+        if (targetLang === 'ko') return;
+
+        const loadingStr = LanguageManager.get('msg-translating') || 'Translating...';
+        const originalHtml = textEl.innerHTML;
+        textEl.innerHTML = `<span style="font-size:0.8rem; color:var(--accent); opacity:0.7;">${loadingStr}</span>`;
+
+        try {
+            await new Promise(r => setTimeout(r, 800));
+            let trans = `[${targetLang.toUpperCase()}] ${originalText} (AI Simulated)`;
+            textEl.innerHTML = `<div style="color:var(--accent); font-style:italic;">${trans}</div>
+                <div style="font-size:0.65rem; color:var(--text-muted); cursor:pointer; margin-top:4px; text-decoration:underline;" 
+                     onclick="this.parentNode.innerHTML = \`${originalHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`; document.getElementById('msg-${msgId}').setAttribute('data-translated', 'false');">
+                     ${LanguageManager.get('btn-show-original') || 'Show Original'}
+                </div>`;
+            el.setAttribute('data-translated', 'true');
+        } catch (e) { textEl.innerHTML = originalHtml; }
+    }
 
     // [NEW] Edit Message Prompt
     editMessagePrompt(messageId, oldContent) {
@@ -5780,6 +5877,7 @@ class AntiCodeApp {
                 }
             };
         }
+        this.updateAutoTranslateUI(); // Call in init
     }
     // [New] Invitation System Methods
     renderProfileInviteBadge() {

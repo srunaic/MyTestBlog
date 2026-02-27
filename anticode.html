@@ -143,8 +143,10 @@
                 <!-- User info & UID rendered here by JS -->
             </div>
             <div class="sidebar-settings">
-                <button id="open-shop-btn" class="settings-cog-btn" title="상점" style="margin-right:8px;">🛒</button>
-                <button id="open-settings-btn" class="settings-cog-btn" title="설정">⚙️</button>
+                <button id="open-shop-btn" class="settings-cog-btn" title="상점" style="margin-right:8px;"
+                    data-i18n="[title]nav-records">🛒</button>
+                <button id="open-settings-btn" class="settings-cog-btn" title="설정"
+                    data-i18n="[title]settings-title">⚙️</button>
             </div>
 
             <div class="channel-list-container">
@@ -166,8 +168,9 @@
 
                     </div>
                     <div class="channel-page-bar">
-                        <select id="channel-page-select" class="channel-page-select" title="내 채널 만들기">
-                            <option value="all">전체 채널</option>
+                        <select id="channel-page-select" class="channel-page-select" title="내 채널 만들기"
+                            data-i18n="[title]chat-create-channel">
+                            <option value="all" data-i18n="all">전체 채널</option>
                         </select>
                         <button id="open-channel-pages" class="notif-toggle-btn"
                             style="padding:6px 10px; font-size:0.72rem; white-space:nowrap;"
@@ -191,14 +194,15 @@
                 <div class="header-right">
                     <button id="mobile-more-btn" class="mobile-only-btn">⋮</button>
                     <div id="mobile-dropdown-menu" class="mobile-dropdown-content" style="display:none;">
-                        <button id="menu-channels">💬 채널 목록</button>
-                        <button id="menu-friends">👤 친구 관리</button>
-                        <button id="menu-members">👥 멤버 목록 (온라인 상태)</button>
-                        <button id="menu-pages">📄 내 채널 만들기</button>
+                        <button id="menu-channels" data-i18n="chat-channels">💬 채널 목록</button>
+                        <button id="menu-friends" data-i18n="chat-friends">👤 친구 관리</button>
+                        <button id="menu-members" data-i18n="chat-members">👥 멤버 목록 (온라인 상태)</button>
+                        <button id="menu-pages" data-i18n="chat-create-channel">📄 내 채널 만들기</button>
                         <!-- menu-add removed -->
-                        <button id="menu-profile">⚙️ 프로필 설정</button>
-                        <button id="menu-blocked-list">🚫 차단한 유저 목록</button>
-                        <button onclick="window.location.href='index.html'" id="menu-back">↩️ 블로그로 돌아가기</button>
+                        <button id="menu-profile" data-i18n="settings-profile">⚙️ 프로필 설정</button>
+                        <button id="menu-blocked-list" data-i18n="sidebar-admin">🚫 차단한 유저 목록</button>
+                        <button onclick="window.location.href='index.html'" id="menu-back"
+                            data-i18n="chat-back-to-blog">↩️ 블로그로 돌아가기</button>
                         <button onclick="toggleNotifSound()" class="notif-toggle-btn notif-sound-toggle">🔔 알림 소리
                             ON</button>
                     </div>
@@ -615,13 +619,7 @@
     <div id="app-settings-modal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
             <h2>⚙️ 환경 설정</h2>
-            <div class="setting-item-group">
-                <div class="setting-label">
-                    <span class="label-title">👤 내 프로필</span>
-                    <span class="label-desc">닉네임과 프로필 이미지를 변경합니다.</span>
-                </div>
-                <button type="button" id="open-profile-edit-btn" class="notif-toggle-btn">프로필 설정</button>
-            </div>
+
             <div class="setting-item-group">
                 <div class="setting-label">
                     <span class="label-title" data-i18n="settings-lang">🌐 언어 설정 (Language)</span>
@@ -634,6 +632,14 @@
                     <option value="ja">日本語 (Japanese)</option>
                     <option value="zh">中文 (Chinese)</option>
                 </select>
+            </div>
+            <div class="setting-item-group">
+                <div class="setting-label">
+                    <span class="label-title" data-i18n="settings-auto-translate">자동 번역</span>
+                    <span class="label-desc" data-i18n="settings-auto-translate-desc">메시지를 자동으로 번역하여 표시합니다.</span>
+                </div>
+                <button type="button" id="auto-translate-toggle" class="notif-toggle-btn"
+                    onclick="window.app && window.app.toggleAutoTranslate()">OFF</button>
             </div>
             <div class="setting-item-group">
                 <div class="setting-label">
