@@ -2781,8 +2781,14 @@ function handleMobileNotifClick() {
 }
 
 function exitApp() {
-    console.log('Exiting app to main OS...');
-    window.location.href = 'https://victoryka-os.pages.dev/';
+    console.log('Exiting app...');
+    // Attempt to close the window (works in some PWA modes/standalone)
+    window.close();
+
+    // Fallback: Redirect to main OS
+    setTimeout(() => {
+        window.location.href = 'https://victoryka-os.pages.dev/';
+    }, 100);
 }
 
 function handleMobileChat() {
