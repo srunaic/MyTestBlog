@@ -3,6 +3,11 @@ self.onmessage = function (event) {
     const { type, payload, id } = event.data;
 
     switch (type) {
+        case 'SET_CONFIG':
+            self.supabaseUrl = payload.supabaseUrl;
+            self.supabaseKey = payload.supabaseKey;
+            self.postMessage({ id, result: 'CONFIG_SET' });
+            break;
         case 'FILTER_PROFANITY':
             self.postMessage({ id, result: filterProfanity(payload.text) });
             break;
@@ -21,7 +26,10 @@ self.onmessage = function (event) {
         case 'TRANSLATE':
             translateText(payload.text, payload.targetLang)
                 .then(translatedText => self.postMessage({ id, result: { translatedText } }))
-                .catch(err => self.postMessage({ id, error: err.message }));
+                .catch(err => {
+                    console.error('Worker: Translation error:', err);
+                    self.postMessage({ id, result: { translatedText: payload.text } }); // Fallback
+                });
             break;
         case 'PING':
             self.postMessage({ id, result: 'PONG' });
@@ -160,15 +168,49 @@ function oracleBrain(query, posts = []) {
 // [NEW] Translation Cache for performance optimization
 const translationCache = new Map();
 
+// [NEW] Simple hash for DB lookups
+function generateHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash.toString();
+}
+
 async function translateText(text, targetLang) {
     if (!text || !targetLang || targetLang === 'ko') return text;
 
     const cacheKey = `${text}:${targetLang}`;
-    if (translationCache.has(cacheKey)) {
-        // console.log('[CACHE HIT]', cacheKey);
-        return translationCache.get(cacheKey);
+    if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
+
+    const sourceHash = `${targetLang}:${generateHash(text)}`;
+
+    // 1. Check Global DB Cache
+    if (self.supabaseUrl && self.supabaseKey) {
+        try {
+            const getUrl = `${self.supabaseUrl}/rest/v1/translations?source_hash=eq.${encodeURIComponent(sourceHash)}&select=translated_text`;
+            const dbRes = await fetch(getUrl, {
+                headers: {
+                    'apikey': self.supabaseKey,
+                    'Authorization': `Bearer ${self.supabaseKey}`
+                }
+            });
+            if (dbRes.ok) {
+                const results = await dbRes.json();
+                if (results && results.length > 0) {
+                    const dbTrans = results[0].translated_text;
+                    translationCache.set(cacheKey, dbTrans);
+                    return dbTrans;
+                }
+            }
+        } catch (e) {
+            console.warn('Worker: DB cache check failed', e);
+        }
     }
 
+    // 2. Call Translation API
     try {
         const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
 
@@ -181,6 +223,26 @@ async function translateText(text, targetLang) {
         if (data && data[0]) {
             const result = data[0].map(x => x[0]).join('');
             translationCache.set(cacheKey, result);
+
+            // 3. Save to Global DB Cache (Fire and forget or async)
+            if (self.supabaseUrl && self.supabaseKey) {
+                fetch(`${self.supabaseUrl}/rest/v1/translations`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': self.supabaseKey,
+                        'Authorization': `Bearer ${self.supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'resolution=merge-duplicates'
+                    },
+                    body: JSON.stringify({
+                        source_hash: sourceHash,
+                        original_text: text,
+                        target_lang: targetLang,
+                        translated_text: result
+                    })
+                }).catch(e => console.warn('Worker: Failed to save to DB cache', e));
+            }
+
             return result;
         }
         return text;

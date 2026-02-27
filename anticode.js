@@ -15,7 +15,11 @@ const translations = {
         "chat-channels": "채널 목록", "chat-friends": "친구 목록", "chat-members": "멤버 목록", "chat-add-friend": "친구추가", "chat-create-channel": "내 채널 만들기", "chat-welcome-title": "ROSAE HUB에 오신 것을 환영합니다!", "chat-welcome-desc": "커뮤니티의 시작점입니다. 메시지를 남겨보세요.", "chat-input-placeholder": "메시지 보내기...", "chat-send": "전송", "chat-online": "온라인", "chat-back-to-blog": "↩️ 블로그로 돌아가기",
         "cat-all": "전체보기 (ALL)", "cat-research": "연구소 소식", "cat-drawings": "갤러리", "cat-bug": "버그 신고", "status-posts": "개의 글", "status-no-posts": "아직 등록된 글이 없습니다.", "admin-user-mgr": "👥 사용자 관리", "admin-user-mgr-title": "전체 사용자 관리", "admin-user-mgr-desc": "가입된 전체 회원 목록입니다.", "btn-refresh": "목록 새로고침", "detail-archive": "아카이브", "detail-published": "발행", "detail-views": "조회", "cat-uncategorized": "미분류",
         "admin-cat-mgr": "카테고리 관리", "admin-social-links": "소셜 링크 설정", "admin-social-name": "이름 (예: INSTA)", "admin-social-url": "주소 (https://...)", "admin-social-add": "링크 추가", "admin-ai-logs": "ORACLE INSIGHTS (AI 로그)", "admin-chatbot-logs": "챗봇 로그 분석", "admin-test-server": "관리자 테스트 서버", "admin-maintenance": "서버 점검 관리", "chat-input-placeholder-dynamic": "에 메시지 보내기",
-        "type-general": "일반", "chat-page-all": "전체 채널(편집 불가)", "chat-page-empty": "이 페이지에 채널이 없습니다.", "chat-discovery-none": "검색 결과 없음", "chat-owned-none": "내가 만든 채팅방이 없습니다.", "chat-personal-none": "내가 만든 채널 목록(카테고리)이 없습니다."
+        "type-general": "일반", "chat-page-all": "전체 채널(편집 불가)", "chat-page-empty": "이 페이지에 채널이 없습니다.", "chat-discovery-none": "검색 결과 없음", "chat-owned-none": "내가 만든 채팅방이 없습니다.", "chat-personal-none": "내가 만든 채널 목록(카테고리)이 없습니다.",
+        "msg-dear": "님", "msg-translating": "번역 중...", "btn-show-original": "원본 보기", "msg-edit-prompt": "메시지 수정:", "msg-delete-confirm": "정말 이 메시지를 삭제하시겠습니까?", "msg-unknown-user": "알 수 없음", "alert-owner-profile": "방장의 프로필을 볼 수 없습니다.",
+        "shop-owned": "보유중", "shop-no-products": "판매 중인 상품이 없습니다.", "shop-buy-warning": "[구매 경고]\n이 상품은 구매 후 환불이 불가능합니다.\n정말 구매하시겠습니까?", "shop-buy-error": "구매 중 오류가 발생했습니다: ", "shop-buy-success": "구매 성공! 이모티콘 탭에서 확인할 수 있습니다.", "shop-buy-fail": "구매 실패: ",
+        "bank-input-error": "보내시는 분의 은행명과 입금자명을 입력해주세요.", "bank-confirm-desc": "[입금 신청 내역 확인]\n신청 금액: {amount} 코인\n입금 은행: {bank}\n입금자명: {owner}\n\n위 내용으로 입금 신청하시겠습니까?", "bank-error": "입금 신청 중 오류가 발생했습니다.", "msg-loading": "로딩 중...", "msg-permission-error": "권한이 없거나 오류가 발생했습니다.", "bank-no-pending": "대기 중인 요청이 없습니다.",
+        "settings-notif-on": "🔔 알림 소리 ON", "settings-notif-off": "🔕 알림 소리 OFF", "blocked-users-title": "차단한 유저 목록"
     },
     en: {
         "nav-records": "Records", "nav-chat": "💬 Chat", "nav-journal": "Journal", "nav-login": "Login", "nav-signup": "Sign Up", "nav-logout": "Logout", "nav-account": "Account",
@@ -27,7 +31,11 @@ const translations = {
         "chat-channels": "Channels", "chat-friends": "Friends", "chat-members": "Members", "chat-add-friend": "Add Friend", "chat-create-channel": "Create Channel", "chat-welcome-title": "Welcome to ROSAE HUB!", "chat-welcome-desc": "This is the start of the community. Leave a message.", "chat-input-placeholder": "Send a message...", "chat-send": "Send", "chat-online": "Online", "chat-back-to-blog": "↩️ Back to Blog",
         "cat-all": "All (ALL)", "cat-research": "Research", "cat-drawings": "Drawings", "cat-bug": "Bug Report", "status-posts": "posts", "status-no-posts": "No posts found.", "admin-user-mgr": "👥 User Mgmt", "admin-user-mgr-title": "Global User Management", "admin-user-mgr-desc": "List of all registered members.", "btn-refresh": "Refresh List", "detail-archive": "Archive", "detail-published": "Published", "detail-views": "Views", "cat-uncategorized": "Uncategorized",
         "admin-cat-mgr": "Category Mgmt", "admin-social-links": "Social Links", "admin-social-name": "Name (e.g. INSTA)", "admin-social-url": "URL (https://...)", "admin-social-add": "Add Link", "admin-ai-logs": "ORACLE INSIGHTS (AI Logs)", "admin-chatbot-logs": "Chatbot Logs", "admin-test-server": "Admin Test Server", "admin-maintenance": "Server Maintenance", "chat-input-placeholder-dynamic": "Send a message to",
-        "type-general": "General", "chat-page-all": "All Channels (View Only)", "chat-page-empty": "No channels on this page.", "chat-discovery-none": "No results found", "chat-owned-none": "No chat rooms created.", "chat-personal-none": "No personal categories found."
+        "type-general": "General", "chat-page-all": "All Channels (View Only)", "chat-page-empty": "No channels on this page.", "chat-discovery-none": "No results found", "chat-owned-none": "No chat rooms created.", "chat-personal-none": "No personal categories found.",
+        "msg-dear": "", "msg-translating": "Translating...", "btn-show-original": "Show Original", "msg-edit-prompt": "Edit Message:", "msg-delete-confirm": "Delete this message?", "msg-unknown-user": "Unknown", "alert-owner-profile": "Cannot view owner's profile.",
+        "shop-owned": "Owned", "shop-no-products": "No products for sale.", "shop-buy-warning": "[Purchase Warning]\nNo refunds after purchase.\nProceed?", "shop-buy-error": "Error buying product: ", "shop-buy-success": "Purchase successful!", "shop-buy-fail": "Purchase failed: ",
+        "bank-input-error": "Enter bank name and sender name.", "bank-confirm-desc": "[Deposit Details]\nAmount: {amount}\nBank: {bank}\nOwner: {owner}\nProceed?", "bank-error": "Deposit error.", "msg-loading": "Loading...", "msg-permission-error": "No permission or error.", "bank-no-pending": "No pending requests.",
+        "settings-notif-on": "🔔 Notif Sound ON", "settings-notif-off": "🔕 Notif Sound OFF", "blocked-users-title": "Blocked Users"
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
@@ -39,7 +47,11 @@ const translations = {
         "chat-channels": "チャンネル", "chat-friends": "友達", "chat-members": "メンバー", "chat-add-friend": "友達追加", "chat-create-channel": "チャンネル作成", "chat-welcome-title": "ROSAE HUBへようこそ！", "chat-welcome-desc": "コミュニティの始まりです。メッセージを残しましょう。", "chat-input-placeholder": "メッセージを送る...", "chat-send": "送信", "chat-online": "オンライン", "chat-back-to-blog": "↩️ ブログに戻る",
         "cat-all": "全表示 (ALL)", "cat-research": "研究所ニュース", "cat-drawings": "ギャラリー", "cat-bug": "バグ報告", "status-posts": "件の投稿", "status-no-posts": "まだ投稿がありません。", "admin-user-mgr": "👥 ユーザー管理", "admin-user-mgr-title": "全ユーザー管理", "admin-user-mgr-desc": "登録された全会員のリストです。", "btn-refresh": "リスト更新", "detail-archive": "アーカイブ", "detail-published": "発行", "detail-views": "閲覧", "cat-uncategorized": "未分類",
         "admin-cat-mgr": "カテゴリー管理", "admin-social-links": "SNSリンク設定", "admin-social-name": "名前 (例: INSTA)", "admin-social-url": "アドレス (https://...)", "admin-social-add": "リンク追加", "admin-ai-logs": "ORACLE INSIGHTS (AIログ)", "admin-chatbot-logs": "チャットボットログ分析", "admin-test-server": "管理者テストサーバー", "admin-maintenance": "サーバー点検管理", "chat-input-placeholder-dynamic": "にメッセージを送信",
-        "type-general": "一般", "chat-page-all": "全チャンネル (編集不可)", "chat-page-empty": "このページにはチャンネル가ありません。", "chat-discovery-none": "検索結果なし", "chat-owned-none": "作成したチャットルームはありません。", "chat-personal-none": "作成したカテゴリーはありません。"
+        "type-general": "一般", "chat-page-all": "全チャンネル (編集不可)", "chat-page-empty": "このページにはチャンネル가ありません。", "chat-discovery-none": "検索結果なし", "chat-owned-none": "作成したチャットルームはありません。", "chat-personal-none": "作成したカテゴリーはありません。",
+        "msg-dear": "様", "msg-translating": "翻訳中...", "btn-show-original": "原文表示", "msg-edit-prompt": "メッセージを編集:", "msg-delete-confirm": "このメッセージを削除しますか？", "msg-unknown-user": "不明", "alert-owner-profile": "作成者のプロフィールを見ることはできません。",
+        "shop-owned": "保有中", "shop-no-products": "販売中の商品はありません。", "shop-buy-warning": "[購入警告]\nこの商品は購入後の払い戻しができません。\n本当に購入しますか？", "shop-buy-error": "購入中にエラーが発生しました: ", "shop-buy-success": "購入成功！絵文字タブで確認できます。", "shop-buy-fail": "購入失敗: ",
+        "bank-input-error": "振込元の銀行名と振込人名を入力してください。", "bank-confirm-desc": "[振込申請内容の確認]\n申請金額: {amount} コイン\n振込先銀行: {bank}\n振込人名: {owner}\n\n上記の内容で申請しますか？", "bank-error": "振込申請中にエラーが発生しました。", "msg-loading": "読み込み中...", "msg-permission-error": "権限がないか、エラーが発生しました。", "bank-no-pending": "待機中のリクエストはありません。",
+        "settings-notif-on": "🔔 通知音 ON", "settings-notif-off": "🔕 通知音 OFF", "blocked-users-title": "ブロックしたユーザーリスト"
     },
     zh: {
         "nav-records": "记录所", "nav-chat": "💬 聊天", "nav-journal": "日记", "nav-login": "登录", "nav-signup": "注册", "nav-logout": "注销", "nav-account": "账号管理",
@@ -52,7 +64,11 @@ const translations = {
         "cat-all": "全部显示 (ALL)", "cat-research": "研究所新闻", "cat-drawings": "画廊", "cat-bug": "Bug 报告", "status-posts": "条内容", "status-no-posts": "尚无内容。", "admin-user-mgr": "👥 用户管理", "admin-user-mgr-title": "全局用户管理", "admin-user-mgr-desc": "已注册会员列表。", "btn-refresh": "刷新列表", "detail-archive": "归档", "detail-published": "发布", "detail-views": "阅读", "cat-uncategorized": "未分类",
         "admin-cat-mgr": "类别管理", "admin-social-links": "社交链接设置", "admin-social-name": "名称 (如: INSTA)", "admin-social-url": "地址 (https://...)", "admin-social-add": "添加链接", "admin-ai-logs": "ORACLE INSIGHTS (AI日志)", "admin-chatbot-logs": "聊天机器人日志分析", "admin-test-server": "管理员测试服务器", "admin-maintenance": "服务器维护管理", "chat-input-placeholder-dynamic": "发送消息至",
         "type-notice": " (公告)", "type-secret": " (私密)", "type-open": " (公开)", "type-qna": " (Q&A)", "type-general": "普通",
-        "chat-page-all": "全部频道 (不可编辑)", "chat-page-empty": "此页面暂无频道。", "chat-discovery-none": "无搜索结果", "chat-owned-none": "暂无创建的聊天室。", "chat-personal-none": "暂无个人分类。"
+        "chat-page-all": "全部频道 (不可编辑)", "chat-page-empty": "此页面暂无频道。", "chat-discovery-none": "无搜索结果", "chat-owned-none": "暂无创建的聊天室。", "chat-personal-none": "暂无个人分类。",
+        "msg-dear": " ", "msg-translating": "正在翻译...", "btn-show-original": "查看原文", "msg-edit-prompt": "编辑消息:", "msg-delete-confirm": "要删除此消息吗？", "msg-unknown-user": "未知", "alert-owner-profile": "无法查看房主的个人资料。",
+        "shop-owned": "已拥有", "shop-no-products": "暂无出售商品。", "shop-buy-warning": "[购买警告]\n购买后不予退款。\n确定购买吗？", "shop-buy-error": "购买过程中出现错误: ", "shop-buy-success": "购买成功！可在表情符号标签中查看。", "shop-buy-fail": "购买失败: ",
+        "bank-input-error": "请输入汇款银行名称和汇款人姓名。", "bank-confirm-desc": "[确认存款申请详情]\n申请金额: {amount} 币\n存款银行: {bank}\n存款人姓名: {owner}\n\n确定要按上述内容申请存款吗？", "bank-error": "申请存款过程中出现错误。", "msg-loading": "正在加载...", "msg-permission-error": "权限不足或发生错误。", "bank-no-pending": "目前没有待处理的请求。",
+        "settings-notif-on": "🔔 提示音 开启", "settings-notif-off": "🔕 提示音 关闭", "blocked-users-title": "屏蔽用户列表"
     }
 };
 
@@ -159,6 +175,12 @@ const LogicWorker = {
                 }
             };
             this.worker.onerror = (err) => console.error('LogicWorker Error:', err);
+
+            // [NEW] Configure worker with DB credentials for global translation cache
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined' && !SUPABASE_URL.startsWith('VITE_')) {
+                this.execute('SET_CONFIG', { supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY });
+            }
+
             console.log('LogicWorker (Logic Thread) ready.');
         } catch (e) {
             console.warn('LogicWorker init failed:', e);
@@ -571,10 +593,10 @@ const NotificationManager = {
 
             if (this.isSoundOn) {
                 btn.classList.add('on');
-                btn.innerHTML = (isSettings) ? '🔔 ON' : '🔔 알림 소리 ON';
+                btn.innerHTML = (isSettings) ? '🔔 ON' : LanguageManager.get('settings-notif-on');
             } else {
                 btn.classList.remove('on');
-                btn.innerHTML = (isSettings) ? '🔕 OFF' : '🔕 알림 소리 OFF';
+                btn.innerHTML = (isSettings) ? '🔕 OFF' : LanguageManager.get('settings-notif-off');
             }
         });
     },
@@ -4580,7 +4602,7 @@ class AntiCodeApp {
                     console.warn('getUserInfo failed in appendMessage:', e);
                 }
             }
-            if (!info) info = { nickname: msg.author || '알 수 없음', avatar_url: null };
+            if (!info) info = { nickname: msg.author || LanguageManager.get('msg-unknown-user'), avatar_url: null };
 
             if (typeof this.createMessageElementAsync !== 'function') {
                 console.error('Critical: createMessageElementAsync not found');
@@ -4710,11 +4732,13 @@ class AntiCodeApp {
     }
 
     updateAutoTranslateUI() {
-        const btn = document.getElementById('auto-translate-toggle');
-        if (btn) {
-            btn.textContent = this.autoTranslateEnabled ? 'ON' : 'OFF';
-            btn.classList.toggle('on', this.autoTranslateEnabled);
-        }
+        ['auto-translate-toggle', 'mobile-auto-translate-toggle-chat'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.textContent = this.autoTranslateEnabled ? 'ON' : 'OFF';
+                btn.classList.toggle('on', this.autoTranslateEnabled);
+            }
+        });
     }
 
     async translateMessage(msgId) {
@@ -4752,7 +4776,7 @@ class AntiCodeApp {
 
     // [NEW] Edit Message Prompt
     editMessagePrompt(messageId, oldContent) {
-        const newContent = prompt('메시지 수정:', oldContent);
+        const newContent = prompt(LanguageManager.get('msg-edit-prompt'), oldContent);
         if (newContent !== null && newContent.trim() !== '' && newContent !== oldContent) {
             this.saveMessageEdit(messageId, newContent.trim());
         }
@@ -4798,7 +4822,7 @@ class AntiCodeApp {
 
     async deleteMessage(messageId) {
         if (!messageId) return;
-        if (!confirm('정말 이 메시지를 삭제하시겠습니까?')) return;
+        if (!confirm(LanguageManager.get('msg-delete-confirm'))) return;
 
         // Instant UI: Remove from DOM immediately
         const el = document.getElementById(`msg-${messageId}`);
@@ -5019,30 +5043,33 @@ class AntiCodeApp {
                         <div class="shop-product-desc">${prod.description || ''}</div>
                     </div>
                     ${isOwned
-                        ? `<div class="shop-owned-badge">보유중</div>`
+                        ? `<div class="shop-owned-badge">${LanguageManager.get('shop-owned')}</div>`
                         : `<button class="shop-buy-btn" onclick="window.app.buyProduct(${prod.id}, ${prod.price})">${prod.price > 0 ? prod.price.toLocaleString() + ' 코인' : '무료 받기'}</button>`
                     }
                 `;
                 listEl.appendChild(card);
             });
         } else {
-            if (listEl) listEl.innerHTML = '<div style="padding:20px; text-align:center;">판매 중인 상품이 없습니다.</div>';
+            if (listEl) listEl.innerHTML = `<div style="padding:20px; text-align:center;">${LanguageManager.get('shop-no-products')}</div>`;
         }
     }
 
     async buyProduct(productId, price) {
-        const warningMsg = `[구매 경고]\n이 상품은 구매 후 환불이 불가능합니다.\n${price > 0 ? price.toLocaleString() + ' 코인을 사용하여 ' : ''}정말 구매하시겠습니까?`;
+        let warningMsg = LanguageManager.get('shop-buy-warning');
+        if (price > 0) {
+            warningMsg = warningMsg.replace('정말 구매하시겠습니까?', `${price.toLocaleString()} 코인을 사용하여 정말 구매하시겠습니까?`);
+        }
         if (!confirm(warningMsg)) return;
 
         const { data, error } = await this.supabase.rpc('purchase_product', { p_product_id: productId });
 
         if (error) {
-            alert('구매 중 오류가 발생했습니다: ' + error.message);
+            alert(LanguageManager.get('shop-buy-error') + error.message);
             return;
         }
 
         if (data.status === 'success') {
-            alert('구매 성공! 이모티콘 탭에서 확인할 수 있습니다.');
+            alert(LanguageManager.get('shop-buy-success'));
             // Refresh Shop & Balance
             const balanceEl = document.getElementById('shop-user-balance');
             if (balanceEl && data.balance !== undefined) balanceEl.innerText = data.balance.toLocaleString();
@@ -5095,17 +5122,14 @@ class AntiCodeApp {
         const senderAccount = document.getElementById('bank-sender-account').value;
 
         if (!senderBank || !senderAccount) {
-            alert('보내시는 분의 은행명과 입금자명을 입력해주세요.');
+            alert(LanguageManager.get('bank-input-error'));
             return;
         }
 
-        const confirmMsg = `[입금 신청 내역 확인]
-신청 금액: ${parseInt(amount).toLocaleString()} 코인
-입금 은행: ${senderBank}
-입금자명: ${senderAccount}
-
-위 내용으로 입금 신청하시겠습니까? 
-(입금 확인 후 관리자가 승인합니다.)`;
+        const confirmMsg = LanguageManager.get('bank-confirm-desc')
+            .replace('{amount}', parseInt(amount).toLocaleString())
+            .replace('{bank}', senderBank)
+            .replace('{owner}', senderAccount);
 
         if (!confirm(confirmMsg)) return;
 
@@ -5127,7 +5151,7 @@ class AntiCodeApp {
             }
         } catch (err) {
             console.error('Deposit Error:', err);
-            alert('입금 신청 중 오류가 발생했습니다.');
+            alert(LanguageManager.get('bank-error'));
         }
     }
 
@@ -5166,18 +5190,18 @@ class AntiCodeApp {
     // Admin: Load Pending Deposits
     async loadPendingDeposits() {
         const listEl = document.getElementById('admin-deposit-list');
-        listEl.innerHTML = '<div style="padding:20px; text-align:center;">로딩 중...</div>';
+        listEl.innerHTML = `<div style="padding:20px; text-align:center;">${LanguageManager.get('msg-loading')}</div>`;
 
         const { data, error } = await this.supabase.rpc('get_pending_deposits');
 
         if (error) {
             console.error(error);
-            listEl.innerHTML = '<div style="padding:20px; text-align:center; color:red;">권한이 없거나 오류가 발생했습니다.</div>';
+            listEl.innerHTML = `<div style="padding:20px; text-align:center; color:red;">${LanguageManager.get('msg-permission-error')}</div>`;
             return;
         }
 
         if (!data || data.length === 0) {
-            listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#888;">대기 중인 요청이 없습니다.</div>';
+            listEl.innerHTML = `<div style="padding:20px; text-align:center; color:#888;">${LanguageManager.get('bank-no-pending')}</div>`;
             return;
         }
 

@@ -203,8 +203,11 @@
                         <button id="menu-blocked-list" data-i18n="sidebar-admin">🚫 차단한 유저 목록</button>
                         <button onclick="window.location.href='index.html'" id="menu-back"
                             data-i18n="chat-back-to-blog">↩️ 블로그로 돌아가기</button>
-                        <button onclick="toggleNotifSound()" class="notif-toggle-btn notif-sound-toggle">🔔 알림 소리
-                            ON</button>
+                        <button onclick="toggleNotifSound()" class="notif-toggle-btn notif-sound-toggle"
+                            data-i18n="settings-notif-on">🔔 알림 소리 ON</button>
+                        <button onclick="window.app && window.app.toggleAutoTranslate()"
+                            class="notif-toggle-btn auto-translate-toggle" id="mobile-auto-translate-toggle-chat"
+                            data-i18n="settings-auto-translate">자동 번역 OFF</button>
                     </div>
                 </div>
             </header>
@@ -212,7 +215,7 @@
             <div id="blocked-list-modal" class="modal-overlay" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>차단한 유저 목록</h2>
+                        <h2 data-i18n="blocked-users-title">차단한 유저 목록</h2>
                         <button id="close-blocked-modal" class="close-btn">&times;</button>
                     </div>
                     <div id="blocked-users-container" class="blocked-list-container">

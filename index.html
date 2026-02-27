@@ -892,8 +892,19 @@
                         <option value="zh">中文 (Chinese)</option>
                     </select>
                 </div>
+
+                <!-- [NEW] Auto-Translate for Mobile -->
+                <div class="setting-item-group">
+                    <div class="setting-label">
+                        <span class="label-title" data-i18n="settings-auto-translate">자동 번역</span>
+                        <span class="label-desc" data-i18n="settings-auto-translate-desc">메시지를 자동으로 번역하여 표시합니다.</span>
+                    </div>
+                    <button type="button" id="mobile-auto-translate-toggle" class="notif-toggle-btn"
+                        onclick="toggleAutoTranslate()">OFF</button>
+                </div>
+
                 <div class="settings-group">
-                    <label>Font Settings</label>
+                    <label data-i18n="settings-font">Font Settings</label>
                     <div class="font-size-controls">
                         <button onclick="changeFontSize(0.8)">Small</button>
                         <button onclick="changeFontSize(1.0)" class="active">Normal</button>
@@ -901,9 +912,10 @@
                     </div>
                 </div>
                 <div class="settings-group">
-                    <label>Layout Optimization</label>
+                    <label data-i18n="settings-layout">Layout Optimization</label>
                     <div class="layout-controls">
-                        <p class="desc">If the layout doesn't fit your screen, adjust the width.</p>
+                        <p class="desc" data-i18n="settings-layout-desc">If the layout doesn't fit your screen, adjust
+                            the width.</p>
                         <span>Content Width</span>
                         <input type="range" min="80" max="100" value="100" oninput="changeLayoutScale(this.value)">
                     </div>

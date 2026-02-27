@@ -35,6 +35,7 @@ var isServerDown = false;
 const translations = {
     ko: {
         "nav-records": "기록소", "nav-chat": "💬 채팅하기", "nav-journal": "일지", "nav-login": "로그인", "nav-signup": "회원가입", "nav-logout": "로그아웃", "nav-account": "계정 관리",
+        "msg-dear": "님",
         "header-subtitle": "기록이 흐르고, 대화가 머무는 곳", "welcome-back": "다시 오신 것을 환영합니다, ", "welcome-subtitle": "당신의 자원을 탐색하세요.",
         "sidebar-cats": "주요 카테고리", "sidebar-admin": "관리자 패널", "sidebar-connect": "연결", "sidebar-bgm": "BGM 플레이어",
         "best-posts": "베스트 포스트", "feeds": "피드", "write": "글쓰기", "back-to-list": "← 목록으로", "comments": "댓글", "comment-placeholder": "댓글을 입력하세요...", "comment-submit": "등록", "comment-login-required": "댓글을 달려면 로그인이 필요합니다.",
@@ -50,6 +51,7 @@ const translations = {
     },
     en: {
         "nav-records": "Records", "nav-chat": "💬 Chat", "nav-journal": "Journal", "nav-login": "Login", "nav-signup": "Sign Up", "nav-logout": "Logout", "nav-account": "Account",
+        "msg-dear": "",
         "header-subtitle": "Where records flow and conversations stay", "welcome-back": "Welcome back, ", "welcome-subtitle": "Explore your resources.",
         "sidebar-cats": "MAIN CATEGORIES", "sidebar-admin": "ADMIN PANEL", "sidebar-connect": "CONNECT", "sidebar-bgm": "BGM PLAYER",
         "best-posts": "BEST POSTS", "feeds": "FEEDS", "write": "Write", "back-to-list": "← Back to List", "comments": "COMMENTS", "comment-placeholder": "Enter your comment...", "comment-submit": "Submit", "comment-login-required": "Login is required to comment.",
@@ -65,6 +67,7 @@ const translations = {
     },
     ja: {
         "nav-records": "記録所", "nav-chat": "💬 チャット", "nav-journal": "日誌", "nav-login": "ログイン", "nav-signup": "会員登録", "nav-logout": "ログアウト", "nav-account": "アカウント管理",
+        "msg-dear": "様",
         "header-subtitle": "記録が流れ、会話が留まる場所", "welcome-back": "おかえりなさい、 ", "welcome-subtitle": "リソースを探索しましょう。",
         "sidebar-cats": "メインカテゴリー", "sidebar-admin": "管理者パネル", "sidebar-connect": "接続", "sidebar-bgm": "BGMプレイヤー",
         "best-posts": "ベストポスト", "feeds": "フィード", "write": "記事を書く", "back-to-list": "← リストに戻る", "comments": "コメント", "comment-placeholder": "コメントを入力してください...", "comment-submit": "登録", "comment-login-required": "コメントするにはログインが必要です。",
@@ -80,6 +83,7 @@ const translations = {
     },
     zh: {
         "nav-records": "记录所", "nav-chat": "💬 聊天", "nav-journal": "日记", "nav-login": "登录", "nav-signup": "注册", "nav-logout": "注销", "nav-account": "账号管理",
+        "msg-dear": " ",
         "header-subtitle": "记录流动，对话停留的地方", "welcome-back": "欢迎回来, ", "welcome-subtitle": "探索您的资源。",
         "sidebar-cats": "主要类别", "sidebar-admin": "管理面板", "sidebar-connect": "连接", "sidebar-bgm": "BGM播放器",
         "best-posts": "推荐文章", "feeds": "动态", "write": "发帖", "back-to-list": "← 返回列表", "comments": "评论", "comment-placeholder": "输入评论...", "comment-submit": "提交", "comment-login-required": "登录后即可发表评论。",
@@ -111,7 +115,9 @@ const LanguageManager = {
         this.currentLang = lang;
         localStorage.setItem('app_lang', lang);
         this.applyTranslations();
-        // [NEW] Refresh entire board UI
+        // [MOD] Refresh entire UI including navigation
+        if (typeof updateUserNav === 'function') updateUserNav();
+
         if (typeof renderCategories === 'function') renderCategories();
         if (typeof renderBestPosts === 'function') renderBestPosts();
         if (typeof renderPosts === 'function') renderPosts();
@@ -148,6 +154,34 @@ const LanguageManager = {
 window.LanguageManager = LanguageManager;
 LanguageManager.init();
 
+// [NEW] Auto-Translate Logic for Blog
+function updateAutoTranslateUI() {
+    const btn = document.getElementById('mobile-auto-translate-toggle');
+    if (btn) {
+        const enabled = localStorage.getItem('app_auto_translate') === 'true';
+        btn.textContent = enabled ? 'ON' : 'OFF';
+        btn.classList.toggle('on', enabled);
+    }
+}
+
+function toggleAutoTranslate() {
+    const current = localStorage.getItem('app_auto_translate') === 'true';
+    const newState = !current;
+    localStorage.setItem('app_auto_translate', newState);
+    updateAutoTranslateUI();
+    // Refresh posts to trigger translation if turned ON
+    if (typeof renderAll === 'function') renderAll();
+    else if (typeof renderPosts === 'function') renderPosts();
+}
+
+window.toggleAutoTranslate = toggleAutoTranslate;
+window.updateAutoTranslateUI = updateAutoTranslateUI;
+
+// Initialize Auto-Translate UI on load
+document.addEventListener('DOMContentLoaded', () => {
+    updateAutoTranslateUI();
+});
+
 // [OPTIMIZATION] Local cache for translated titles to avoid worker overhead on scroll/re-render
 const titleTranslationCache = new Map();
 
@@ -171,6 +205,12 @@ const LogicWorker = {
                 }
             };
             this.worker.onerror = (err) => console.error('LogicWorker Error:', err);
+
+            // [NEW] Configure worker with DB credentials for global translation cache
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined' && !SUPABASE_URL.startsWith('VITE_')) {
+                this.execute('SET_CONFIG', { supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY });
+            }
+
             console.log('LogicWorker (Logic Thread) ready.');
         } catch (e) {
             console.warn('LogicWorker init failed (fallback to main thread):', e);
@@ -335,10 +375,10 @@ const NotificationManager = {
             const isHeader = btn.id === 'notif-toggle-pc';
             if (this.isSoundOn) {
                 btn.classList.add('on');
-                btn.innerHTML = isHeader ? '🔔 ON' : '🔔 알림 소리 ON';
+                btn.innerHTML = isHeader ? '🔔 ON' : LanguageManager.get('settings-notif-on');
             } else {
                 btn.classList.remove('on');
-                btn.innerHTML = isHeader ? '🔕 OFF' : '🔕 알림 소리 OFF';
+                btn.innerHTML = isHeader ? '🔕 OFF' : LanguageManager.get('settings-notif-off');
             }
         });
     },
@@ -860,12 +900,12 @@ function updateUserNav() {
 
     if (currentUser) {
         userNav.innerHTML = `
-            <a href="javascript:void(0)" onclick="renderAll()" class="active">기록소</a>
-            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">💬 채팅하기</a>
-            <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">일지</a>
-            <span class="user-info-text">${currentUser.nickname}님</span>
-            <a href="javascript:void(0)" onclick="openAccountModal()" class="user-action-link">계정 관리</a>
-            <a href="javascript:void(0)" onclick="logout()" class="logout-link">로그아웃</a>
+            <a href="javascript:void(0)" onclick="renderAll()" class="active">${LanguageManager.get('nav-records')}</a>
+            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">${LanguageManager.get('nav-chat')}</a>
+            <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">${LanguageManager.get('nav-journal')}</a>
+            <span class="user-info-text">${currentUser.nickname}${LanguageManager.get('msg-dear')}</span>
+            <a href="javascript:void(0)" onclick="openAccountModal()" class="user-action-link">${LanguageManager.get('nav-account')}</a>
+            <a href="javascript:void(0)" onclick="logout()" class="logout-link">${LanguageManager.get('nav-logout')}</a>
         `;
         if (adminOnlyActions) adminOnlyActions.style.display = currentUser.role === 'admin' ? 'block' : 'none';
         if (userActions) userActions.style.display = 'flex';
@@ -873,11 +913,11 @@ function updateUserNav() {
         if (userMgrBtn) userMgrBtn.style.display = isAdminMode ? 'block' : 'none';
     } else {
         userNav.innerHTML = `
-            <a href="javascript:void(0)" onclick="renderAll()" class="active">기록소</a>
-            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">💬 채팅하기</a>
-            <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">일지</a>
-            <a href="javascript:void(0)" onclick="openAuthModal('login')">로그인</a>
-            <a href="javascript:void(0)" onclick="openAuthModal('signup')">회원가입</a>
+            <a href="javascript:void(0)" onclick="renderAll()" class="active">${LanguageManager.get('nav-records')}</a>
+            <a href="anticode.html" style="color:var(--futuristic-accent); font-weight:900;">${LanguageManager.get('nav-chat')}</a>
+            <a href="javascript:void(0)" onclick="alert('일지 준비중입니다.')">${LanguageManager.get('nav-journal')}</a>
+            <a href="javascript:void(0)" onclick="openAuthModal('login')">${LanguageManager.get('nav-login')}</a>
+            <a href="javascript:void(0)" onclick="openAuthModal('signup')">${LanguageManager.get('nav-signup')}</a>
         `;
         if (adminOnlyActions) adminOnlyActions.style.display = 'none';
         if (userActions) userActions.style.display = 'flex';
