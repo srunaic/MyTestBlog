@@ -2767,9 +2767,7 @@ window.changeFontSize = changeFontSize;
 window.changeLayoutScale = changeLayoutScale;
 window.changeHeightScale = changeHeightScale;
 
-function exitApp() {
-    window.location.href = 'https://victoryka-os.pages.dev/';
-}
+
 
 function toggleMobileSearchActual() {
     const bar = document.getElementById('mobile-search-bar');
