@@ -1491,6 +1491,9 @@ input:focus {
     /* Header adjustments */
     .chat-header {
         padding: 0 10px;
+        padding-top: env(safe-area-inset-top, 0);
+        height: auto;
+        min-height: 48px;
         display: flex !important;
         justify-content: space-between !important;
         gap: 10px !important;
