@@ -155,28 +155,37 @@ function oracleBrain(query, posts = []) {
     return { text: "저는 블로그 콘텐츠와 이미지, 태그를 분석하는 Oracle AI입니다. 질문을 주시면 관련 내용을 찾아드릴게요." };
 }
 
-/**
- * [NEW] Robust Translation Logic (Papago/Google-level)
- * Uses a reliable public API structure for high accuracy.
- */
+// --- Utilities ---
+
+// [NEW] Translation Cache for performance optimization
+const translationCache = new Map();
+
 async function translateText(text, targetLang) {
     if (!text || !targetLang || targetLang === 'ko') return text;
 
+    const cacheKey = `${text}:${targetLang}`;
+    if (translationCache.has(cacheKey)) {
+        // console.log('[CACHE HIT]', cacheKey);
+        return translationCache.get(cacheKey);
+    }
+
     try {
-        // We use a robust public translation endpoint (e.g., Google Translate API - free tier/proxy)
-        // This structure ensures high accuracy as requested.
         const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
 
-        if (!response.ok) throw new Error('Translation API network error');
+        if (!response.ok) {
+            console.error('Worker: Translation API response not ok', response.status);
+            return text;
+        }
 
         const data = await response.json();
-        // Google Translate's gtx response format: [[["translated", "original", ...]], ...]
         if (data && data[0]) {
-            return data[0].map(x => x[0]).join('');
+            const result = data[0].map(x => x[0]).join('');
+            translationCache.set(cacheKey, result);
+            return result;
         }
         return text;
     } catch (error) {
-        console.error('Translation failed:', error);
-        throw error;
+        console.error('Worker: Translation failed:', error);
+        return text;
     }
 }

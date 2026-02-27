@@ -80,7 +80,7 @@ const LanguageManager = {
         // [NEW] Trigger re-render of messages and refresh UI if language changes
         if (window.app) {
             if (window.app.activeChannelId) window.app.loadMessages(window.app.activeChannelId);
-            window.app.renderChannelList(); // Refresh channel names
+            window.app.renderChannels(); // Refresh channel names
             LanguageManager.applyTranslations(); // Refresh static data-i18n tags
         }
     },
@@ -4197,8 +4197,8 @@ class AntiCodeApp {
     </div>
 </div>
 `;
-            // [NEW] Automatic Translation for incoming messages
-            if (!isOptimistic && !isMyMessage && this.autoTranslateEnabled && LanguageManager.currentLang !== 'ko') {
+            // [NEW] Automatic Translation for incoming messages (Including my own as per user request)
+            if (!isOptimistic && this.autoTranslateEnabled && LanguageManager.currentLang !== 'ko') {
                 setTimeout(() => this.translateMessage(msg.id), 100);
             }
 

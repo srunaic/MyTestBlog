@@ -148,6 +148,9 @@ const LanguageManager = {
 window.LanguageManager = LanguageManager;
 LanguageManager.init();
 
+// [OPTIMIZATION] Local cache for translated titles to avoid worker overhead on scroll/re-render
+const titleTranslationCache = new Map();
+
 // 🧵 Web Worker (Logic Thread) Manager
 const LogicWorker = {
     worker: null,
@@ -1115,16 +1118,28 @@ async function renderBestPosts() {
         card.onclick = () => showDetail(post.id);
 
         let displayTitle = post.title || '';
+        const cacheKey = post.id + LanguageManager.currentLang;
         const autoTrans = localStorage.getItem('app_auto_translate') === 'true';
+
         if (autoTrans && LanguageManager.currentLang !== 'ko') {
-            displayTitle = '...';
-            LogicWorker.execute('TRANSLATE', { text: post.title, targetLang: LanguageManager.currentLang })
-                .then(res => {
-                    if (res && res.translatedText) {
+            if (titleTranslationCache.has(cacheKey)) {
+                displayTitle = titleTranslationCache.get(cacheKey);
+            } else {
+                displayTitle = `<span style="display:inline-block; color:var(--accent-main); opacity:0.6; font-style:italic; animation: translatePulse_Local 1.5s infinite ease-in-out; pointer-events:none;">${LanguageManager.get('msg-translating') || 'Translating...'}</span>
+                                <style>@keyframes translatePulse_Local { 0%, 100% { opacity: 0.4; transform: scale(0.98); } 50% { opacity: 0.8; transform: scale(1.02); } }</style>`;
+                LogicWorker.execute('TRANSLATE', { text: post.title, targetLang: LanguageManager.currentLang })
+                    .then(res => {
+                        if (res && res.translatedText) {
+                            titleTranslationCache.set(cacheKey, res.translatedText);
+                            const titleEl = card.querySelector('h2');
+                            if (titleEl) titleEl.innerText = res.translatedText.length > 20 ? res.translatedText.substring(0, 20) + '...' : res.translatedText;
+                        }
+                    }).catch(err => {
+                        console.error('Best posts translation failed:', err);
                         const titleEl = card.querySelector('h2');
-                        if (titleEl) titleEl.innerText = res.translatedText.length > 20 ? res.translatedText.substring(0, 20) + '...' : res.translatedText;
-                    }
-                });
+                        if (titleEl) titleEl.innerText = post.title.length > 20 ? post.title.substring(0, 20) + '...' : post.title;
+                    });
+            }
         }
 
         const truncatedTitle = displayTitle.length > 20 ? displayTitle.substring(0, 20) + '...' : displayTitle;
@@ -1285,16 +1300,28 @@ function renderPosts() {
         item.className = `title-item ${isSelected ? 'selected' : ''}`;
 
         let displayTitle = post.title || '';
+        const cacheKey = post.id + LanguageManager.currentLang;
         const autoTrans = localStorage.getItem('app_auto_translate') === 'true';
+
         if (autoTrans && LanguageManager.currentLang !== 'ko') {
-            displayTitle = '...';
-            LogicWorker.execute('TRANSLATE', { text: post.title, targetLang: LanguageManager.currentLang })
-                .then(res => {
-                    if (res && res.translatedText) {
+            if (titleTranslationCache.has(cacheKey)) {
+                displayTitle = titleTranslationCache.get(cacheKey);
+            } else {
+                displayTitle = `<span style="display:inline-block; color:var(--accent-main); opacity:0.6; font-style:italic; animation: translatePulse_Local 1.5s infinite ease-in-out; pointer-events:none;">${LanguageManager.get('msg-translating') || 'Translating...'}</span>
+                                <style>@keyframes translatePulse_Local { 0%, 100% { opacity: 0.4; transform: scale(0.98); } 50% { opacity: 0.8; transform: scale(1.02); } }</style>`;
+                LogicWorker.execute('TRANSLATE', { text: post.title, targetLang: LanguageManager.currentLang })
+                    .then(res => {
+                        if (res && res.translatedText) {
+                            titleTranslationCache.set(cacheKey, res.translatedText);
+                            const titleEl = item.querySelector('h2');
+                            if (titleEl) titleEl.innerText = res.translatedText.length > 20 ? res.translatedText.substring(0, 20) + '...' : res.translatedText;
+                        }
+                    }).catch(err => {
+                        console.error('Posts translation failed:', err);
                         const titleEl = item.querySelector('h2');
-                        if (titleEl) titleEl.innerText = res.translatedText.length > 20 ? res.translatedText.substring(0, 20) + '...' : res.translatedText;
-                    }
-                });
+                        if (titleEl) titleEl.innerText = post.title.length > 20 ? post.title.substring(0, 20) + '...' : post.title;
+                    });
+            }
         }
 
         const truncatedTitle = displayTitle.length > 20 ? displayTitle.substring(0, 20) + '...' : displayTitle;
