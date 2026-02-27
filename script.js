@@ -25,7 +25,7 @@ var currentPage = 1;
 var postsPerPage = 12;
 
 // [NEW] Version Control
-const APP_VERSION = '2026.01.28.2015';
+const APP_VERSION = '2026.02.27.1430';
 var isServerDown = false;
 
 // 🧵 Web Worker (Logic Thread) Manager
@@ -243,8 +243,6 @@ const NotificationManager = {
 
 // Global Exposure for Notifications
 window.NotificationManager = NotificationManager;
-
-// Global Exposure for Notifications (Required for HTML onclick)
 window.clearNotifications = () => NotificationManager.clearNotifications();
 window.toggleNotifSound = () => NotificationManager.toggleSound();
 

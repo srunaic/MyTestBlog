@@ -1,14 +1,14 @@
 // [DEPLOYMENT] Cloudflare Pages Sync - 2026-01-03 10:58
-const CACHE_NAME = 'nanodoroshi-v2.7'; // [UPDATE] Forced cache purge for compatibility sweep
+const CACHE_NAME = 'nanodoroshi-v2026.02.27.1430'; // [UPDATE] Forced cache purge
 const ASSETS = [
     '/',
-    '/index.html?v=2026.01.28.2015',
-    '/style.css?v=2026.01.28.2015',
-    '/script.js?v=2026.01.28.2015',
-    '/worker.js?v=2026.01.28.2015',
-    '/anticode.html?v=2026.01.28.2015',
-    '/anticode.css?v=2026.01.28.2015',
-    '/anticode.js?v=2026.01.28.2015',
+    '/index.html?v=2026.02.27.1430',
+    '/style.css?v=2026.02.27.1430',
+    '/script.js?v=2026.02.27.1430',
+    '/worker.js?v=2026.02.27.1430',
+    '/anticode.html?v=2026.02.27.1430',
+    '/anticode.css?v=2026.02.27.1430',
+    '/anticode.js?v=2026.02.27.1430',
     '/icon-192x192-maskable.png',
     '/manifest-v3.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'

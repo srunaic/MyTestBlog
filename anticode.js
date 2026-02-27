@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'VITE_SUPABASE_KEY';
 const VAPID_PUBLIC_KEY = 'VITE_VAPID_PUBLIC_KEY';
 const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
-const APP_VERSION = '2026.01.28.2015';
+const APP_VERSION = '2026.02.27.1430';
 var isServerDown = false;
 
 const CATEGORY_NAMES = {
@@ -751,8 +751,13 @@ class AntiCodeApp {
                 .select('page_id, channel_id, position')
                 .in('page_id', ids)
                 .order('position', { ascending: true });
+
             if (e2) {
                 console.warn('loadChannelPageItems failed:', e2);
+                // [DEBUG] Check if we got an HTML response instead of Error object
+                if (typeof e2 === 'string' && e2.includes('<!DOCTYPE')) {
+                    console.error('SERVER RETURNED HTML INSTEAD OF JSON! This usually means the table is missing or URL misconfigured.');
+                }
                 return;
             }
             for (const it of (items || [])) {
