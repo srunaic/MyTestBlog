@@ -689,6 +689,17 @@ function restoreUIState() {
     if (state) {
         if (state.category) currentCategory = state.category;
         if (state.page) currentPage = state.page;
+
+        // [NEW] Persist Settings
+        if (state.fontScale) {
+            document.documentElement.style.setProperty('--mobile-font-scale', state.fontScale);
+        }
+        if (state.layoutScale) {
+            document.documentElement.style.setProperty('--mobile-layout-scale', state.layoutScale + '%');
+        }
+        if (state.layoutHeight) {
+            document.documentElement.style.setProperty('--mobile-layout-height', state.layoutHeight + '%');
+        }
     }
 }
 
@@ -2509,15 +2520,22 @@ function closeMobileSettings() {
 function changeFontSize(scale) {
     document.documentElement.style.setProperty('--mobile-font-scale', scale);
     document.querySelectorAll('.font-size-controls button').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    // Use scale or target to add active class
+    // Since this is called from inline onclick, event is global
+    if (window.event && window.event.currentTarget) {
+        window.event.currentTarget.classList.add('active');
+    }
+    SessionManager.saveUIState({ fontScale: scale });
 }
 
 function changeLayoutScale(percentage) {
     document.documentElement.style.setProperty('--mobile-layout-scale', percentage + '%');
+    SessionManager.saveUIState({ layoutScale: percentage });
 }
 
 function changeHeightScale(percentage) {
     document.documentElement.style.setProperty('--mobile-layout-height', percentage + '%');
+    SessionManager.saveUIState({ layoutHeight: percentage });
 }
 
 // Expose globals
