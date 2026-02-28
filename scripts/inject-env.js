@@ -24,7 +24,9 @@ const envVars = {
     // Public (safe to ship) VAPID key for Web Push subscriptions
     'VITE_VAPID_PUBLIC_KEY': findEnv('VAPID_PUBLIC_KEY'),
     // Public Worker URL for R2 uploads (safe to ship)
-    'VITE_R2_UPLOAD_BASE_URL': findEnv('R2_UPLOAD_BASE_URL')
+    'VITE_R2_UPLOAD_BASE_URL': findEnv('R2_UPLOAD_BASE_URL'),
+    // Dynamic Tunnel URL for local testing
+    'VITE_TUNNEL_URL': findEnv('VITE_TUNNEL_URL')
 };
 
 console.log("[Env Inject] Resolved Keys:", Object.keys(envVars).filter(k => envVars[k]));
@@ -65,8 +67,8 @@ INPUT_FILES.forEach(file => {
 
             // Fallback: unquoted replacement (legacy)
             if (!did) {
-            const pieces = content.split(placeholder);
-            if (pieces.length > 1) {
+                const pieces = content.split(placeholder);
+                if (pieces.length > 1) {
                     content = pieces.join(String(value).trim());
                     did = true;
                 }

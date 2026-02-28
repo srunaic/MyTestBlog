@@ -28,6 +28,7 @@ var postsPerPage = 12;
 // [NEW] Version Control
 const APP_VERSION = '2026.02.27.1430';
 var isServerDown = false;
+var VITE_TUNNEL_URL = '__VITE_TUNNEL_URL__'; // Placeholder for build-time injection
 
 // ==========================================
 // 1.5 LOCALIZATION (INLINED)
@@ -605,6 +606,7 @@ function initializeDOMElements() {
     addCatBtn = document.getElementById('add-cat-btn');
     newCatInput = document.getElementById('new-cat-name');
     catMgrList = document.getElementById('cat-mgr-list');
+    adminTestServerBtn = document.getElementById('admin-test-server-btn');
 
     accountModal = document.getElementById('account-modal');
     accountForm = document.getElementById('account-form');
@@ -1799,6 +1801,16 @@ function setupEventListeners() {
         listView.style.display = 'block';
         window.scrollTo({ top: 400, behavior: 'smooth' });
     };
+
+    // Admin Test Server Button
+    if (adminTestServerBtn) {
+        adminTestServerBtn.onclick = () => {
+            const targetUrl = (VITE_TUNNEL_URL && VITE_TUNNEL_URL !== '__VITE_TUNNEL_URL__')
+                ? VITE_TUNNEL_URL
+                : 'http://localhost:9000';
+            window.open(targetUrl, '_blank');
+        };
+    }
 
     // Category Management
     if (manageCatsBtn) manageCatsBtn.onclick = () => {
