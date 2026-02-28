@@ -2612,7 +2612,7 @@ async function syncMaintenanceStatus() {
 }
 
 function applyMaintenanceUI(data) {
-    const overlay = document.getElementById('maintenance-overlay');
+    const overlay = document.getElementById('global-mt-overlay');
     const msgEl = document.getElementById('mt-display-message');
     const schEl = document.getElementById('mt-display-schedule');
     const ctrlEl = document.getElementById('admin-mt-control');

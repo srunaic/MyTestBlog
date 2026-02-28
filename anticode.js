@@ -3232,10 +3232,12 @@ class AntiCodeApp {
     }
 
     toggleMaintenanceMode(isDown) {
-        const overlay = document.getElementById('maintenance-overlay');
+        const overlay = document.getElementById('global-mt-overlay');
         if (!overlay) return;
         isServerDown = isDown;
         overlay.style.display = isDown ? 'flex' : 'none';
+
+        // Also update the message dynamically if data exists (this assumes syncMaintenanceStatus manages the text elsewhere or data is injected here)
     }
 
     async checkAppUpdate() {
