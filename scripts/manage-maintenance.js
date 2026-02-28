@@ -49,11 +49,11 @@ async function toggleMaintenance() {
         if (error.message.includes('row-level security')) {
             console.error('💡 Tip: Try using SUPABASE_SERVICE_ROLE_KEY instead of VITE_SUPABASE_KEY for Node scripts.');
         }
-        process.exit(1);
+        setTimeout(() => process.exit(1), 500);
     } else {
         console.log(`✅ SUCCESS: Server Maintenance is now ${mode}!`);
         console.log('브라우저에서 변경 사항을 확인하세요.\n');
-        process.exit(0);
+        setTimeout(() => process.exit(0), 500);
     }
 }
 

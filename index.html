@@ -778,6 +778,20 @@
 
 
 
+    <!-- Global Maintenance Overlay (triggered by DB flag via syncMaintenanceStatus) -->
+    <div id="maintenance-overlay"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:99999; backdrop-filter:blur(15px); color:#fff; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        <div
+            style="border:2px solid #ffa500; padding:40px; border-radius:15px; background:rgba(40, 20, 0, 0.5); box-shadow: 0 0 50px rgba(255,165,0,0.2);">
+            <h1 style="font-size:3rem; color:#ffa500; margin-bottom:20px; letter-spacing:5px;">SERVER MAINTENANCE</h1>
+            <p id="mt-display-message" style="font-size:1.2rem; color:#eee; margin-bottom:10px;">서버 점검 중입니다.</p>
+            <p id="mt-display-schedule" style="font-size:0.9rem; color:#888; margin-bottom:30px;"></p>
+            <div id="admin-mt-control" style="display:none;">
+                <p style="color:#888; font-size:0.8rem;">점검 해제는 바탕화면의 Maintenance_OFF.bat 을 실행하세요.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav">
         <a href="javascript:void(0)" onclick="exitApp()" class="nav-item">
