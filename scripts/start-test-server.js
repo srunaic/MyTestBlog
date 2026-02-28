@@ -55,17 +55,22 @@ try {
                 console.log(`\n💉 Injecting Tunnel URL [${tunnelUrl}] into build...`);
                 // Set the environment variable for the sub-process
                 process.env.VITE_TUNNEL_URL = tunnelUrl;
-                try {
-                    // Just run the full build script again - it's safer and cleaner
-                    execSync('npm run build', { stdio: 'inherit', env: process.env });
-                    console.log('✅ Re-build with tunnel URL complete!');
 
-                    // Automatically open the tunnel URL in the browser
-                    console.log(`🌐 Opening Browser: ${tunnelUrl}`);
-                    execSync(`start ${tunnelUrl}`, { shell: true });
-                } catch (e) {
-                    console.warn('⚠️ Re-build or browser open failed, but server continues:', e.message);
-                }
+                // Add a short delay to ensure localtunnel is fully established and stable
+                console.log('⏳ Waiting for tunnel stability (3s)...');
+                setTimeout(() => {
+                    try {
+                        // Just run the full build script again - it's safer and cleaner
+                        execSync('npm run build', { stdio: 'inherit', env: process.env });
+                        console.log('✅ Re-build with tunnel URL complete!');
+
+                        // Automatically open the tunnel URL in the browser
+                        console.log(`🌐 Opening Browser: ${tunnelUrl}`);
+                        execSync(`start ${tunnelUrl}`, { shell: true });
+                    } catch (e) {
+                        console.warn('⚠️ Re-build or browser open failed, but server continues:', e.message);
+                    }
+                }, 3000);
             }
 
             console.log('\n=========================================');

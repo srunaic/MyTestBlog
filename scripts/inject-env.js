@@ -55,17 +55,24 @@ INPUT_FILES.forEach(file => {
             let did = false;
             const safe = toJsStringLiteral(value);
 
-            // Prefer replacing quoted placeholders, e.g. 'VITE_X' or "VITE_X"
-            if (content.includes(`'${placeholder}'`)) {
+            // 1. Prefer replacing placeholders wrapped in underscores (e.g., __VITE_TUNNEL_URL__)
+            const underscorePlaceholder = `__${placeholder}__`;
+            if (content.includes(underscorePlaceholder)) {
+                content = content.split(underscorePlaceholder).join(safe);
+                did = true;
+            }
+
+            // 2. Prefer replacing quoted placeholders, e.g. 'VITE_X' or "VITE_X"
+            if (!did && content.includes(`'${placeholder}'`)) {
                 content = content.split(`'${placeholder}'`).join(safe);
                 did = true;
             }
-            if (content.includes(`"${placeholder}"`)) {
+            if (!did && content.includes(`"${placeholder}"`)) {
                 content = content.split(`"${placeholder}"`).join(safe);
                 did = true;
             }
 
-            // Fallback: unquoted replacement (legacy)
+            // 3. Fallback: unquoted replacement (legacy)
             if (!did) {
                 const pieces = content.split(placeholder);
                 if (pieces.length > 1) {
