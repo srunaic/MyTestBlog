@@ -4172,10 +4172,49 @@ class AntiCodeApp {
 
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
-        elements.forEach(el => { if (el) fragment.appendChild(el); });
+        let lastDateString = null;
+
+        elements.forEach((el, index) => {
+            if (el) {
+                const msgObj = rows[index];
+                if (msgObj) {
+                    const msgDate = new Date(msgObj.created_at);
+                    const currentMsgDateString = `${msgDate.getFullYear()}-${msgDate.getMonth() + 1}-${msgDate.getDate()}`;
+                    if (currentMsgDateString !== lastDateString) {
+                        fragment.appendChild(this.createDateSeparator(msgDate));
+                        lastDateString = currentMsgDateString;
+                    }
+                }
+                fragment.appendChild(el);
+            }
+        });
+
+        this.lastAppendedDateString = lastDateString;
 
         container.appendChild(fragment);
         container.scrollTop = container.scrollHeight;
+    }
+
+    createDateSeparator(dateObj) {
+        const div = document.createElement('div');
+        div.className = 'chat-date-separator';
+        div.style.textAlign = 'center';
+        div.style.margin = '20px 0';
+        div.style.position = 'relative';
+
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const wd = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()];
+        const dateStr = `${y}. ${m}. ${d}. (${wd})`;
+
+        div.innerHTML = `
+            <span style="background: var(--bg-color); padding: 0 15px; color: #888; font-size: 0.85rem; font-weight: bold; position: relative; z-index: 1;">
+                ${dateStr}
+            </span>
+            <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1); z-index: 0;"></div>
+        `;
+        return div;
     }
 
     async createMessageElementAsync(msg, info, isOptimistic = false) {
@@ -4191,8 +4230,7 @@ class AntiCodeApp {
                 if (msg.id) msgEl.setAttribute('data-temp-id', msg.id);
             }
 
-            const timeStr = new Date(msg.created_at).toLocaleString([], {
-                year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+            const timeStr = new Date(msg.created_at).toLocaleTimeString('ko-KR', {
                 hour: '2-digit', minute: '2-digit'
             });
             const initial = (info.nickname || msg.author || '?')[0];
@@ -4632,6 +4670,13 @@ class AntiCodeApp {
 
             const msgEl = await this.createMessageElementAsync(msg, info, isOptimistic);
             if (msgEl) {
+                const msgDate = new Date(msg.created_at || Date.now());
+                const currentMsgDateString = `${msgDate.getFullYear()}-${msgDate.getMonth() + 1}-${msgDate.getDate()}`;
+                if (currentMsgDateString !== this.lastAppendedDateString) {
+                    container.appendChild(this.createDateSeparator(msgDate));
+                    this.lastAppendedDateString = currentMsgDateString;
+                }
+
                 container.appendChild(msgEl);
                 if (typeof this._scrollToBottom === 'function') {
                     this._scrollToBottom();
