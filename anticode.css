@@ -797,6 +797,29 @@
     padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+/* Chat Date Separator - Sticky Header */
+.chat-date-separator {
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+    text-align: center;
+    pointer-events: none;
+    /* Let clicks pass through to messages underneath */
+    margin: 20px 0;
+    transition: opacity 0.3s;
+}
+
+/* Add a subtle glow/backdrop for readability when scrolling over messages */
+.chat-date-separator span {
+    background: rgba(255, 255, 255, 0.85);
+    /* Semi-transparent white background */
+    backdrop-filter: blur(4px);
+    padding: 2px 12px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    /* Slight shadow to separate from chat */
+}
+
 .chat-header {
     height: 48px;
     padding: 0 16px;

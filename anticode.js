@@ -4200,7 +4200,6 @@ class AntiCodeApp {
         div.className = 'chat-date-separator';
         div.style.textAlign = 'center';
         div.style.margin = '20px 0';
-        div.style.position = 'relative';
 
         const y = dateObj.getFullYear();
         const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -4209,10 +4208,9 @@ class AntiCodeApp {
         const dateStr = `${y}. ${m}. ${d}. (${wd})`;
 
         div.innerHTML = `
-            <span style="background: var(--bg-color); padding: 0 15px; color: #888; font-size: 0.85rem; font-weight: bold; position: relative; z-index: 1;">
+            <span style="color: #666; font-size: 0.75rem; font-weight: bold; letter-spacing: 0.5px;">
                 ${dateStr}
             </span>
-            <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1); z-index: 0;"></div>
         `;
         return div;
     }
