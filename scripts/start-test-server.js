@@ -59,8 +59,12 @@ try {
                     // Just run the full build script again - it's safer and cleaner
                     execSync('npm run build', { stdio: 'inherit', env: process.env });
                     console.log('✅ Re-build with tunnel URL complete!');
+
+                    // Automatically open the tunnel URL in the browser
+                    console.log(`🌐 Opening Browser: ${tunnelUrl}`);
+                    execSync(`start ${tunnelUrl}`, { shell: true });
                 } catch (e) {
-                    console.warn('⚠️ Re-build failed, but server continues:', e.message);
+                    console.warn('⚠️ Re-build or browser open failed, but server continues:', e.message);
                 }
             }
 

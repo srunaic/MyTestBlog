@@ -564,7 +564,6 @@ var catMgrSection = null;
 var addCatBtn = null;
 var newCatInput = null;
 var catMgrList = null;
-var adminTestServerBtn = null;
 
 // Comments & Activity
 var commentList = null;
@@ -607,7 +606,6 @@ function initializeDOMElements() {
     addCatBtn = document.getElementById('add-cat-btn');
     newCatInput = document.getElementById('new-cat-name');
     catMgrList = document.getElementById('cat-mgr-list');
-    adminTestServerBtn = document.getElementById('admin-test-server-btn');
 
     accountModal = document.getElementById('account-modal');
     accountForm = document.getElementById('account-form');
@@ -1801,17 +1799,7 @@ function setupEventListeners() {
         detailView.style.display = 'none';
         listView.style.display = 'block';
         window.scrollTo({ top: 400, behavior: 'smooth' });
-    };
-
-    // Admin Test Server Button
-    if (adminTestServerBtn) {
-        adminTestServerBtn.onclick = () => {
-            const targetUrl = (VITE_TUNNEL_URL && VITE_TUNNEL_URL !== '__VITE_TUNNEL_URL__')
-                ? VITE_TUNNEL_URL
-                : 'http://localhost:9000';
-            window.open(targetUrl, '_blank');
-        };
-    }
+    }; // Added missing closing brace
 
     // Category Management
     if (manageCatsBtn) manageCatsBtn.onclick = () => {
