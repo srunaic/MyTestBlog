@@ -2589,39 +2589,7 @@ if (typeof window !== 'undefined') {
         deleteComment,
         updateUserRole: window.updateUserRole || async function (uid, role) { if (supabase) { const { error } = await supabase.from('users').update({ role }).eq('username', uid); if (error) alert(error.message); else alert('권한이 변경되었습니다.'); await loadData(); renderUserManagement(); } },
         deleteUser: window.deleteUser || async function (uid) { if (confirm('사용자를 삭제하시겠습니까?')) { if (supabase) { const { error } = await supabase.from('users').delete().eq('username', uid); if (error) alert(error.message); else { alert('삭제되었습니다.'); await loadData(); renderUserManagement(); } } } },
-        renderUserManagement,
-        openMaintenanceModal: () => {
-            const modal = document.getElementById('maintenance-modal');
-            if (modal) {
-                // Pre-fill with current state if possible
-                modal.style.display = 'flex';
-            }
-        },
-        closeMaintenanceModal: () => {
-            const modal = document.getElementById('maintenance-modal');
-            if (modal) modal.style.display = 'none';
-        },
-        toggleMaintenance: async (status) => {
-            const msg = document.getElementById('mt-message')?.value || '서버 점검 중입니다.';
-            const sch = document.getElementById('mt-schedule')?.value || '';
-
-            if (supabase) {
-                const { error } = await supabase.from('site_management').update({
-                    is_maintenance: status,
-                    maintenance_message: msg,
-                    maintenance_schedule: sch,
-                    updated_at: new Date().toISOString()
-                }).eq('id', 1);
-
-                if (error) alert('Error: ' + error.message);
-                else {
-                    alert(status ? '서버 점검이 시작되었습니다.' : '서버 점검이 종료되었습니다.');
-                    location.reload();
-                }
-            } else {
-                alert('Supabase not initialized');
-            }
-        }
+        renderUserManagement
     });
 }
 
