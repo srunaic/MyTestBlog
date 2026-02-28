@@ -564,6 +564,7 @@ var catMgrSection = null;
 var addCatBtn = null;
 var newCatInput = null;
 var catMgrList = null;
+var adminTestServerBtn = null;
 
 // Comments & Activity
 var commentList = null;
