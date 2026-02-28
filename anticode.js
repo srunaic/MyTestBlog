@@ -3234,10 +3234,18 @@ class AntiCodeApp {
     toggleMaintenanceMode(isDown) {
         const overlay = document.getElementById('global-mt-overlay');
         if (!overlay) return;
-        isServerDown = isDown;
-        overlay.style.display = isDown ? 'flex' : 'none';
 
-        // Also update the message dynamically if data exists (this assumes syncMaintenanceStatus manages the text elsewhere or data is injected here)
+        const isTestServer = window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.endsWith('.loca.lt');
+
+        isServerDown = isDown;
+
+        if (isTestServer) {
+            overlay.style.display = 'none'; // Never show on test server
+        } else {
+            overlay.style.display = isDown ? 'flex' : 'none';
+        }
     }
 
     async checkAppUpdate() {

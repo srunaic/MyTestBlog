@@ -2617,7 +2617,11 @@ function applyMaintenanceUI(data) {
     const schEl = document.getElementById('mt-display-schedule');
     const ctrlEl = document.getElementById('admin-mt-control');
 
-    if (data.is_maintenance) {
+    const isTestServer = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.endsWith('.loca.lt');
+
+    if (data.is_maintenance && !isTestServer) {
         // Check if current user is admin to allow bypass
         const isAdmin = currentUser && currentUser.role === 'admin';
 
