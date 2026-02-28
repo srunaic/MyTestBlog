@@ -24,24 +24,46 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 2. Parse Arguments
-const mode = process.argv[2]; // 'ON' or 'OFF'
-if (!['ON', 'OFF'].includes(mode)) {
-    console.error('❌ Usage: node manage-maintenance.js [ON|OFF]');
+const mode = process.argv[2]; // 'ON', 'OFF', or 'EXTEND'
+if (!['ON', 'OFF', 'EXTEND'].includes(mode)) {
+    console.error('❌ Usage: node manage-maintenance.js [ON|OFF|EXTEND] "schedule_string"');
     process.exit(1);
 }
 
+// 3. Get optional schedule argument (for ON and EXTEND)
+const customSchedule = process.argv[3] || '예정 시간: 작업 완료 시까지';
+
 async function toggleMaintenance() {
-    const status = (mode === 'ON');
+    const isMaintenanceMode = (mode === 'ON' || mode === 'EXTEND');
     console.log(`\n⏳ Setting Maintenance Mode to: ${mode}...`);
+
+    let updateData = {};
+    if (mode === 'ON') {
+        updateData = {
+            is_maintenance: true,
+            maintenance_message: '서버 점검 중입니다. 서비스 이용에 불편을 드려 죄송합니다.',
+            maintenance_schedule: customSchedule,
+            updated_at: new Date().toISOString()
+        };
+    } else if (mode === 'EXTEND') {
+        updateData = {
+            is_maintenance: true,
+            maintenance_message: '서버 점검 시간이 연장되었습니다. 양해 부탁드립니다.',
+            maintenance_schedule: customSchedule,
+            updated_at: new Date().toISOString()
+        };
+    } else {
+        updateData = {
+            is_maintenance: false,
+            maintenance_message: '',
+            maintenance_schedule: '',
+            updated_at: new Date().toISOString()
+        };
+    }
 
     const { error } = await supabase
         .from('site_management')
-        .update({
-            is_maintenance: status,
-            maintenance_message: status ? '서버 점검 중입니다. 잠시 후 상점 이용이 가능합니다.' : '',
-            maintenance_schedule: status ? '예정 시간: 작업 완료 시까지' : '',
-            updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', 1);
 
     if (error) {
@@ -52,6 +74,9 @@ async function toggleMaintenance() {
         setTimeout(() => process.exit(1), 500);
     } else {
         console.log(`✅ SUCCESS: Server Maintenance is now ${mode}!`);
+        if (isMaintenanceMode) {
+            console.log(`📅 Schedule set to: ${customSchedule}`);
+        }
         console.log('브라우저에서 변경 사항을 확인하세요.\n');
         setTimeout(() => process.exit(0), 500);
     }
