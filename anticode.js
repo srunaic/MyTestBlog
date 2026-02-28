@@ -141,6 +141,7 @@ const R2_UPLOAD_BASE_URL = 'VITE_R2_UPLOAD_BASE_URL';
 const SESSION_KEY = 'nano_dorothy_session';
 const APP_VERSION = '2026.02.27.1430';
 var isServerDown = false;
+var VITE_TUNNEL_URL = '__VITE_TUNNEL_URL__'; // Placeholder for build-time injection
 
 const CATEGORY_NAMES = {
     notice: '📢 공지사항',
