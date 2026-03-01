@@ -19,7 +19,7 @@ const translations = {
         "type-notice": " (공지)", "type-secret": " (비공개)", "type-open": " (공개)", "type-qna": " (Q&A)", "type-general": "일반", "chat-page-all": "전체 채널(편집 불가)", "chat-page-empty": "이 페이지에 채널이 없습니다.", "chat-discovery-none": "검색 결과 없음", "chat-owned-none": "내가 만든 채팅방이 없습니다.", "chat-personal-none": "내가 만든 채널 목록(카테고리)이 없습니다.",
         "msg-dear": "님", "msg-translating": "번역 중...", "btn-show-original": "원본 보기", "msg-edit-prompt": "메시지 수정:", "msg-delete-confirm": "정말 이 메시지를 삭제하시겠습니까?", "msg-unknown-user": "알 수 없음", "alert-owner-profile": "방장의 프로필을 볼 수 없습니다.",
         "shop-owned": "보유중", "shop-no-products": "판매 중인 상품이 없습니다.", "shop-buy-warning": "[구매 경고]\n이 상품은 구매 후 환불이 불가능합니다.\n정말 구매하시겠습니까?", "shop-buy-error": "구매 중 오류가 발생했습니다: ", "shop-buy-success": "구매 성공! 이모티콘 탭에서 확인할 수 있습니다.", "shop-buy-fail": "구매 실패: ",
-        "bank-input-error": "보내시는 분의 은행명과 입금자명을 입력해주세요.", "bank-confirm-desc": "[입금 신청 내역 확인]\n신청 금액: {amount} 코인\n입금 은행: {bank}\n입금자명: {owner}\n\n위 내용으로 입금 신청하시겠습니까?", "bank-error": "입금 신청 중 오류가 발생했습니다.", "msg-loading": "로딩 중...", "msg-permission-error": "권한이 없거나 오류가 발생했습니다.", "bank-no-pending": "대기 중인 요청이 없습니다.",
+        "bank-input-error": "보내시는 분의 은행명과 입금자명을 입력해주세요.", "bank-confirm-desc": "[입금 신청 내역 확인]\n신청 금액: {amount} 포인트\n입금 은행: {bank}\n입금자명: {owner}\n\n위 내용으로 입금 신청하시겠습니까?", "bank-error": "입금 신청 중 오류가 발생했습니다.", "msg-loading": "로딩 중...", "msg-permission-error": "권한이 없거나 오류가 발생했습니다.", "bank-no-pending": "대기 중인 요청이 없습니다.",
         "settings-notif-on": "🔔 알림 소리 ON", "settings-notif-off": "🔕 알림 소리 OFF", "blocked-users-title": "차단한 유저 목록",
         "btn-invite": "초대하기", "btn-delete": "삭제하기", "btn-kick": "강퇴", "btn-block": "차단"
     },
@@ -5108,7 +5108,7 @@ class AntiCodeApp {
                     </div>
                     ${isOwned
                         ? `<div class="shop-owned-badge">${LanguageManager.get('shop-owned')}</div>`
-                        : `<button class="shop-buy-btn" onclick="window.app.buyProduct(${prod.id}, ${prod.price})">${prod.price > 0 ? prod.price.toLocaleString() + ' 코인' : '무료 받기'}</button>`
+                        : `<button class="shop-buy-btn" onclick="window.app.buyProduct(${prod.id}, ${prod.price})">${prod.price > 0 ? prod.price.toLocaleString() + ' 포인트' : '무료 받기'}</button>`
                     }
                 `;
                 listEl.appendChild(card);
@@ -5121,7 +5121,7 @@ class AntiCodeApp {
     async buyProduct(productId, price) {
         let warningMsg = LanguageManager.get('shop-buy-warning');
         if (price > 0) {
-            warningMsg = warningMsg.replace('정말 구매하시겠습니까?', `${price.toLocaleString()} 코인을 사용하여 정말 구매하시겠습니까?`);
+            warningMsg = warningMsg.replace('정말 구매하시겠습니까?', `${price.toLocaleString()} 포인트를 사용하여 정말 구매하시겠습니까?`);
         }
         if (!confirm(warningMsg)) return;
 
@@ -5277,7 +5277,7 @@ class AntiCodeApp {
                 <div style="flex: 1;">
                     <div style="font-weight: bold; margin-bottom: 4px;">${item.user_id} (${item.depositor_name})</div>
                     <div style="font-size: 0.8rem; color: #888;">
-                        금액: <span style="color: #ffb6c1;">${item.amount.toLocaleString()} 코인</span><br>
+                        금액: <span style="color: #ffb6c1;">${item.amount.toLocaleString()} 포인트</span><br>
                         송금: ${item.sender_bank || '미입력'} / ${item.sender_account || '미입력'}
                     </div>
                 </div>
@@ -5292,7 +5292,7 @@ class AntiCodeApp {
 
     // Admin: Approve Deposit
     async approveDeposit(merchantUid) {
-        if (!confirm('정말 승인하시겠습니까? 해당 유저에게 코인이 지급됩니다.')) return;
+        if (!confirm('정말 승인하시겠습니까? 해당 유저에게 포인트가 지급됩니다.')) return;
 
         const { data, error } = await this.supabase.rpc('approve_bank_deposit', {
             p_merchant_uid: merchantUid
