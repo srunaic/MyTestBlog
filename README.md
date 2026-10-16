@@ -39,11 +39,3 @@
 *   **Deployment**: Cloudflare Pages / GitHub Pages
 
 ---
-
-## 💎 비즈니스 모델 & 로드맵
-우리는 **"감성 테크(Emotional Tech)"**를 지향합니다. 딱딱한 기계적 인터페이스가 아닌, 따뜻하고 몰입감 있는 디지털 안식처를 만드는 것이 목표입니다.
-*   **현재**: 채팅 및 기본 마켓 기능 안정화
-*   **미래**: 크리에이터 수익구조(Creator Economy), 음성/화상 채팅, 나만의 테마 커스터마이징
-
----
-© 2026 Nanodoroshi. All Rights Reserved.
