@@ -1,4 +1,4 @@
-# 🌸 ROSAE HUB (로제 허브)
+# 🌸 ROSAE HUB (로제 허브 블로그 커뮤니티 사이트)
 
 > **"구글에 [ROSAE HUB]를 검색해보세요! 실제 운영 중인 서비스가 최상단에 노출됩니다."**  
 > **Live Site:** <a href="https://mytestblog-d85.pages.dev/">https://mytestblog-d85.pages.dev/</a>
