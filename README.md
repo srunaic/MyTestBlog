@@ -4,7 +4,7 @@
 ![ROSAE HUB Banner](https://placehold.co/1200x400/111214/ffb92f?text=ROSAE+HUB&font=montserrat)
 
 ---
-
+<a href="https://mytestblog-d85.pages.dev/">로제허브 커뮤니티</a>
 ## 🚀 프로젝트 개요 (Project Overview)
 **ROSAE HUB**는 단순한 채팅 앱을 넘어, **블로그, 실시간 커뮤니티, 그리고 디지털 오픈 마켓**이 결합된 차세대 웹 플랫폼입니다.  
 사용자 경험(UX)과 감성적인 디자인(Emotional Tech)에 초점을 맞추었으며, 최신 웹 기술(PWA)을 통해 앱과 같은 부드러운 사용성을 제공합니다.
